@@ -54,6 +54,8 @@ class HelloTriangleApplication {
   private:
     GLFWwindow* window;
     VkInstance instance;
+    VkDevice device;
+    VkQueue graphics_queue;
 
     void init_window() {
         glfwInit();
@@ -115,9 +117,8 @@ class HelloTriangleApplication {
         //
         // PICK PHYSICAL DEVICE
         //
-
-        const auto is_device_suitable = []([[maybe_unused]] VkPhysicalDevice device) -> bool {
-            const auto indices = find_queue_families(device);
+        const auto is_device_suitable = []([[maybe_unused]] VkPhysicalDevice _device) -> bool {
+            const auto indices = find_queue_families(_device);
 
             return indices.is_complete();
         };
@@ -134,9 +135,9 @@ class HelloTriangleApplication {
         std::vector<VkPhysicalDevice> devices(device_count);
         vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
 
-        for (const auto& device : devices) {
-            if (is_device_suitable(device)) {
-                physical_device = device;
+        for (const auto& _device : devices) {
+            if (is_device_suitable(_device)) {
+                physical_device = _device;
                 break;
             }
         }
@@ -149,6 +150,42 @@ class HelloTriangleApplication {
         vkGetPhysicalDeviceProperties(physical_device, &properties);
 
         std::cout << "Using physical device: " << properties.deviceName << "\n";
+
+        //
+        // CREATE LOGICAL DEVICE
+        //
+        QueueFamilyIndices indices = find_queue_families(physical_device);
+
+        VkDeviceQueueCreateInfo queue_create_info{};
+        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.queueFamilyIndex = indices.graphics_family.value();
+        queue_create_info.queueCount = 1;
+        float queue_priority = 1.0f;
+        queue_create_info.pQueuePriorities = &queue_priority;
+
+        VkPhysicalDeviceFeatures device_features{};
+
+        VkDeviceCreateInfo device_create_info{};
+        device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        device_create_info.pQueueCreateInfos = &queue_create_info;
+        device_create_info.queueCreateInfoCount = 1;
+
+        device_create_info.pEnabledFeatures = &device_features;
+        device_create_info.enabledExtensionCount = 0;
+
+        if (enable_validation_layers) {
+            device_create_info.enabledLayerCount = (uint32_t)validation_layers.size();
+            device_create_info.ppEnabledLayerNames = validation_layers.data();
+        } else {
+            create_info.enabledLayerCount = 0;
+        }
+
+        if (vkCreateDevice(physical_device, &device_create_info, nullptr, &device) != VK_SUCCESS) {
+            throw std::runtime_error("Error creating logical device");
+        }
+
+        // Get graphics queue handle
+        vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &graphics_queue);
     }
 
     bool check_validation_layer_support(const std::vector<const char*>& validation_layers) {
@@ -183,6 +220,7 @@ class HelloTriangleApplication {
     }
 
     void cleanup() {
+        vkDestroyDevice(device, nullptr);
         vkDestroyInstance(instance, nullptr);
 
         glfwDestroyWindow(window);
