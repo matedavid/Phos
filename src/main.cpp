@@ -1,11 +1,44 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <iostream>
 #include <stdexcept>
 #include <vector>
+#include <optional>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
+
+struct QueueFamilyIndices {
+    std::optional<uint32_t> graphics_family;
+
+    bool is_complete() const { return graphics_family.has_value(); }
+};
+
+QueueFamilyIndices find_queue_families(VkPhysicalDevice device) {
+    QueueFamilyIndices indices;
+
+    uint32_t queue_family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
+
+    int32_t i = 0;
+    for (const auto& queue_family : queue_families) {
+        if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphics_family = i;
+        }
+
+        if (indices.is_complete()) {
+            break;
+        }
+
+        ++i;
+    }
+
+    return indices;
+}
 
 class HelloTriangleApplication {
   public:
@@ -32,7 +65,9 @@ class HelloTriangleApplication {
     }
 
     void init_vulkan() {
+        //
         // CREATE INSTANCE
+        //
         VkApplicationInfo app_info{};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         app_info.pApplicationName = "Hello Triangle";
@@ -46,9 +81,7 @@ class HelloTriangleApplication {
         const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
 
         // Validation layers
-        const std::vector<const char*> validation_layers = {
-            "VK_LAYER_KHRONOS_validation"
-        };
+        const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
 
 #ifdef NDEBUG
         const bool enable_validation_layers = false;
@@ -78,6 +111,44 @@ class HelloTriangleApplication {
         if (result != VK_SUCCESS) {
             throw std::runtime_error("Failed to create instance");
         }
+
+        //
+        // PICK PHYSICAL DEVICE
+        //
+
+        const auto is_device_suitable = []([[maybe_unused]] VkPhysicalDevice device) -> bool {
+            const auto indices = find_queue_families(device);
+
+            return indices.is_complete();
+        };
+
+        VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+
+        uint32_t device_count = 0;
+        vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
+
+        if (device_count == 0) {
+            throw std::runtime_error("No GPUs with Vulkan support");
+        }
+
+        std::vector<VkPhysicalDevice> devices(device_count);
+        vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
+
+        for (const auto& device : devices) {
+            if (is_device_suitable(device)) {
+                physical_device = device;
+                break;
+            }
+        }
+
+        if (physical_device == VK_NULL_HANDLE) {
+            throw std::runtime_error("No suitable GPU found");
+        }
+
+        VkPhysicalDeviceProperties properties;
+        vkGetPhysicalDeviceProperties(physical_device, &properties);
+
+        std::cout << "Using physical device: " << properties.deviceName << "\n";
     }
 
     bool check_validation_layer_support(const std::vector<const char*>& validation_layers) {
