@@ -171,6 +171,8 @@ class HelloTriangleApplication {
     VkFormat swap_chain_image_format;
     VkExtent2D swap_chain_extent;
 
+    std::vector<VkImageView> swap_chain_image_views;
+
     void init_window() {
         glfwInit();
 
@@ -347,7 +349,7 @@ class HelloTriangleApplication {
             choose_swap_present_mode(swap_chain_support.present_modes);
         const VkExtent2D extent = choose_swap_extent(swap_chain_support.capabilities, window);
 
-        // Select minimum number of images for the swapchain
+        // Select minimum number of images for the swap chain
         uint32_t image_count = swap_chain_support.capabilities.minImageCount + 1;
 
         if (swap_chain_support.capabilities.maxImageCount > 0 &&
@@ -399,6 +401,35 @@ class HelloTriangleApplication {
 
         swap_chain_image_format = surface_format.format;
         swap_chain_extent = extent;
+
+        //
+        // CREATE IMAGE VIEWS
+        //
+        swap_chain_image_views.resize(swap_chain_images.size());
+
+        for (uint32_t i = 0; i < swap_chain_images.size(); ++i) {
+            VkImageViewCreateInfo image_view_create_info{};
+            image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            image_view_create_info.image = swap_chain_images[i];
+            image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            image_view_create_info.format = swap_chain_image_format;
+
+            image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+            image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            image_view_create_info.subresourceRange.baseMipLevel = 0;
+            image_view_create_info.subresourceRange.levelCount = 1;
+            image_view_create_info.subresourceRange.baseArrayLayer = 0;
+            image_view_create_info.subresourceRange.layerCount = 1;
+
+            if (vkCreateImageView(device, &image_view_create_info, nullptr,
+                                  &swap_chain_image_views[i]) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to create image view");
+            }
+        }
     }
 
     bool check_validation_layer_support(const std::vector<const char*>& validation_layers) {
@@ -433,6 +464,10 @@ class HelloTriangleApplication {
     }
 
     void cleanup() {
+        for (const auto& imageView : swap_chain_image_views) {
+            vkDestroyImageView(device, imageView, nullptr);
+        }
+
         vkDestroySwapchainKHR(device, swap_chain, nullptr);
         vkDestroyDevice(device, nullptr);
         vkDestroySurfaceKHR(instance, surface, nullptr);
