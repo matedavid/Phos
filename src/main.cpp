@@ -161,6 +161,7 @@ class HelloTriangleApplication {
     VkInstance instance;
     VkSurfaceKHR surface;
 
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice device;
 
     VkQueue graphics_queue;
@@ -182,10 +183,25 @@ class HelloTriangleApplication {
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
     }
 
+#ifdef NDEBUG
+    const bool enable_validation_layers = false;
+#else
+    const bool enable_validation_layers = true;
+#endif
+
+    const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
+    const std::vector<const char*> device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
     void init_vulkan() {
-        //
-        // CREATE INSTANCE
-        //
+        create_instance();
+        create_surface();
+        create_physical_device();
+        create_logical_device();
+        create_swap_chain();
+        create_image_views();
+    }
+
+    void create_instance() {
         VkApplicationInfo app_info{};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         app_info.pApplicationName = "Hello Triangle";
@@ -198,16 +214,7 @@ class HelloTriangleApplication {
         uint32_t glfw_extension_count = 0;
         const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
 
-        // Validation layers
-        const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
-
-#ifdef NDEBUG
-        const bool enable_validation_layers = false;
-#else
-        const bool enable_validation_layers = true;
-#endif
-
-        if (enable_validation_layers && !check_validation_layer_support(validation_layers)) {
+        if (enable_validation_layers && !check_validation_layer_support()) {
             throw std::runtime_error("Validation layers requested but not available");
         }
 
@@ -229,22 +236,17 @@ class HelloTriangleApplication {
         if (result != VK_SUCCESS) {
             throw std::runtime_error("Failed to create instance");
         }
+    }
 
-        //
-        // CREATE SURFACE
-        //
+    void create_surface() {
         if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("Error creating KHR surface");
         }
+    }
 
-        //
-        // PICK PHYSICAL DEVICE
-        //
-        const std::vector<const char*> device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-
-        const auto is_device_suitable =
-            [&device_extensions]([[maybe_unused]] VkPhysicalDevice _device,
-                                 VkSurfaceKHR _surface) -> bool {
+    void create_physical_device() {
+        const auto is_device_suitable = [&]([[maybe_unused]] VkPhysicalDevice _device,
+                                           VkSurfaceKHR _surface) -> bool {
             const auto indices = find_queue_families(_device, _surface);
 
             const bool extensions_supported =
@@ -260,8 +262,6 @@ class HelloTriangleApplication {
 
             return indices.is_complete() && extensions_supported && swap_chain_adequate;
         };
-
-        VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 
         uint32_t device_count = 0;
         vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
@@ -288,10 +288,9 @@ class HelloTriangleApplication {
         vkGetPhysicalDeviceProperties(physical_device, &properties);
 
         std::cout << "Using physical device: " << properties.deviceName << "\n";
+    }
 
-        //
-        // CREATE LOGICAL DEVICE
-        //
+    void create_logical_device() {
         QueueFamilyIndices indices = find_queue_families(physical_device, surface);
 
         std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
@@ -325,7 +324,7 @@ class HelloTriangleApplication {
             device_create_info.enabledLayerCount = (uint32_t)validation_layers.size();
             device_create_info.ppEnabledLayerNames = validation_layers.data();
         } else {
-            create_info.enabledLayerCount = 0;
+            device_create_info.enabledLayerCount = 0;
         }
 
         if (vkCreateDevice(physical_device, &device_create_info, nullptr, &device) != VK_SUCCESS) {
@@ -335,11 +334,9 @@ class HelloTriangleApplication {
         // Get queues handles
         vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &graphics_queue);
         vkGetDeviceQueue(device, indices.present_family.value(), 0, &presentation_queue);
+    }
 
-        //
-        // CREATE SWAP CHAIN
-        //
-
+    void create_swap_chain() {
         SwapChainSupportDetails swap_chain_support =
             query_swap_chain_support(physical_device, surface);
 
@@ -372,7 +369,7 @@ class HelloTriangleApplication {
         const uint32_t queue_family_indices[2] = {swap_chain_indices.graphics_family.value(),
                                                   swap_chain_indices.present_family.value()};
 
-        if (indices.graphics_family != indices.present_family) {
+        if (swap_chain_indices.graphics_family != swap_chain_indices.present_family) {
             swap_chain_create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             swap_chain_create_info.queueFamilyIndexCount = 2;
             swap_chain_create_info.pQueueFamilyIndices = queue_family_indices;
@@ -401,10 +398,9 @@ class HelloTriangleApplication {
 
         swap_chain_image_format = surface_format.format;
         swap_chain_extent = extent;
+    }
 
-        //
-        // CREATE IMAGE VIEWS
-        //
+    void create_image_views() {
         swap_chain_image_views.resize(swap_chain_images.size());
 
         for (uint32_t i = 0; i < swap_chain_images.size(); ++i) {
@@ -432,7 +428,7 @@ class HelloTriangleApplication {
         }
     }
 
-    bool check_validation_layer_support(const std::vector<const char*>& validation_layers) {
+    bool check_validation_layer_support() {
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
