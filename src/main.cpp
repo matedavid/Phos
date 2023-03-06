@@ -9,6 +9,7 @@
 #include <optional>
 #include <limits>
 #include <algorithm>
+#include <fstream>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -145,6 +146,23 @@ VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities,
     return actual_extend;
 }
 
+std::vector<char> read_file(const std::string& file_path) {
+    std::ifstream file(file_path, std::ios::ate | std::ios::binary);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Error opening file");
+    }
+
+    size_t fileSize = (size_t)file.tellg();
+    std::vector<char> buffer(fileSize);
+
+    file.seekg(0);
+    file.read(buffer.data(), (int64_t)fileSize);
+
+    file.close();
+    return buffer;
+}
+
 class HelloTriangleApplication {
   public:
     HelloTriangleApplication() = default;
@@ -199,6 +217,7 @@ class HelloTriangleApplication {
         create_logical_device();
         create_swap_chain();
         create_image_views();
+        create_graphics_pipeline();
     }
 
     void create_instance() {
@@ -246,7 +265,7 @@ class HelloTriangleApplication {
 
     void create_physical_device() {
         const auto is_device_suitable = [&]([[maybe_unused]] VkPhysicalDevice _device,
-                                           VkSurfaceKHR _surface) -> bool {
+                                            VkSurfaceKHR _surface) -> bool {
             const auto indices = find_queue_families(_device, _surface);
 
             const bool extensions_supported =
@@ -428,6 +447,37 @@ class HelloTriangleApplication {
         }
     }
 
+    void create_graphics_pipeline() {
+        //
+        // SHADER MODULES
+        //
+        const auto vertex_shader_code = read_file("../shaders/vert.spv");
+        const auto fragment_shader_code = read_file("../shaders/frag.spv");
+
+        const auto vertex_shader_module = create_shader_module(vertex_shader_code);
+        const auto fragment_shader_module = create_shader_module(fragment_shader_code);
+
+        vkDestroyShaderModule(device, vertex_shader_module, nullptr);
+        vkDestroyShaderModule(device, fragment_shader_module, nullptr);
+
+        VkPipelineShaderStageCreateInfo vertex_shader_stage_info{};
+        vertex_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertex_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        vertex_shader_stage_info.module = vertex_shader_module;
+        vertex_shader_stage_info.pName = "main";
+
+        VkPipelineShaderStageCreateInfo fragment_shader_stage_info{};
+        vertex_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertex_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        vertex_shader_stage_info.module = fragment_shader_module;
+        vertex_shader_stage_info.pName = "main";
+
+        const VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_shader_stage_info,
+                                                                 fragment_shader_stage_info};
+
+        (void)shader_stages;
+    }
+
     bool check_validation_layer_support() {
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
@@ -451,6 +501,20 @@ class HelloTriangleApplication {
         }
 
         return true;
+    }
+
+    VkShaderModule create_shader_module(const std::vector<char>& code) {
+        VkShaderModuleCreateInfo create_info{};
+        create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        create_info.codeSize = code.size();
+        create_info.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+        VkShaderModule shader_module;
+        if (vkCreateShaderModule(device, &create_info, nullptr, &shader_module) != VK_SUCCESS) {
+            throw std::runtime_error("Could not create shader module");
+        }
+
+        return shader_module;
     }
 
     void main_loop() {
