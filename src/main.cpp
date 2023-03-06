@@ -192,7 +192,10 @@ class HelloTriangleApplication {
 
     std::vector<VkImageView> swap_chain_image_views;
 
+    VkRenderPass render_pass;
     VkPipelineLayout pipeline_layout;
+
+    VkPipeline graphics_pipeline;
 
     void init_window() {
         glfwInit();
@@ -219,6 +222,7 @@ class HelloTriangleApplication {
         create_logical_device();
         create_swap_chain();
         create_image_views();
+        create_render_pass();
         create_graphics_pipeline();
     }
 
@@ -449,6 +453,41 @@ class HelloTriangleApplication {
         }
     }
 
+    void create_render_pass() {
+        // Attachment description
+        VkAttachmentDescription color_attachment{};
+        color_attachment.format = swap_chain_image_format;
+        color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        // Subpasses and attachment references
+        VkAttachmentReference color_attachment_ref{};
+        color_attachment_ref.attachment = 0;
+        color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass{};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &color_attachment_ref;
+
+        // Create render pass
+        VkRenderPassCreateInfo render_pass_info{};
+        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        render_pass_info.attachmentCount = 1;
+        render_pass_info.pAttachments = &color_attachment;
+        render_pass_info.subpassCount = 1;
+        render_pass_info.pSubpasses = &subpass;
+
+        if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create render pass");
+        }
+    }
+
     void create_graphics_pipeline() {
         //
         // SHADER MODULES
@@ -459,9 +498,6 @@ class HelloTriangleApplication {
         const auto vertex_shader_module = create_shader_module(vertex_shader_code);
         const auto fragment_shader_module = create_shader_module(fragment_shader_code);
 
-        vkDestroyShaderModule(device, vertex_shader_module, nullptr);
-        vkDestroyShaderModule(device, fragment_shader_module, nullptr);
-
         VkPipelineShaderStageCreateInfo vertex_shader_stage_info{};
         vertex_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vertex_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -469,15 +505,13 @@ class HelloTriangleApplication {
         vertex_shader_stage_info.pName = "main";
 
         VkPipelineShaderStageCreateInfo fragment_shader_stage_info{};
-        vertex_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vertex_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        vertex_shader_stage_info.module = fragment_shader_module;
-        vertex_shader_stage_info.pName = "main";
+        fragment_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        fragment_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        fragment_shader_stage_info.module = fragment_shader_module;
+        fragment_shader_stage_info.pName = "main";
 
-        const VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_shader_stage_info,
-                                                                 fragment_shader_stage_info};
-
-        (void)shader_stages;
+        VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_shader_stage_info,
+                                                           fragment_shader_stage_info};
 
         //
         // FIXED FUNCTIONS
@@ -518,6 +552,10 @@ class HelloTriangleApplication {
         VkRect2D scissor{};
         scissor.offset = {0, 0};
         scissor.extent = swap_chain_extent;
+
+        // Not using because using as dynamic state
+        (void)viewport;
+        (void)scissor;
 
         VkPipelineViewportStateCreateInfo viewport_state{};
         viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -561,17 +599,63 @@ class HelloTriangleApplication {
         color_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
         color_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;             // Optional
 
+        VkPipelineColorBlendStateCreateInfo color_blending{};
+        color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        color_blending.logicOpEnable = VK_FALSE;
+        color_blending.logicOp = VK_LOGIC_OP_COPY; // Optional
+        color_blending.attachmentCount = 1;
+        color_blending.pAttachments = &color_blend_attachment;
+        color_blending.blendConstants[0] = 0.0f; // Optional
+        color_blending.blendConstants[1] = 0.0f; // Optional
+        color_blending.blendConstants[2] = 0.0f; // Optional
+        color_blending.blendConstants[3] = 0.0f; // Optional
+
+        // Pipeline Layout
         VkPipelineLayoutCreateInfo pipeline_layout_info{};
         pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipeline_layout_info.setLayoutCount = 0;
-        pipeline_layout_info.pSetLayouts = nullptr; // Optional
-        pipeline_layout_info.pushConstantRangeCount = 0; // Optional
+        pipeline_layout_info.pSetLayouts = nullptr;         // Optional
+        pipeline_layout_info.pushConstantRangeCount = 0;    // Optional
         pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
 
         if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &pipeline_layout)) {
             throw std::runtime_error("Error creating pipeline layout");
         }
 
+        //
+        // CREATION OF GRAPHICS PIPELINE
+        //
+        VkGraphicsPipelineCreateInfo pipeline_info{};
+        pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipeline_info.stageCount = 2;
+        pipeline_info.pStages = shader_stages;
+
+        pipeline_info.pVertexInputState = &vertex_input_info;
+        pipeline_info.pInputAssemblyState = &input_assembly;
+        pipeline_info.pViewportState = &viewport_state;
+        pipeline_info.pRasterizationState = &rasterizer;
+        pipeline_info.pMultisampleState = &multisampling;
+        pipeline_info.pDepthStencilState = nullptr;
+        pipeline_info.pColorBlendState = &color_blending;
+        pipeline_info.pDynamicState = &dynamic_state;
+
+        pipeline_info.layout = pipeline_layout;
+
+        pipeline_info.renderPass = render_pass;
+        pipeline_info.subpass = 0;
+
+        // Create current pipeline deriving from existing one
+        pipeline_info.basePipelineHandle = VK_NULL_HANDLE; // Optional
+        pipeline_info.basePipelineIndex = -1;              // Optional
+
+        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr,
+                                      &graphics_pipeline) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create graphics pipeline");
+        }
+
+        // Destroy shader modules
+        vkDestroyShaderModule(device, vertex_shader_module, nullptr);
+        vkDestroyShaderModule(device, fragment_shader_module, nullptr);
     }
 
     bool check_validation_layer_support() {
@@ -620,7 +704,9 @@ class HelloTriangleApplication {
     }
 
     void cleanup() {
+        vkDestroyPipeline(device, graphics_pipeline, nullptr);
         vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
+        vkDestroyRenderPass(device, render_pass, nullptr);
 
         for (const auto& imageView : swap_chain_image_views) {
             vkDestroyImageView(device, imageView, nullptr);
