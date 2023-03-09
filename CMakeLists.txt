@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(VulkanRenderer)
+project(test)
 
 # Create executable
 add_executable(${PROJECT_NAME})
@@ -13,7 +13,7 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
 # Sources and include directories
 target_sources(${PROJECT_NAME} PRIVATE 
-    src/main.cpp
+    src/test.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)

@@ -48,7 +48,7 @@ SpacesInSquareBrackets: 'false'
 Standard: Auto
 TabWidth: 4
 UseTab: Never
-ColumnLimit: 100
+ColumnLimit: 120
 IndentWidth: 4
 
 ...
