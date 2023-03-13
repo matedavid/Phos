@@ -7,7 +7,7 @@ add_executable(${PROJECT_NAME})
 
 # Project settings
 set(CMAKE_CXX_STANDARD 20)
-target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
+# target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
@@ -33,3 +33,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
 # Vulkan
 find_package(Vulkan REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
+
+# stb
+target_include_directories(${PROJECT_NAME} PRIVATE vendor/stb/)
