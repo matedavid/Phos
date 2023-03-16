@@ -7,13 +7,16 @@ add_executable(${PROJECT_NAME})
 
 # Project settings
 set(CMAKE_CXX_STANDARD 20)
-# target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
+target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
 # Sources and include directories
-target_sources(${PROJECT_NAME} PRIVATE 
-    src/test.cpp
+target_sources(${PROJECT_NAME} PRIVATE
+        src/renderer/vulkan_instance.cpp
+        src/renderer/vulkan_physical_device.cpp
+
+        src/main.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)
