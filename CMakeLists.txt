@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(test)
+project(vulkan-renderer LANGUAGES CXX)
+
+# Project settings
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Create executable
 add_executable(${PROJECT_NAME})
 
-# Project settings
-set(CMAKE_CXX_STANDARD 20)
 target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
@@ -39,3 +41,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
 
 # stb
 target_include_directories(${PROJECT_NAME} PRIVATE vendor/stb/)
+
+# spdlog
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog)
+target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
