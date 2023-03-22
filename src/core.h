@@ -7,7 +7,7 @@
 #define CORE_ERROR(...) spdlog::error(__VA_ARGS__)
 
 #define CORE_ASSERT(condition, ...) \
-    if (!condition) {               \
+    if (!(condition)) {               \
         CORE_ERROR(__VA_ARGS__);    \
         assert(false);              \
     }
