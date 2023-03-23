@@ -15,7 +15,7 @@ class VulkanPhysicalDevice {
         bool presentation = false;
         VkSurfaceKHR surface = VK_NULL_HANDLE; // Only if presentation is true
 
-        std::vector<const char*> extensions;
+        std::vector<const char*> extensions{};
     };
 
     struct QueueFamilies {

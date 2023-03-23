@@ -4,6 +4,7 @@
 
 #include "renderer/vulkan_instance.h"
 #include "renderer/vulkan_physical_device.h"
+#include "renderer/vulkan_device.h"
 
 // Forward declarations
 class GLFWwindow;

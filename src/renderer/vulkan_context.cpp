@@ -18,6 +18,8 @@ VulkanContext::VulkanContext(const std::vector<const char*>& required_extensions
     const auto selected_physical_device = select_physical_device(physical_devices, device_extensions);
 
     std::cout << "Selected physical device: " << selected_physical_device.get_properties().deviceName << "\n";
+
+    const auto device = std::make_shared<VulkanDevice>(selected_physical_device, m_surface, device_extensions);
 }
 
 VulkanContext::~VulkanContext() {

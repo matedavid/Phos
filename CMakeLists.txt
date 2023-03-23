@@ -17,6 +17,7 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/vulkan_instance.cpp
         src/renderer/vulkan_physical_device.cpp
+        src/renderer/vulkan_device.cpp
 
         src/renderer/vulkan_context.cpp
 

@@ -75,12 +75,14 @@ VulkanPhysicalDevice::QueueFamilies VulkanPhysicalDevice::get_queue_families(con
         if (requirements.transfer && (property.queueFlags & VK_QUEUE_TRANSFER_BIT))
             queue_families.transfer = idx;
 
-        VkBool32 presentation_supported;
-        VK_CHECK(
-            vkGetPhysicalDeviceSurfaceSupportKHR(m_physical_device, idx, requirements.surface, &presentation_supported))
+        if (requirements.presentation) {
+            VkBool32 presentation_supported;
+            VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR(
+                m_physical_device, idx, requirements.surface, &presentation_supported))
 
-        if (presentation_supported)
-            queue_families.presentation = idx;
+            if (presentation_supported)
+                queue_families.presentation = idx;
+        }
     }
 
     return queue_families;
