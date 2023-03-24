@@ -15,6 +15,9 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
 # Sources and include directories
 target_sources(${PROJECT_NAME} PRIVATE
+        src/core/window.cpp
+        src/core/glfw_window.cpp
+
         src/renderer/vulkan_instance.cpp
         src/renderer/vulkan_physical_device.cpp
         src/renderer/vulkan_device.cpp
