@@ -1,4 +1,3 @@
-#include <vector>
 #include <iostream>
 
 #include <memory>
@@ -11,9 +10,8 @@ constexpr uint32_t HEIGHT = 960;
 
 int main() {
     auto window = std::make_shared<Window>(WIDTH, HEIGHT);
-    const auto& extensions = window->get_vulkan_instance_extensions();
 
-    // [[maybe_unused]] VulkanContext context(extensions, window);
+    [[maybe_unused]] VulkanContext context(window);
 
     while (!window->should_close()) {
         window->update();

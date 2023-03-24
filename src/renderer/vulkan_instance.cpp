@@ -1,8 +1,11 @@
 #include "vulkan_instance.h"
 
-#include "vulkan_physical_device.h"
+#include "renderer/vulkan_physical_device.h"
+#include "core/window.h"
 
-VulkanInstance::VulkanInstance(const std::vector<const char*>& required_extensions) {
+VulkanInstance::VulkanInstance(const std::shared_ptr<Window>& window) {
+    const auto& required_extensions = window->get_vulkan_instance_extensions();
+
     VkApplicationInfo application_info{};
     application_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     application_info.pApplicationName = "vulkan-renderer";
@@ -23,9 +26,13 @@ VulkanInstance::VulkanInstance(const std::vector<const char*>& required_extensio
     create_info.ppEnabledLayerNames = validation_layers.data();
 
     VK_CHECK(vkCreateInstance(&create_info, nullptr, &m_instance))
+
+    // Create Surface
+    VK_CHECK(window->create_surface(m_instance, m_surface))
 }
 
 VulkanInstance::~VulkanInstance() {
+    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkDestroyInstance(m_instance, nullptr);
 }
 

@@ -3,11 +3,14 @@
 #include "core.h"
 
 #include <vector>
+#include <vulkan/vulkan.h>
 
 #define GLFW_WINDOW
 
 #ifdef GLFW_WINDOW
 #define NATIVE_WINDOW_TYPE GLFWwindow*
+#else
+#error Need to define a window
 #endif
 
 // Forward declarations
@@ -24,6 +27,7 @@ class INativeWindow {
     [[nodiscard]] virtual uint32_t get_height() const = 0;
 
     [[nodiscard]] virtual std::vector<const char*> get_vulkan_instance_extensions() const = 0;
+    virtual VkResult create_surface(const VkInstance& instance, VkSurfaceKHR& surface) const = 0;
 
     [[nodiscard]] virtual NATIVE_WINDOW_TYPE handle() const = 0;
 };
@@ -37,6 +41,7 @@ class Window {
     [[nodiscard]] bool should_close() const;
 
     [[nodiscard]] std::vector<const char*> get_vulkan_instance_extensions() const;
+    VkResult create_surface(const VkInstance& instance, VkSurfaceKHR& surface) const;
 
     [[nodiscard]] uint32_t get_width() const;
     [[nodiscard]] uint32_t get_height() const;

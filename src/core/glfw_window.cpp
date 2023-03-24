@@ -1,8 +1,11 @@
 #include "glfw_window.h"
 
+#ifdef GLFW_WINDOW
+
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#ifdef GLFW_WINDOW
+#include "renderer/vulkan_instance.h"
 
 GLFWWindow::GLFWWindow(uint32_t width, uint32_t height) : m_width(width), m_height(height) {
     CORE_ASSERT(glfwInit(), "Failed to initialize GLFW")
@@ -40,6 +43,10 @@ std::vector<const char*> GLFWWindow::get_vulkan_instance_extensions() const {
     }
 
     return extensions;
+}
+
+VkResult GLFWWindow::create_surface(const VkInstance& instance, VkSurfaceKHR& surface) const {
+    return glfwCreateWindowSurface(instance, m_window, nullptr, &surface);
 }
 
 #endif

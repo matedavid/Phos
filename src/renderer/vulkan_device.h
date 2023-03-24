@@ -18,6 +18,7 @@ class VulkanDevice {
     ~VulkanDevice();
 
     [[nodiscard]] VkDevice handle() const { return m_device; }
+    [[nodiscard]] VulkanPhysicalDevice physical_device() const { return m_physical_device; }
 
   private:
     VkDevice m_device;

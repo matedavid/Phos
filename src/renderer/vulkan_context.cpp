@@ -1,29 +1,23 @@
 #include "vulkan_context.h"
 
-#include <GLFW/glfw3.h>
-
 #include <iostream>
 #include <ranges>
 #include <optional>
 
-VulkanContext::VulkanContext(const std::vector<const char*>& required_extensions, GLFWwindow* window) {
-    m_instance = std::make_unique<VulkanInstance>(required_extensions);
+#include "core/window.h"
+
+VulkanContext::VulkanContext(std::shared_ptr<Window>& window) {
+    m_instance = std::make_unique<VulkanInstance>(window);
 
     const auto physical_devices = m_instance->get_physical_devices();
-
-    // Create surface
-    VK_CHECK(glfwCreateWindowSurface(m_instance->handle(), window, nullptr, &m_surface))
 
     const std::vector<const char*> device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     const auto selected_physical_device = select_physical_device(physical_devices, device_extensions);
 
     std::cout << "Selected physical device: " << selected_physical_device.get_properties().deviceName << "\n";
 
-    const auto device = std::make_shared<VulkanDevice>(selected_physical_device, m_surface, device_extensions);
-}
-
-VulkanContext::~VulkanContext() {
-    vkDestroySurfaceKHR(m_instance->handle(), m_surface, nullptr);
+    m_device = std::make_shared<VulkanDevice>(selected_physical_device, m_instance->get_surface(), device_extensions);
+    m_swapchain = std::make_shared<VulkanSwapchain>(m_device, m_instance->get_surface());
 }
 
 VulkanPhysicalDevice VulkanContext::select_physical_device(
@@ -33,7 +27,7 @@ VulkanPhysicalDevice VulkanContext::select_physical_device(
         .graphics = true,
         .transfer = true,
         .presentation = true,
-        .surface = m_surface,
+        .surface = m_instance->get_surface(),
 
         .extensions = extensions,
     };

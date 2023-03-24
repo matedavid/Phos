@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "core/glfw_window.h"
+#include "renderer/vulkan_instance.h"
 
 Window::Window(uint32_t width, uint32_t height) {
 #ifdef GLFW_WINDOW
@@ -20,6 +21,11 @@ bool Window::should_close() const {
 
 std::vector<const char*> Window::get_vulkan_instance_extensions() const {
     return m_window->get_vulkan_instance_extensions();
+}
+
+
+VkResult Window::create_surface(const VkInstance& instance, VkSurfaceKHR& surface) const {
+    return m_window->create_surface(instance, surface);
 }
 
 uint32_t Window::get_width() const {

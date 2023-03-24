@@ -21,6 +21,7 @@ class GLFWWindow : public INativeWindow {
     [[nodiscard]] uint32_t get_height() const override { return m_height; }
 
     [[nodiscard]] std::vector<const char*> get_vulkan_instance_extensions() const override;
+    VkResult create_surface(const VkInstance& instance, VkSurfaceKHR& surface) const override;
 
     [[nodiscard]] GLFWwindow* handle() const override { return m_window; }
 
