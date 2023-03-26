@@ -22,6 +22,8 @@ VulkanContext::VulkanContext(std::shared_ptr<Window>& window) {
 
     const auto vertex = std::make_shared<VulkanShaderModule>(
         "../assets/shaders/vertex.spv", VulkanShaderModule::Stage::Vertex, m_device);
+    const auto fragment = std::make_shared<VulkanShaderModule>(
+        "../assets/shaders/fragment.spv", VulkanShaderModule::Stage::Vertex, m_device);
 }
 
 VulkanPhysicalDevice VulkanContext::select_physical_device(
