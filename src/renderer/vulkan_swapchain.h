@@ -10,7 +10,7 @@ class VulkanDevice;
 
 class VulkanSwapchain {
   public:
-    VulkanSwapchain(std::shared_ptr<VulkanDevice>& device, VkSurfaceKHR surface);
+    VulkanSwapchain(std::shared_ptr<VulkanDevice> device, VkSurfaceKHR surface);
     ~VulkanSwapchain();
 
   private:
@@ -21,8 +21,8 @@ class VulkanSwapchain {
         VkExtent2D extent;
     };
 
-    VkSwapchainKHR m_swapchain;
-    SwapchainInformation m_swapchain_info;
+    VkSwapchainKHR m_swapchain{};
+    SwapchainInformation m_swapchain_info{};
 
     std::vector<VkImage> m_images;
     std::vector<VkImageView> m_image_views;

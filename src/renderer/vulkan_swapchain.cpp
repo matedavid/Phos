@@ -2,7 +2,7 @@
 
 #include "renderer/vulkan_device.h"
 
-VulkanSwapchain::VulkanSwapchain(std::shared_ptr<VulkanDevice>& device, VkSurfaceKHR surface)
+VulkanSwapchain::VulkanSwapchain(std::shared_ptr<VulkanDevice> device, VkSurfaceKHR surface)
     : m_device(std::move(device)), m_surface(surface) {
     m_swapchain_info = get_swapchain_information();
 
