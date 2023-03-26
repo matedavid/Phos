@@ -14,11 +14,6 @@ class VulkanSwapchain {
     ~VulkanSwapchain();
 
   private:
-    VkSwapchainKHR m_swapchain;
-
-    std::shared_ptr<VulkanDevice> m_device;
-    VkSurfaceKHR m_surface;
-
     struct SwapchainInformation {
         VkSurfaceCapabilitiesKHR capabilities;
         VkSurfaceFormatKHR surface_format;
@@ -26,5 +21,15 @@ class VulkanSwapchain {
         VkExtent2D extent;
     };
 
-    SwapchainInformation get_swapchain_information() const;
+    VkSwapchainKHR m_swapchain;
+    SwapchainInformation m_swapchain_info;
+
+    std::vector<VkImage> m_images;
+    std::vector<VkImageView> m_image_views;
+
+    std::shared_ptr<VulkanDevice> m_device;
+    VkSurfaceKHR m_surface;
+
+    [[nodiscard]] SwapchainInformation get_swapchain_information() const;
+    void retrieve_swapchain_images();
 };
