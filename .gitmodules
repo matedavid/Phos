@@ -7,3 +7,6 @@
 [submodule "vendor/spdlog"]
 	path = vendor/spdlog
 	url = git@github.com:gabime/spdlog.git
+[submodule "vendor/spirv-reflect"]
+	path = vendor/spirv-reflect
+	url = git@github.com:KhronosGroup/SPIRV-Reflect.git

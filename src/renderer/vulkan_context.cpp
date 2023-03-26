@@ -1,10 +1,11 @@
 #include "vulkan_context.h"
 
-#include <iostream>
 #include <ranges>
 #include <optional>
 
 #include "core/window.h"
+
+#include "renderer/vulkan_shader_module.h"
 
 VulkanContext::VulkanContext(std::shared_ptr<Window>& window) {
     m_instance = std::make_unique<VulkanInstance>(window);
@@ -14,15 +15,17 @@ VulkanContext::VulkanContext(std::shared_ptr<Window>& window) {
     const std::vector<const char*> device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     const auto selected_physical_device = select_physical_device(physical_devices, device_extensions);
 
-    std::cout << "Selected physical device: " << selected_physical_device.get_properties().deviceName << "\n";
+    fmt::print("Selected physical device: {}\n", selected_physical_device.get_properties().deviceName);
 
     m_device = std::make_shared<VulkanDevice>(selected_physical_device, m_instance->get_surface(), device_extensions);
     m_swapchain = std::make_shared<VulkanSwapchain>(m_device, m_instance->get_surface());
+
+    const auto vertex = std::make_shared<VulkanShaderModule>(
+        "../assets/shaders/vertex.spv", VulkanShaderModule::Stage::Vertex, m_device);
 }
 
 VulkanPhysicalDevice VulkanContext::select_physical_device(
-    const std::vector<VulkanPhysicalDevice>& physical_devices,
-    const std::vector<const char*>& extensions) const {
+    const std::vector<VulkanPhysicalDevice>& physical_devices, const std::vector<const char*>& extensions) const {
     const VulkanPhysicalDevice::Requirements requirements = {
         .graphics = true,
         .transfer = true,

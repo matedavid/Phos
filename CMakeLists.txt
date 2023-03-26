@@ -22,11 +22,12 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/vulkan_physical_device.cpp
         src/renderer/vulkan_device.cpp
         src/renderer/vulkan_swapchain.cpp
+        src/renderer/vulkan_shader_module.cpp
 
         src/renderer/vulkan_context.cpp
 
         src/main.cpp
-)
+        )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)
 
@@ -52,3 +53,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE vendor/stb/)
 # spdlog
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog)
 target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
+
+# Spirv-reflect
+set(SPIRV_REFLECT_EXECUTABLE OFF CACHE BOOL "" FORCE)
+set(SPIRV_REFLECT_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(SPIRV_REFLECT_STATIC_LIB ON)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/spirv-reflect)
+target_link_libraries(${PROJECT_NAME} PRIVATE spirv-reflect-static)
