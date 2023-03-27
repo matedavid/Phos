@@ -23,8 +23,21 @@ VulkanShaderModule::VulkanShaderModule(const std::string& path, Stage stage, std
 
     VK_CHECK(vkCreateShaderModule(m_device->handle(), &create_info, nullptr, &m_shader))
 
+    // Spirv reflection
+    SpvReflectShaderModule module;
+    SPIRV_REFLECT_CHECK(
+        spvReflectCreateShaderModule(content.size(), reinterpret_cast<const uint32_t*>(content.data()), &module))
+
+    CORE_ASSERT(
+        static_cast<VkShaderStageFlagBits>(module.shader_stage) == get_vulkan_stage(m_stage), "Stage does not match");
+
     if (m_stage == Stage::Vertex)
-        retrieve_vertex_input_info(content);
+        retrieve_vertex_input_info(module);
+
+    retrieve_descriptor_sets_info(module);
+
+    // Cleanup
+    spvReflectDestroyShaderModule(&module);
 }
 
 VulkanShaderModule::~VulkanShaderModule() {
@@ -66,11 +79,7 @@ VkShaderStageFlagBits VulkanShaderModule::get_vulkan_stage(Stage stage) const {
     }
 }
 
-void VulkanShaderModule::retrieve_vertex_input_info(const std::vector<char>& content) {
-    SpvReflectShaderModule module;
-    SPIRV_REFLECT_CHECK(
-        spvReflectCreateShaderModule(content.size(), reinterpret_cast<const uint32_t*>(content.data()), &module))
-
+void VulkanShaderModule::retrieve_vertex_input_info(const SpvReflectShaderModule& module) {
     // Input variables
     uint32_t input_variables_count;
     SPIRV_REFLECT_CHECK(spvReflectEnumerateInputVariables(&module, &input_variables_count, nullptr))
@@ -98,7 +107,39 @@ void VulkanShaderModule::retrieve_vertex_input_info(const std::vector<char>& con
     }
 
     m_binding_description.stride = stride;
+}
 
-    // Cleanup
-    spvReflectDestroyShaderModule(&module);
+void VulkanShaderModule::retrieve_descriptor_sets_info(const SpvReflectShaderModule& module) {
+    uint32_t descriptor_sets_count;
+    SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&module, &descriptor_sets_count, nullptr))
+
+    std::vector<SpvReflectDescriptorSet*> descriptor_sets(descriptor_sets_count);
+    SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&module, &descriptor_sets_count, descriptor_sets.data()))
+
+    for (const auto* set : descriptor_sets) {
+        VkDescriptorSetLayoutCreateInfo descriptor_set_create_info{};
+        descriptor_set_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        descriptor_set_create_info.bindingCount = set->binding_count;
+
+        for (uint32_t i = 0; i < set->binding_count; ++i) {
+            const auto* set_binding = set->bindings[i];
+
+            VkDescriptorSetLayoutBinding binding{};
+            binding.binding = set_binding->binding;
+            binding.descriptorType = static_cast<VkDescriptorType>(set_binding->descriptor_type);
+            binding.descriptorCount = set_binding->count;
+            binding.stageFlags = get_vulkan_stage(m_stage);
+            binding.pImmutableSamplers = VK_NULL_HANDLE;
+
+            // Dont know why but it's done this way in the example
+            // (https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_descriptors.cpp)
+            for (uint32_t i_dim = 0; i_dim < set_binding->array.dims_count; ++i_dim)
+                binding.descriptorCount *= set_binding->array.dims[i_dim];
+
+            m_bindings.push_back(binding);
+        }
+
+        descriptor_set_create_info.pBindings = m_bindings.data();
+        m_descriptor_sets.push_back(descriptor_set_create_info);
+    }
 }

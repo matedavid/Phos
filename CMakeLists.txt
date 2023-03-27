@@ -23,6 +23,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/vulkan_device.cpp
         src/renderer/vulkan_swapchain.cpp
         src/renderer/vulkan_shader_module.cpp
+        src/renderer/vulkan_graphics_pipeline.cpp
         src/renderer/vulkan_utils.cpp
 
         src/renderer/vulkan_context.cpp

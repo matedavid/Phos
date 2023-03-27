@@ -8,6 +8,7 @@
 
 // Forward declarations
 class VulkanDevice;
+class SpvReflectShaderModule;
 
 class VulkanShaderModule {
   public:
@@ -22,6 +23,9 @@ class VulkanShaderModule {
     [[nodiscard]] std::vector<VkVertexInputAttributeDescription> get_attribute_descriptions() const {
         return m_attribute_descriptions;
     }
+    [[nodiscard]] std::vector<VkDescriptorSetLayoutCreateInfo> get_descriptor_sets() const { return m_descriptor_sets; }
+
+    [[nodiscard]] Stage get_stage() const { return m_stage; }
 
   private:
     VkShaderModule m_shader{};
@@ -32,8 +36,12 @@ class VulkanShaderModule {
     VkVertexInputBindingDescription m_binding_description{};
     std::vector<VkVertexInputAttributeDescription> m_attribute_descriptions;
 
+    std::vector<VkDescriptorSetLayoutCreateInfo> m_descriptor_sets;
+    std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+
     [[nodiscard]] std::vector<char> read_shader_file(const std::string& path) const;
     [[nodiscard]] VkShaderStageFlagBits get_vulkan_stage(Stage stage) const;
 
-    void retrieve_vertex_input_info(const std::vector<char>& content);
+    void retrieve_vertex_input_info(const SpvReflectShaderModule& module);
+    void retrieve_descriptor_sets_info(const SpvReflectShaderModule& module);
 };

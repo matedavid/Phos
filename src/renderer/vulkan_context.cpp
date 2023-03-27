@@ -6,6 +6,7 @@
 #include "core/window.h"
 
 #include "renderer/vulkan_shader_module.h"
+#include "renderer/vulkan_graphics_pipeline.h"
 
 VulkanContext::VulkanContext(std::shared_ptr<Window>& window) {
     m_instance = std::make_unique<VulkanInstance>(window);
@@ -23,7 +24,10 @@ VulkanContext::VulkanContext(std::shared_ptr<Window>& window) {
     const auto vertex = std::make_shared<VulkanShaderModule>(
         "../assets/shaders/vertex.spv", VulkanShaderModule::Stage::Vertex, m_device);
     const auto fragment = std::make_shared<VulkanShaderModule>(
-        "../assets/shaders/fragment.spv", VulkanShaderModule::Stage::Vertex, m_device);
+        "../assets/shaders/fragment.spv", VulkanShaderModule::Stage::Fragment, m_device);
+
+    VulkanGraphicsPipeline pipeline(
+        m_device, VulkanGraphicsPipeline::Description{.shader_modules = {vertex, fragment}});
 }
 
 VulkanPhysicalDevice VulkanContext::select_physical_device(
