@@ -7,6 +7,7 @@
 
 #include "renderer/vulkan_shader_module.h"
 #include "renderer/vulkan_graphics_pipeline.h"
+#include "renderer/vulkan_command_pool.h"
 
 VulkanContext::VulkanContext(std::shared_ptr<Window>& window) {
     m_instance = std::make_unique<VulkanInstance>(window);
@@ -28,6 +29,12 @@ VulkanContext::VulkanContext(std::shared_ptr<Window>& window) {
 
     VulkanGraphicsPipeline pipeline(
         m_device, VulkanGraphicsPipeline::Description{.shader_modules = {vertex, fragment}});
+
+    const auto graphics_queue_family = m_device->physical_device().get_queue_families({.graphics = true}).graphics;
+    VulkanCommandPool command_pool(m_device, graphics_queue_family, 2);
+
+    const auto command_buffers = command_pool.get_command_buffers();
+    (void)command_buffers;
 }
 
 VulkanPhysicalDevice VulkanContext::select_physical_device(
