@@ -12,7 +12,7 @@ class Window;
 
 class VulkanContext {
   public:
-    explicit VulkanContext(std::shared_ptr<Window>& window);
+    explicit VulkanContext(const std::shared_ptr<Window>& window);
     ~VulkanContext() = default;
 
   private:

@@ -7,10 +7,11 @@
 
 // Forward declarations
 class VulkanDevice;
+class Window;
 
 class VulkanSwapchain {
   public:
-    VulkanSwapchain(std::shared_ptr<VulkanDevice> device, VkSurfaceKHR surface);
+    VulkanSwapchain(std::shared_ptr<VulkanDevice> device, VkSurfaceKHR surface, std::shared_ptr<Window> window);
     ~VulkanSwapchain();
 
   private:
@@ -29,6 +30,7 @@ class VulkanSwapchain {
 
     std::shared_ptr<VulkanDevice> m_device;
     VkSurfaceKHR m_surface;
+    std::shared_ptr<Window> m_window;
 
     [[nodiscard]] SwapchainInformation get_swapchain_information() const;
     void retrieve_swapchain_images();

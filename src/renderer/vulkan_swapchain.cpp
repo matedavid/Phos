@@ -1,9 +1,11 @@
 #include "vulkan_swapchain.h"
 
+#include "core/window.h"
 #include "renderer/vulkan_device.h"
 
-VulkanSwapchain::VulkanSwapchain(std::shared_ptr<VulkanDevice> device, VkSurfaceKHR surface)
-    : m_device(std::move(device)), m_surface(surface) {
+VulkanSwapchain::VulkanSwapchain(
+    std::shared_ptr<VulkanDevice> device, VkSurfaceKHR surface, std::shared_ptr<Window> window)
+    : m_device(std::move(device)), m_surface(surface), m_window(std::move(window)) {
     m_swapchain_info = get_swapchain_information();
 
     VulkanPhysicalDevice::QueueFamilies queue_families =
@@ -68,21 +70,18 @@ VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information
     if (info.capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         info.extent = info.capabilities.currentExtent;
     } else {
-        /* TODO:
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
+        const auto width = m_window->get_width();
+        const auto height = m_window->get_height();
 
         VkExtent2D actualExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 
-        actualExtent.width = std::clamp(actualExtent.width, surfaceCapabilities.minImageExtent.width,
-                                        surfaceCapabilities.maxImageExtent.width);
-        actualExtent.height = std::clamp(actualExtent.height, surfaceCapabilities.minImageExtent.height,
-                                         surfaceCapabilities.maxImageExtent.height);
+        actualExtent.width = std::clamp(actualExtent.width, info.capabilities.minImageExtent.width,
+                                        info.capabilities.maxImageExtent.width);
+        actualExtent.height = std::clamp(actualExtent.height, info.capabilities.minImageExtent.height,
+                                         info.capabilities.maxImageExtent.height);
 
-        information.extent.width = (uint32_t)width;
-        information.extent.height = (uint32_t)height;
-         */
-        CORE_FAIL("Not implemented");
+        info.extent.width = width;
+        info.extent.height = height;
     }
 
     // Surface formats

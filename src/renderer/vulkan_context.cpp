@@ -9,7 +9,7 @@
 #include "renderer/vulkan_graphics_pipeline.h"
 #include "renderer/vulkan_command_pool.h"
 
-VulkanContext::VulkanContext(std::shared_ptr<Window>& window) {
+VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
     m_instance = std::make_unique<VulkanInstance>(window);
 
     const auto physical_devices = m_instance->get_physical_devices();
@@ -20,7 +20,7 @@ VulkanContext::VulkanContext(std::shared_ptr<Window>& window) {
     fmt::print("Selected physical device: {}\n", selected_physical_device.get_properties().deviceName);
 
     m_device = std::make_shared<VulkanDevice>(selected_physical_device, m_instance->get_surface(), device_extensions);
-    m_swapchain = std::make_shared<VulkanSwapchain>(m_device, m_instance->get_surface());
+    m_swapchain = std::make_shared<VulkanSwapchain>(m_device, m_instance->get_surface(), window);
 
     const auto vertex = std::make_shared<VulkanShaderModule>(
         "../assets/shaders/vertex.spv", VulkanShaderModule::Stage::Vertex, m_device);
