@@ -17,8 +17,8 @@ class GLFWWindow : public INativeWindow {
     void update() const override;
     [[nodiscard]] bool should_close() const override;
 
-    [[nodiscard]] uint32_t get_width() const override { return m_width; }
-    [[nodiscard]] uint32_t get_height() const override { return m_height; }
+    [[nodiscard]] uint32_t get_width() const override { return m_data.width; }
+    [[nodiscard]] uint32_t get_height() const override { return m_data.height; }
 
     [[nodiscard]] std::vector<const char*> get_vulkan_instance_extensions() const override;
     VkResult create_surface(const VkInstance& instance, VkSurfaceKHR& surface) const override;
@@ -28,8 +28,12 @@ class GLFWWindow : public INativeWindow {
   private:
     GLFWwindow* m_window;
 
-    uint32_t m_width;
-    uint32_t m_height;
+    struct WindowData {
+        uint32_t width;
+        uint32_t height;
+    };
+
+    WindowData m_data{};
 };
 
 #endif

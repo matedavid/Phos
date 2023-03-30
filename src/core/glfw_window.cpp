@@ -5,9 +5,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include "renderer/vulkan_instance.h"
-
-GLFWWindow::GLFWWindow(uint32_t width, uint32_t height) : m_width(width), m_height(height) {
+GLFWWindow::GLFWWindow(uint32_t width, uint32_t height) {
     CORE_ASSERT(glfwInit(), "Failed to initialize GLFW")
     if (!glfwVulkanSupported()) {
         glfwTerminate();
@@ -15,9 +13,20 @@ GLFWWindow::GLFWWindow(uint32_t width, uint32_t height) : m_width(width), m_heig
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     m_window = glfwCreateWindow((int32_t)width, (int32_t)height, "Window", nullptr, nullptr);
+
+    glfwSetWindowUserPointer(m_window, &m_data);
+
+    glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int32_t w, int32_t h) {
+        const auto data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+        data->width = (uint32_t)w;
+        data->height = (uint32_t)h;
+    });
+
+    m_data.width = width;
+    m_data.height = height;
 }
 
 GLFWWindow::~GLFWWindow() {
