@@ -6,7 +6,6 @@
 #include "core/window.h"
 
 #include "renderer/vulkan_shader_module.h"
-#include "renderer/vulkan_graphics_pipeline.h"
 #include "renderer/vulkan_command_pool.h"
 
 VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
@@ -33,13 +32,20 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
         .shader_modules = {vertex, fragment},
         .render_pass = m_render_pass,
     };
-    VulkanGraphicsPipeline pipeline(m_device, pipeline_description);
+    m_pipeline = std::make_shared<VulkanGraphicsPipeline>(m_device, pipeline_description);
 
-    const auto graphics_queue_family = m_device->physical_device().get_queue_families({.graphics = true}).graphics;
-    VulkanCommandPool command_pool(m_device, graphics_queue_family, 2);
+    // const auto graphics_queue_family = m_device->physical_device().get_queue_families({.graphics = true}).graphics;
+    // VulkanCommandPool command_pool(m_device, graphics_queue_family, 2);
 
-    const auto command_buffers = command_pool.get_command_buffers();
-    (void)command_buffers;
+    // const auto command_buffers = command_pool.get_command_buffers();
+
+    for (const auto& view : m_swapchain->get_image_views()) {
+        const std::vector<VkImageView> attachments = {view};
+        const auto framebuffer = std::make_shared<VulkanFramebuffer>(
+            m_device, m_render_pass, window->get_width(), window->get_height(), attachments);
+
+        m_present_framebuffers.push_back(framebuffer);
+    }
 }
 
 VulkanPhysicalDevice VulkanContext::select_physical_device(

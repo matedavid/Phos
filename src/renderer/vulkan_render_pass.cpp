@@ -6,7 +6,7 @@ VulkanRenderPass::VulkanRenderPass(std::shared_ptr<VulkanDevice> device) : m_dev
     // TODO: This should definitely be configurable
 
     VkAttachmentDescription attachment_description{};
-    attachment_description.format = VK_FORMAT_R8G8B8A8_SRGB;
+    attachment_description.format = VK_FORMAT_B8G8R8A8_SRGB;
     attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
     attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;

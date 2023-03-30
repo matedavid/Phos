@@ -14,6 +14,8 @@ class VulkanSwapchain {
     VulkanSwapchain(std::shared_ptr<VulkanDevice> device, VkSurfaceKHR surface, std::shared_ptr<Window> window);
     ~VulkanSwapchain();
 
+    [[nodiscard]] std::vector<VkImageView> get_image_views() const { return m_image_views; }
+
   private:
     struct SwapchainInformation {
         VkSurfaceCapabilitiesKHR capabilities;
@@ -24,7 +26,6 @@ class VulkanSwapchain {
 
     VkSwapchainKHR m_swapchain{};
     SwapchainInformation m_swapchain_info{};
-
     std::vector<VkImage> m_images;
     std::vector<VkImageView> m_image_views;
 
