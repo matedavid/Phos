@@ -7,11 +7,13 @@
 // Forward declarations
 class VulkanDevice;
 class VulkanShaderModule;
+class VulkanRenderPass;
 
 class VulkanGraphicsPipeline {
   public:
     struct Description {
         std::vector<std::shared_ptr<VulkanShaderModule>> shader_modules;
+        std::shared_ptr<VulkanRenderPass> render_pass;
     };
 
     VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> device, const Description& description);
@@ -21,7 +23,6 @@ class VulkanGraphicsPipeline {
     VkPipeline m_pipeline{};
     VkPipelineLayout m_pipeline_layout{};
     std::vector<VkDescriptorSetLayout> m_descriptor_set_layouts;
-    VkRenderPass m_render_pass{};
 
     std::shared_ptr<VulkanDevice> m_device;
 };

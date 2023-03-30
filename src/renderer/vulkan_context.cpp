@@ -27,8 +27,13 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
     const auto fragment = std::make_shared<VulkanShaderModule>(
         "../assets/shaders/fragment.spv", VulkanShaderModule::Stage::Fragment, m_device);
 
-    VulkanGraphicsPipeline pipeline(
-        m_device, VulkanGraphicsPipeline::Description{.shader_modules = {vertex, fragment}});
+    m_render_pass = std::make_shared<VulkanRenderPass>(m_device);
+
+    const auto pipeline_description = VulkanGraphicsPipeline::Description{
+        .shader_modules = {vertex, fragment},
+        .render_pass = m_render_pass,
+    };
+    VulkanGraphicsPipeline pipeline(m_device, pipeline_description);
 
     const auto graphics_queue_family = m_device->physical_device().get_queue_families({.graphics = true}).graphics;
     VulkanCommandPool command_pool(m_device, graphics_queue_family, 2);

@@ -4,6 +4,7 @@
 
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_shader_module.h"
+#include "renderer/vulkan_render_pass.h"
 
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> device, const Description& description)
     : m_device(std::move(device)) {
@@ -116,47 +117,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> dev
 
     VK_CHECK(vkCreatePipelineLayout(m_device->handle(), &pipeline_layout_create_info, nullptr, &m_pipeline_layout))
 
-    // Render pass
-    // TODO: This should definitely be configurable
-
-    VkAttachmentDescription attachment_description{};
-    attachment_description.format = VK_FORMAT_R8G8B8A8_SRGB;
-    attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment_description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-    VkAttachmentReference color_attachment{};
-    color_attachment.attachment = 0;
-    color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription subpass_description{};
-    subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass_description.colorAttachmentCount = 1;
-    subpass_description.pColorAttachments = &color_attachment;
-
-    VkSubpassDependency subpass_dependency{};
-    subpass_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    subpass_dependency.dstSubpass = 0;
-    subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    subpass_dependency.srcAccessMask = 0;
-    subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    subpass_dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-    VkRenderPassCreateInfo render_pass_create_info{};
-    render_pass_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_create_info.attachmentCount = 1;
-    render_pass_create_info.pAttachments = &attachment_description;
-    render_pass_create_info.subpassCount = 1;
-    render_pass_create_info.pSubpasses = &subpass_description;
-    render_pass_create_info.dependencyCount = 1;
-    render_pass_create_info.pDependencies = &subpass_dependency;
-
-    VK_CHECK(vkCreateRenderPass(m_device->handle(), &render_pass_create_info, nullptr, &m_render_pass))
-
     //
     // Create pipeline
     //
@@ -174,7 +134,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> dev
     create_info.pColorBlendState = &color_blend_create_info;
     create_info.pDynamicState = &dynamic_state_create_info;
     create_info.layout = m_pipeline_layout;
-    create_info.renderPass = m_render_pass;
+    create_info.renderPass = description.render_pass->handle();
     create_info.subpass = 0;
 
     VK_CHECK(vkCreateGraphicsPipelines(m_device->handle(), nullptr, 1, &create_info, nullptr, &m_pipeline))
@@ -188,9 +148,6 @@ VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
 
     // Destroy pipeline layout
     vkDestroyPipelineLayout(m_device->handle(), m_pipeline_layout, nullptr);
-
-    // Destroy render pass
-    vkDestroyRenderPass(m_device->handle(), m_render_pass, nullptr);
 
     // Destroy pipeline
     vkDestroyPipeline(m_device->handle(), m_pipeline, nullptr);
