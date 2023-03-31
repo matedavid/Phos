@@ -59,6 +59,15 @@ VulkanSwapchain::~VulkanSwapchain() {
     vkDestroySwapchainKHR(m_device->handle(), m_swapchain, nullptr);
 }
 
+uint32_t VulkanSwapchain::acquire_next_image(VkSemaphore semaphore) const {
+    uint32_t image_index;
+    // TODO: Check of out of date error
+    VK_CHECK(
+        vkAcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &image_index))
+
+    return image_index;
+}
+
 VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information() const {
     SwapchainInformation info{};
 
@@ -75,10 +84,10 @@ VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information
 
         VkExtent2D actualExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 
-        actualExtent.width = std::clamp(actualExtent.width, info.capabilities.minImageExtent.width,
-                                        info.capabilities.maxImageExtent.width);
-        actualExtent.height = std::clamp(actualExtent.height, info.capabilities.minImageExtent.height,
-                                         info.capabilities.maxImageExtent.height);
+        actualExtent.width = std::clamp(
+            actualExtent.width, info.capabilities.minImageExtent.width, info.capabilities.maxImageExtent.width);
+        actualExtent.height = std::clamp(
+            actualExtent.height, info.capabilities.minImageExtent.height, info.capabilities.maxImageExtent.height);
 
         info.extent.width = width;
         info.extent.height = height;

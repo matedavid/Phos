@@ -11,9 +11,11 @@ constexpr uint32_t HEIGHT = 960;
 int main() {
     auto window = std::make_shared<Window>(WIDTH, HEIGHT);
 
-    [[maybe_unused]] VulkanContext context(window);
+    VulkanContext context(window);
 
     while (!window->should_close()) {
+        context.update();
+
         window->update();
     }
 

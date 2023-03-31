@@ -1,6 +1,8 @@
 #include "vulkan_render_pass.h"
 
 #include "renderer/vulkan_device.h"
+#include "renderer/vulkan_framebuffer.h"
+#include "renderer/vulkan_command_buffer.h"
 
 VulkanRenderPass::VulkanRenderPass(std::shared_ptr<VulkanDevice> device) : m_device(std::move(device)) {
     // TODO: This should definitely be configurable
@@ -46,4 +48,25 @@ VulkanRenderPass::VulkanRenderPass(std::shared_ptr<VulkanDevice> device) : m_dev
 
 VulkanRenderPass::~VulkanRenderPass() {
     vkDestroyRenderPass(m_device->handle(), m_render_pass, nullptr);
+}
+
+void VulkanRenderPass::begin(
+    const std::shared_ptr<VulkanCommandBuffer>& command_buffer, const std::shared_ptr<VulkanFramebuffer>& framebuffer) {
+    VkClearValue clear{};
+    clear.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    info.renderPass = m_render_pass;
+    info.framebuffer = framebuffer->handle();
+    info.renderArea.offset = {0, 0};
+    info.renderArea.extent = {framebuffer->width(), framebuffer->height()};
+    info.clearValueCount = 1;
+    info.pClearValues = &clear;
+
+    vkCmdBeginRenderPass(command_buffer->handle(), &info, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void VulkanRenderPass::end(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) {
+    vkCmdEndRenderPass(command_buffer->handle());
 }

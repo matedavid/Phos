@@ -9,14 +9,20 @@
 #include "renderer/vulkan_render_pass.h"
 #include "renderer/vulkan_graphics_pipeline.h"
 #include "renderer/vulkan_framebuffer.h"
+#include "renderer/vulkan_command_buffer.h"
+#include "renderer/vulkan_command_pool.h"
 
 // Forward declarations
 class Window;
 
+constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+
 class VulkanContext {
   public:
     explicit VulkanContext(const std::shared_ptr<Window>& window);
-    ~VulkanContext() = default;
+    ~VulkanContext();
+
+    void update();
 
   private:
     std::unique_ptr<VulkanInstance> m_instance;
@@ -25,9 +31,16 @@ class VulkanContext {
     std::shared_ptr<VulkanRenderPass> m_render_pass;
     std::shared_ptr<VulkanGraphicsPipeline> m_pipeline;
 
+    std::shared_ptr<VulkanCommandPool> m_command_pool;
+    std::shared_ptr<VulkanCommandBuffer> m_command_buffer;
     std::vector<std::shared_ptr<VulkanFramebuffer>> m_present_framebuffers;
 
+    VkSemaphore image_available_semaphore;
+    VkSemaphore render_finished_semaphore;
+    VkFence in_flight_fence;
+
+    VkQueue m_graphics_queue;
+
     [[nodiscard]] VulkanPhysicalDevice select_physical_device(
-        const std::vector<VulkanPhysicalDevice>& physical_devices,
-        const std::vector<const char*>& extensions) const;
+        const std::vector<VulkanPhysicalDevice>& physical_devices, const std::vector<const char*>& extensions) const;
 };

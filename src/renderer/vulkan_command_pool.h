@@ -11,6 +11,7 @@ class VulkanCommandBuffer;
 
 class VulkanCommandPool {
   public:
+    // TODO: Do not like this api, probably should change
     VulkanCommandPool(std::shared_ptr<VulkanDevice> device, uint32_t queue_family, uint32_t command_buffer_count);
     ~VulkanCommandPool();
 

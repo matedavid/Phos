@@ -9,14 +9,14 @@ VulkanFramebuffer::VulkanFramebuffer(
     uint32_t width,
     uint32_t height,
     const std::vector<VkImageView>& attachments)
-    : m_device(std::move(device)) {
+    : m_width(width), m_height(height), m_device(std::move(device)) {
     VkFramebufferCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     create_info.renderPass = render_pass->handle();
     create_info.attachmentCount = (uint32_t)attachments.size();
     create_info.pAttachments = attachments.data();
-    create_info.width = width;
-    create_info.height = height;
+    create_info.width = m_width;
+    create_info.height = m_height;
     create_info.layers = 1; // TODO: Configurable
 
     VK_CHECK(vkCreateFramebuffer(m_device->handle(), &create_info, nullptr, &m_framebuffer))
