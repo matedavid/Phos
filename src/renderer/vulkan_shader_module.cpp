@@ -1,5 +1,7 @@
 #include "vulkan_shader_module.h"
 
+#include <ranges>
+#include <algorithm>
 #include <fstream>
 #include <spirv_reflect.h>
 #include <vulkan/vk_format_utils.h>
@@ -87,12 +89,20 @@ void VulkanShaderModule::retrieve_vertex_input_info(const SpvReflectShaderModule
     std::vector<SpvReflectInterfaceVariable*> input_variables(input_variables_count);
     SPIRV_REFLECT_CHECK(spvReflectEnumerateInputVariables(&module, &input_variables_count, input_variables.data()))
 
-    m_binding_description = {};
-    m_binding_description.binding = 0;
-    m_binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    const auto is_built_in = [](const SpvReflectInterfaceVariable* variable) {
+        return static_cast<uint32_t>(variable->built_in) != std::numeric_limits<uint32_t>::max();
+    };
+
+    const bool has_only_builtin_variables = std::ranges::all_of(input_variables, is_built_in);
+    if (has_only_builtin_variables)
+        return;
+
+    m_binding_description = VkVertexInputBindingDescription{};
+    m_binding_description->binding = 0;
+    m_binding_description->inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     uint32_t stride = 0;
-    for (const auto* input_var : input_variables) {
+    for (const auto* input_var : input_variables | std::views::filter(is_built_in)) {
         const auto format = static_cast<VkFormat>(input_var->format);
 
         VkVertexInputAttributeDescription description{};
@@ -106,7 +116,7 @@ void VulkanShaderModule::retrieve_vertex_input_info(const SpvReflectShaderModule
         stride += VulkanUtils::get_format_size(format);
     }
 
-    m_binding_description.stride = stride;
+    m_binding_description->stride = stride;
 }
 
 void VulkanShaderModule::retrieve_descriptor_sets_info(const SpvReflectShaderModule& module) {

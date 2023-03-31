@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 #include <vector>
+#include <optional>
 
 // Forward declarations
 class VulkanDevice;
@@ -19,7 +20,9 @@ class VulkanShaderModule {
 
     [[nodiscard]] VkPipelineShaderStageCreateInfo get_shader_stage_create_info() const;
 
-    [[nodiscard]] VkVertexInputBindingDescription get_binding_description() const { return m_binding_description; }
+    [[nodiscard]] std::optional<VkVertexInputBindingDescription> get_binding_description() const {
+        return m_binding_description;
+    }
     [[nodiscard]] std::vector<VkVertexInputAttributeDescription> get_attribute_descriptions() const {
         return m_attribute_descriptions;
     }
@@ -33,11 +36,11 @@ class VulkanShaderModule {
 
     std::shared_ptr<VulkanDevice> m_device;
 
-    VkVertexInputBindingDescription m_binding_description{};
-    std::vector<VkVertexInputAttributeDescription> m_attribute_descriptions;
+    std::optional<VkVertexInputBindingDescription> m_binding_description;
+    std::vector<VkVertexInputAttributeDescription> m_attribute_descriptions{};
 
-    std::vector<VkDescriptorSetLayoutCreateInfo> m_descriptor_sets;
-    std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+    std::vector<VkDescriptorSetLayoutCreateInfo> m_descriptor_sets{};
+    std::vector<VkDescriptorSetLayoutBinding> m_bindings{};
 
     [[nodiscard]] std::vector<char> read_shader_file(const std::string& path) const;
     [[nodiscard]] VkShaderStageFlagBits get_vulkan_stage(Stage stage) const;

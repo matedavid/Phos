@@ -8,6 +8,7 @@
 class VulkanDevice;
 class VulkanShaderModule;
 class VulkanRenderPass;
+class VulkanCommandBuffer;
 
 class VulkanGraphicsPipeline {
   public:
@@ -18,6 +19,8 @@ class VulkanGraphicsPipeline {
 
     VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> device, const Description& description);
     ~VulkanGraphicsPipeline();
+
+    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;
 
   private:
     VkPipeline m_pipeline{};

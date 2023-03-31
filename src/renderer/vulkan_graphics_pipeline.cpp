@@ -5,6 +5,7 @@
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_shader_module.h"
 #include "renderer/vulkan_render_pass.h"
+#include "renderer/vulkan_command_buffer.h"
 
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> device, const Description& description)
     : m_device(std::move(device)) {
@@ -22,14 +23,16 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> dev
     const auto& vertex_shader = iterator->get();
 
     const auto binding_description = vertex_shader->get_binding_description();
-    const auto attribute_description = vertex_shader->get_attribute_descriptions();
+    const auto attribute_descriptions = vertex_shader->get_attribute_descriptions();
 
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info{};
     vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_create_info.vertexBindingDescriptionCount = 1;
-    vertex_input_create_info.pVertexBindingDescriptions = &binding_description;
-    vertex_input_create_info.vertexAttributeDescriptionCount = (uint32_t)attribute_description.size();
-    vertex_input_create_info.pVertexAttributeDescriptions = attribute_description.data();
+    vertex_input_create_info.vertexBindingDescriptionCount = static_cast<bool>(binding_description.has_value());
+    vertex_input_create_info.pVertexBindingDescriptions =
+        binding_description.has_value() ? &binding_description.value() : VK_NULL_HANDLE;
+    vertex_input_create_info.vertexAttributeDescriptionCount = (uint32_t)attribute_descriptions.size();
+    vertex_input_create_info.pVertexAttributeDescriptions =
+        !attribute_descriptions.empty() ? attribute_descriptions.data() : VK_NULL_HANDLE;
 
     // Input Assembly
     VkPipelineInputAssemblyStateCreateInfo input_assembly_create_info{};
@@ -151,4 +154,8 @@ VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
 
     // Destroy pipeline
     vkDestroyPipeline(m_device->handle(), m_pipeline, nullptr);
+}
+
+void VulkanGraphicsPipeline::bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const {
+    vkCmdBindPipeline(command_buffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 }
