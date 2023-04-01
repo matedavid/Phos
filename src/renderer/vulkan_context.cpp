@@ -58,6 +58,9 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
     VK_CHECK(vkCreateSemaphore(m_device->handle(), &semaphoreCreateInfo, nullptr, &image_available_semaphore))
     VK_CHECK(vkCreateSemaphore(m_device->handle(), &semaphoreCreateInfo, nullptr, &render_finished_semaphore))
     VK_CHECK(vkCreateFence(m_device->handle(), &fenceCreateInfo, nullptr, &in_flight_fence))
+
+    const std::vector<float> data = {0.0f, -0.5f, 0.0f, -0.5f, 0.5f, 0.0f, 0.5f, 0.5f, 0.0f};
+    m_vertex_buffer = std::make_unique<VulkanVertexBuffer>(m_device, data);
 }
 
 VulkanContext::~VulkanContext() {
@@ -99,6 +102,7 @@ void VulkanContext::update() {
     vkCmdSetViewport(command_buffer->handle(), 0, 1, &viewport);
     vkCmdSetScissor(command_buffer->handle(), 0, 1, &scissor);
 
+    m_vertex_buffer->bind(command_buffer);
     vkCmdDraw(command_buffer->handle(), 3, 1, 0, 0);
 
     m_render_pass->end(command_buffer);

@@ -89,12 +89,13 @@ void VulkanShaderModule::retrieve_vertex_input_info(const SpvReflectShaderModule
     std::vector<SpvReflectInterfaceVariable*> input_variables(input_variables_count);
     SPIRV_REFLECT_CHECK(spvReflectEnumerateInputVariables(&module, &input_variables_count, input_variables.data()))
 
-    const auto is_built_in = [](const SpvReflectInterfaceVariable* variable) {
-        return static_cast<uint32_t>(variable->built_in) != std::numeric_limits<uint32_t>::max();
+    const auto is_not_built_in = [](const SpvReflectInterfaceVariable* variable) {
+        return static_cast<uint32_t>(variable->built_in) == std::numeric_limits<uint32_t>::max();
     };
 
-    const bool has_only_builtin_variables = std::ranges::all_of(input_variables, is_built_in);
-    if (has_only_builtin_variables)
+    std::vector<SpvReflectInterfaceVariable*> non_builtin_variables;
+    std::ranges::copy_if(input_variables, std::back_inserter(non_builtin_variables), is_not_built_in);
+    if (non_builtin_variables.empty())
         return;
 
     m_binding_description = VkVertexInputBindingDescription{};
@@ -102,7 +103,7 @@ void VulkanShaderModule::retrieve_vertex_input_info(const SpvReflectShaderModule
     m_binding_description->inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     uint32_t stride = 0;
-    for (const auto* input_var : input_variables | std::views::filter(is_built_in)) {
+    for (const auto* input_var : non_builtin_variables) {
         const auto format = static_cast<VkFormat>(input_var->format);
 
         VkVertexInputAttributeDescription description{};

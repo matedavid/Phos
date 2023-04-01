@@ -11,6 +11,7 @@
 #include "renderer/vulkan_framebuffer.h"
 #include "renderer/vulkan_command_buffer.h"
 #include "renderer/vulkan_command_pool.h"
+#include "renderer/vulkan_buffers.h"
 
 // Forward declarations
 class Window;
@@ -34,6 +35,8 @@ class VulkanContext {
     std::shared_ptr<VulkanCommandPool> m_command_pool;
     std::shared_ptr<VulkanCommandBuffer> m_command_buffer;
     std::vector<std::shared_ptr<VulkanFramebuffer>> m_present_framebuffers;
+
+    std::unique_ptr<VulkanVertexBuffer> m_vertex_buffer;
 
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;
