@@ -7,7 +7,7 @@
 #ifdef GLFW_WINDOW
 
 // Forward declarations
-class GLFWwindow;
+struct GLFWwindow;
 
 class GLFWWindow : public INativeWindow {
   public:

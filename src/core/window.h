@@ -14,7 +14,7 @@
 #endif
 
 // Forward declarations
-class GLFWwindow;
+struct GLFWwindow;
 
 class INativeWindow {
   public:

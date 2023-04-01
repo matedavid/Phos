@@ -9,7 +9,7 @@
 
 // Forward declarations
 class VulkanDevice;
-class SpvReflectShaderModule;
+struct SpvReflectShaderModule;
 
 class VulkanShaderModule {
   public:
