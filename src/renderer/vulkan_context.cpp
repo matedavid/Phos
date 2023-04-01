@@ -59,8 +59,11 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
     VK_CHECK(vkCreateSemaphore(m_device->handle(), &semaphoreCreateInfo, nullptr, &render_finished_semaphore))
     VK_CHECK(vkCreateFence(m_device->handle(), &fenceCreateInfo, nullptr, &in_flight_fence))
 
-    const std::vector<float> data = {0.0f, -0.5f, 0.0f, -0.5f, 0.5f, 0.0f, 0.5f, 0.5f, 0.0f};
+    const std::vector<float> data = {-0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, -0.5f, 0.5f, 0.0f, 0.5f, 0.5f, 0.0f};
     m_vertex_buffer = std::make_unique<VulkanVertexBuffer>(m_device, data);
+
+    const std::vector<uint32_t> indices = {0, 2, 1, 1, 2, 3};
+    m_index_buffer = std::make_unique<VulkanIndexBuffer>(m_device, indices);
 }
 
 VulkanContext::~VulkanContext() {
@@ -103,7 +106,10 @@ void VulkanContext::update() {
     vkCmdSetScissor(command_buffer->handle(), 0, 1, &scissor);
 
     m_vertex_buffer->bind(command_buffer);
-    vkCmdDraw(command_buffer->handle(), 3, 1, 0, 0);
+    m_index_buffer->bind(command_buffer);
+
+    vkCmdDrawIndexed(m_command_buffer->handle(), m_index_buffer->get_count(), 1, 0, 0, 0);
+    // vkCmdDraw(command_buffer->handle(), 3, 1, 0, 0);
 
     m_render_pass->end(command_buffer);
     command_buffer->end();

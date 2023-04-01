@@ -37,6 +37,7 @@ class VulkanContext {
     std::vector<std::shared_ptr<VulkanFramebuffer>> m_present_framebuffers;
 
     std::unique_ptr<VulkanVertexBuffer> m_vertex_buffer;
+    std::unique_ptr<VulkanIndexBuffer> m_index_buffer;
 
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;
