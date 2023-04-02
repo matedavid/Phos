@@ -152,7 +152,7 @@ void VulkanContext::update() {
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         // recreateSwapchain();
     } else if (result != VK_SUCCESS) {
-        CORE_FAIL("Failed to present image");
+        CORE_FAIL("Failed to present image")
     }
 
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
