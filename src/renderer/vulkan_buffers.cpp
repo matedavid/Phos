@@ -5,8 +5,56 @@
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_command_buffer.h"
 
-static std::optional<uint32_t> find_memory_type(
-    VkPhysicalDevice device, uint32_t filter, VkMemoryPropertyFlags properties) {
+std::pair<VkBuffer, VkDeviceMemory> BufferUtils::create_buffer(
+    const std::shared_ptr<VulkanDevice>& device,
+    VkDeviceSize size,
+    VkBufferUsageFlags usage,
+    VkMemoryPropertyFlags properties
+) {
+    VkBufferCreateInfo create_info{};
+    create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    create_info.size = size;
+    create_info.usage = usage;
+    create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkBuffer buffer;
+    VK_CHECK(vkCreateBuffer(device->handle(), &create_info, nullptr, &buffer))
+
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(device->handle(), buffer, &memory_requirements);
+
+    const auto memory_type_index =
+        find_memory_type(device->physical_device().handle(), memory_requirements.memoryTypeBits, properties);
+
+    CORE_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate vertex buffer")
+
+    VkMemoryAllocateInfo allocate_info{};
+    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocate_info.allocationSize = memory_requirements.size;
+    allocate_info.memoryTypeIndex = memory_type_index.value();
+
+    // Allocate memory
+    VkDeviceMemory memory;
+    VK_CHECK(vkAllocateMemory(device->handle(), &allocate_info, nullptr, &memory))
+
+    // Bind memory to buffer
+    VK_CHECK(vkBindBufferMemory(device->handle(), buffer, memory, 0))
+
+    return {buffer, memory};
+}
+
+void BufferUtils::copy_buffer(VkBuffer src, VkBuffer dest, VkDeviceSize size) {
+    // TODO:
+    (void)src;
+    (void)dest;
+    (void)size;
+}
+
+std::optional<uint32_t> BufferUtils::find_memory_type(
+    VkPhysicalDevice device,
+    uint32_t filter,
+    VkMemoryPropertyFlags properties
+) {
     VkPhysicalDeviceMemoryProperties memory_properties;
     vkGetPhysicalDeviceMemoryProperties(device, &memory_properties);
 
@@ -24,37 +72,18 @@ static std::optional<uint32_t> find_memory_type(
 //
 VulkanVertexBuffer::VulkanVertexBuffer(std::shared_ptr<VulkanDevice> device, const std::vector<float>& data)
     : m_device(std::move(device)) {
-    VkBufferCreateInfo create_info{};
-    create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    create_info.size = data.size() * sizeof(float);
-    create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    const VkDeviceSize size = data.size() * sizeof(float);
 
-    VK_CHECK(vkCreateBuffer(m_device->handle(), &create_info, nullptr, &m_buffer))
-
-    VkMemoryRequirements memory_requirements;
-    vkGetBufferMemoryRequirements(m_device->handle(), m_buffer, &memory_requirements);
-
-    const auto memory_type_index = find_memory_type(
-        m_device->physical_device().handle(), memory_requirements.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    CORE_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate vertex buffer")
-
-    VkMemoryAllocateInfo allocate_info{};
-    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = memory_type_index.value();
-
-    // Allocate memory
-    VK_CHECK(vkAllocateMemory(m_device->handle(), &allocate_info, nullptr, &m_memory))
-
-    // Bind memory to buffer
-    VK_CHECK(vkBindBufferMemory(m_device->handle(), m_buffer, m_memory, 0))
+    std::tie(m_buffer, m_memory) = BufferUtils::create_buffer(
+        m_device,
+        size,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+    );
 
     void* map_data;
-    VK_CHECK(vkMapMemory(m_device->handle(), m_memory, 0, create_info.size, 0, &map_data))
-    memcpy(map_data, data.data(), (size_t)create_info.size);
+    VK_CHECK(vkMapMemory(m_device->handle(), m_memory, 0, size, 0, &map_data))
+    memcpy(map_data, data.data(), (size_t)size);
     vkUnmapMemory(m_device->handle(), m_memory);
 }
 
@@ -75,37 +104,18 @@ void VulkanVertexBuffer::bind(const std::shared_ptr<VulkanCommandBuffer>& comman
 //
 VulkanIndexBuffer::VulkanIndexBuffer(std::shared_ptr<VulkanDevice> device, const std::vector<uint32_t>& indices)
     : m_count((uint32_t)indices.size()), m_device(std::move(device)) {
-    VkBufferCreateInfo create_info{};
-    create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    create_info.size = indices.size() * sizeof(uint32_t);
-    create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    const VkDeviceSize size = indices.size() * sizeof(uint32_t);
 
-    VK_CHECK(vkCreateBuffer(m_device->handle(), &create_info, nullptr, &m_buffer))
-
-    VkMemoryRequirements memory_requirements;
-    vkGetBufferMemoryRequirements(m_device->handle(), m_buffer, &memory_requirements);
-
-    const auto memory_type_index = find_memory_type(
-        m_device->physical_device().handle(), memory_requirements.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    CORE_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate vertex buffer")
-
-    VkMemoryAllocateInfo allocate_info{};
-    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = memory_type_index.value();
-
-    // Allocate memory
-    VK_CHECK(vkAllocateMemory(m_device->handle(), &allocate_info, nullptr, &m_memory))
-
-    // Bind memory to buffer
-    VK_CHECK(vkBindBufferMemory(m_device->handle(), m_buffer, m_memory, 0))
+    std::tie(m_buffer, m_memory) = BufferUtils::create_buffer(
+        m_device,
+        size,
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+    );
 
     void* map_data;
-    VK_CHECK(vkMapMemory(m_device->handle(), m_memory, 0, create_info.size, 0, &map_data))
-    memcpy(map_data, indices.data(), (size_t)create_info.size);
+    VK_CHECK(vkMapMemory(m_device->handle(), m_memory, 0, size, 0, &map_data))
+    memcpy(map_data, indices.data(), (size_t)size);
     vkUnmapMemory(m_device->handle(), m_memory);
 }
 
