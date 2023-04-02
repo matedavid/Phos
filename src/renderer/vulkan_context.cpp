@@ -158,8 +158,8 @@ void VulkanContext::update() {
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-VulkanPhysicalDevice VulkanContext::select_physical_device(
-    const std::vector<VulkanPhysicalDevice>& physical_devices, const std::vector<const char*>& extensions) const {
+VulkanPhysicalDevice VulkanContext::select_physical_device(const std::vector<VulkanPhysicalDevice>& physical_devices,
+                                                           const std::vector<const char*>& extensions) const {
     const VulkanPhysicalDevice::Requirements requirements = {
         .graphics = true,
         .transfer = true,
@@ -185,11 +185,9 @@ VulkanPhysicalDevice VulkanContext::select_physical_device(
 
         const auto queue_families = device.get_queue_families(requirements);
 
-        if (graphics_transfer_same_queue && queue_families.graphics == queue_families.transfer)
-            score += 10;
+        if (graphics_transfer_same_queue && queue_families.graphics == queue_families.transfer) score += 10;
 
-        if (graphics_presentation_same_queue && queue_families.graphics == queue_families.presentation)
-            score += 10;
+        if (graphics_presentation_same_queue && queue_families.graphics == queue_families.presentation) score += 10;
 
         if (score > max_score) {
             max_device = device;

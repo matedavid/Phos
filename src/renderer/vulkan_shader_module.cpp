@@ -15,7 +15,7 @@
     }
 
 VulkanShaderModule::VulkanShaderModule(const std::string& path, Stage stage, std::shared_ptr<VulkanDevice> device)
-    : m_stage(stage), m_device(std::move(device)) {
+      : m_stage(stage), m_device(std::move(device)) {
     const auto content = read_shader_file(path);
 
     VkShaderModuleCreateInfo create_info{};
@@ -30,11 +30,10 @@ VulkanShaderModule::VulkanShaderModule(const std::string& path, Stage stage, std
     SPIRV_REFLECT_CHECK(
         spvReflectCreateShaderModule(content.size(), reinterpret_cast<const uint32_t*>(content.data()), &module))
 
-    CORE_ASSERT(
-        static_cast<VkShaderStageFlagBits>(module.shader_stage) == get_vulkan_stage(m_stage), "Stage does not match");
+    CORE_ASSERT(static_cast<VkShaderStageFlagBits>(module.shader_stage) == get_vulkan_stage(m_stage),
+                "Stage does not match");
 
-    if (m_stage == Stage::Vertex)
-        retrieve_vertex_input_info(module);
+    if (m_stage == Stage::Vertex) retrieve_vertex_input_info(module);
 
     retrieve_descriptor_sets_info(module);
 
@@ -73,11 +72,11 @@ std::vector<char> VulkanShaderModule::read_shader_file(const std::string& path) 
 
 VkShaderStageFlagBits VulkanShaderModule::get_vulkan_stage(Stage stage) const {
     switch (stage) {
-        default:
-        case Stage::Vertex:
-            return VK_SHADER_STAGE_VERTEX_BIT;
-        case Stage::Fragment:
-            return VK_SHADER_STAGE_FRAGMENT_BIT;
+    default:
+    case Stage::Vertex:
+        return VK_SHADER_STAGE_VERTEX_BIT;
+    case Stage::Fragment:
+        return VK_SHADER_STAGE_FRAGMENT_BIT;
     }
 }
 
@@ -95,8 +94,7 @@ void VulkanShaderModule::retrieve_vertex_input_info(const SpvReflectShaderModule
 
     std::vector<SpvReflectInterfaceVariable*> non_builtin_variables;
     std::ranges::copy_if(input_variables, std::back_inserter(non_builtin_variables), is_not_built_in);
-    if (non_builtin_variables.empty())
-        return;
+    if (non_builtin_variables.empty()) return;
 
     m_binding_description = VkVertexInputBindingDescription{};
     m_binding_description->binding = 0;

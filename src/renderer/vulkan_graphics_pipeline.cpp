@@ -8,7 +8,7 @@
 #include "renderer/vulkan_command_buffer.h"
 
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> device, const Description& description)
-    : m_device(std::move(device)) {
+      : m_device(std::move(device)) {
     // Shaders
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
     for (const auto& shader : description.shader_modules) {

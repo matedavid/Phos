@@ -5,12 +5,10 @@
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_command_buffer.h"
 
-std::pair<VkBuffer, VkDeviceMemory> BufferUtils::create_buffer(
-    const std::shared_ptr<VulkanDevice>& device,
-    VkDeviceSize size,
-    VkBufferUsageFlags usage,
-    VkMemoryPropertyFlags properties
-) {
+std::pair<VkBuffer, VkDeviceMemory> BufferUtils::create_buffer(const std::shared_ptr<VulkanDevice>& device,
+                                                               VkDeviceSize size,
+                                                               VkBufferUsageFlags usage,
+                                                               VkMemoryPropertyFlags properties) {
     VkBufferCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     create_info.size = size;
@@ -43,11 +41,9 @@ std::pair<VkBuffer, VkDeviceMemory> BufferUtils::create_buffer(
     return {buffer, memory};
 }
 
-std::optional<uint32_t> BufferUtils::find_memory_type(
-    VkPhysicalDevice device,
-    uint32_t filter,
-    VkMemoryPropertyFlags properties
-) {
+std::optional<uint32_t> BufferUtils::find_memory_type(VkPhysicalDevice device,
+                                                      uint32_t filter,
+                                                      VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memory_properties;
     vkGetPhysicalDeviceMemoryProperties(device, &memory_properties);
 
@@ -64,15 +60,14 @@ std::optional<uint32_t> BufferUtils::find_memory_type(
 // Vertex Buffer
 //
 VulkanVertexBuffer::VulkanVertexBuffer(std::shared_ptr<VulkanDevice> device, const std::vector<float>& data)
-    : m_device(std::move(device)) {
+      : m_device(std::move(device)) {
     const VkDeviceSize size = data.size() * sizeof(float);
 
-    std::tie(m_buffer, m_memory) = BufferUtils::create_buffer(
-        m_device,
-        size,
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-    );
+    std::tie(m_buffer, m_memory) =
+        BufferUtils::create_buffer(m_device,
+                                   size,
+                                   VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     // TODO: Should look into using a staging buffer
 
@@ -98,15 +93,14 @@ void VulkanVertexBuffer::bind(const std::shared_ptr<VulkanCommandBuffer>& comman
 // Index Buffer
 //
 VulkanIndexBuffer::VulkanIndexBuffer(std::shared_ptr<VulkanDevice> device, const std::vector<uint32_t>& indices)
-    : m_count((uint32_t)indices.size()), m_device(std::move(device)) {
+      : m_count((uint32_t)indices.size()), m_device(std::move(device)) {
     const VkDeviceSize size = indices.size() * sizeof(uint32_t);
 
-    std::tie(m_buffer, m_memory) = BufferUtils::create_buffer(
-        m_device,
-        size,
-        VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-    );
+    std::tie(m_buffer, m_memory) =
+        BufferUtils::create_buffer(m_device,
+                                   size,
+                                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     void* map_data;
     VK_CHECK(vkMapMemory(m_device->handle(), m_memory, 0, size, 0, &map_data))

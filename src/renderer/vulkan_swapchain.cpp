@@ -3,9 +3,10 @@
 #include "core/window.h"
 #include "renderer/vulkan_device.h"
 
-VulkanSwapchain::VulkanSwapchain(
-    std::shared_ptr<VulkanDevice> device, VkSurfaceKHR surface, std::shared_ptr<Window> window)
-    : m_device(std::move(device)), m_surface(surface), m_window(std::move(window)) {
+VulkanSwapchain::VulkanSwapchain(std::shared_ptr<VulkanDevice> device,
+                                 VkSurfaceKHR surface,
+                                 std::shared_ptr<Window> window)
+      : m_device(std::move(device)), m_surface(surface), m_window(std::move(window)) {
     m_swapchain_info = get_swapchain_information();
 
     VulkanPhysicalDevice::QueueFamilies queue_families =

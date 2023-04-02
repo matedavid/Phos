@@ -15,9 +15,8 @@ class VulkanRenderPass {
     explicit VulkanRenderPass(std::shared_ptr<VulkanDevice> device);
     ~VulkanRenderPass();
 
-    void begin(
-        const std::shared_ptr<VulkanCommandBuffer>& command_buffer,
-        const std::shared_ptr<VulkanFramebuffer>& framebuffer);
+    void begin(const std::shared_ptr<VulkanCommandBuffer>& command_buffer,
+               const std::shared_ptr<VulkanFramebuffer>& framebuffer);
     void end(const std::shared_ptr<VulkanCommandBuffer>& command_buffer);
 
     [[nodiscard]] VkRenderPass handle() const { return m_render_pass; }

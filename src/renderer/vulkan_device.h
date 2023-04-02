@@ -11,10 +11,9 @@
 
 class VulkanDevice {
   public:
-    VulkanDevice(
-        VulkanPhysicalDevice physical_device,
-        VkSurfaceKHR surface,
-        const std::vector<const char*>& extensions);
+    VulkanDevice(VulkanPhysicalDevice physical_device,
+                 VkSurfaceKHR surface,
+                 const std::vector<const char*>& extensions);
     ~VulkanDevice();
 
     [[nodiscard]] VkDevice handle() const { return m_device; }

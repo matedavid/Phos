@@ -3,13 +3,12 @@
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_render_pass.h"
 
-VulkanFramebuffer::VulkanFramebuffer(
-    std::shared_ptr<VulkanDevice> device,
-    const std::shared_ptr<VulkanRenderPass>& render_pass,
-    uint32_t width,
-    uint32_t height,
-    const std::vector<VkImageView>& attachments)
-    : m_width(width), m_height(height), m_device(std::move(device)) {
+VulkanFramebuffer::VulkanFramebuffer(std::shared_ptr<VulkanDevice> device,
+                                     const std::shared_ptr<VulkanRenderPass>& render_pass,
+                                     uint32_t width,
+                                     uint32_t height,
+                                     const std::vector<VkImageView>& attachments)
+      : m_width(width), m_height(height), m_device(std::move(device)) {
     VkFramebufferCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     create_info.renderPass = render_pass->handle();

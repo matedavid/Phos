@@ -1,7 +1,6 @@
 #include "vulkan_command_buffer.h"
 
-VulkanCommandBuffer::VulkanCommandBuffer(VkCommandBuffer command_buffer) : m_command_buffer(command_buffer) {
-}
+VulkanCommandBuffer::VulkanCommandBuffer(VkCommandBuffer command_buffer) : m_command_buffer(command_buffer) {}
 
 void VulkanCommandBuffer::begin() {
     CORE_ASSERT(!m_recording, "Can't begin a new command buffer while recording another one")

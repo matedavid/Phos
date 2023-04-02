@@ -13,18 +13,14 @@ class VulkanCommandBuffer;
 
 class BufferUtils {
   public:
-    static std::pair<VkBuffer, VkDeviceMemory> create_buffer(
-        const std::shared_ptr<VulkanDevice>& device,
-        VkDeviceSize size,
-        VkBufferUsageFlags usage,
-        VkMemoryPropertyFlags properties
-    );
+    static std::pair<VkBuffer, VkDeviceMemory> create_buffer(const std::shared_ptr<VulkanDevice>& device,
+                                                             VkDeviceSize size,
+                                                             VkBufferUsageFlags usage,
+                                                             VkMemoryPropertyFlags properties);
 
-    static std::optional<uint32_t> find_memory_type(
-        VkPhysicalDevice device,
-        uint32_t filter,
-        VkMemoryPropertyFlags properties
-    );
+    static std::optional<uint32_t> find_memory_type(VkPhysicalDevice device,
+                                                    uint32_t filter,
+                                                    VkMemoryPropertyFlags properties);
 };
 
 //

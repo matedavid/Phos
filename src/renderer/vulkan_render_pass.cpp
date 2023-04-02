@@ -50,8 +50,8 @@ VulkanRenderPass::~VulkanRenderPass() {
     vkDestroyRenderPass(m_device->handle(), m_render_pass, nullptr);
 }
 
-void VulkanRenderPass::begin(
-    const std::shared_ptr<VulkanCommandBuffer>& command_buffer, const std::shared_ptr<VulkanFramebuffer>& framebuffer) {
+void VulkanRenderPass::begin(const std::shared_ptr<VulkanCommandBuffer>& command_buffer,
+                             const std::shared_ptr<VulkanFramebuffer>& framebuffer) {
     VkClearValue clear{};
     clear.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
 

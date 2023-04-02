@@ -61,8 +61,7 @@ bool VulkanInstance::validation_layers_available(const std::vector<const char*>&
     return std::all_of(validation_layers.begin(), validation_layers.end(), [&](const std::string_view& validation) {
         for (const auto& property : layers) {
             const std::string layer_name = property.layerName;
-            if (validation == layer_name)
-                return true;
+            if (validation == layer_name) return true;
         }
         return false;
     });

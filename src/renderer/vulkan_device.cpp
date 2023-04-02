@@ -2,11 +2,10 @@
 
 #include "renderer/vulkan_physical_device.h"
 
-VulkanDevice::VulkanDevice(
-    VulkanPhysicalDevice physical_device,
-    VkSurfaceKHR surface,
-    const std::vector<const char*>& extensions)
-    : m_physical_device(physical_device) {
+VulkanDevice::VulkanDevice(VulkanPhysicalDevice physical_device,
+                           VkSurfaceKHR surface,
+                           const std::vector<const char*>& extensions)
+      : m_physical_device(physical_device) {
     // TODO: Should make queue families configurable?
     const auto queue_families = physical_device.get_queue_families({
         .graphics = true,

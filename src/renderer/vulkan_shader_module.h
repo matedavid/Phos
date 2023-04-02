@@ -13,7 +13,10 @@ struct SpvReflectShaderModule;
 
 class VulkanShaderModule {
   public:
-    enum class Stage { Vertex, Fragment };
+    enum class Stage {
+        Vertex,
+        Fragment
+    };
 
     VulkanShaderModule(const std::string& path, Stage stage, std::shared_ptr<VulkanDevice> device);
     ~VulkanShaderModule();

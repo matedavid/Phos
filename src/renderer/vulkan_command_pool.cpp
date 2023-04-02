@@ -3,9 +3,10 @@
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_command_buffer.h"
 
-VulkanCommandPool::VulkanCommandPool(
-    std::shared_ptr<VulkanDevice> device, uint32_t queue_family, uint32_t command_buffer_count)
-    : m_queue_family(queue_family), m_device(std::move(device)) {
+VulkanCommandPool::VulkanCommandPool(std::shared_ptr<VulkanDevice> device,
+                                     uint32_t queue_family,
+                                     uint32_t command_buffer_count)
+      : m_queue_family(queue_family), m_device(std::move(device)) {
     VkCommandPoolCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
