@@ -43,13 +43,6 @@ std::pair<VkBuffer, VkDeviceMemory> BufferUtils::create_buffer(
     return {buffer, memory};
 }
 
-void BufferUtils::copy_buffer(VkBuffer src, VkBuffer dest, VkDeviceSize size) {
-    // TODO:
-    (void)src;
-    (void)dest;
-    (void)size;
-}
-
 std::optional<uint32_t> BufferUtils::find_memory_type(
     VkPhysicalDevice device,
     uint32_t filter,
@@ -80,6 +73,8 @@ VulkanVertexBuffer::VulkanVertexBuffer(std::shared_ptr<VulkanDevice> device, con
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
     );
+
+    // TODO: Should look into using a staging buffer
 
     void* map_data;
     VK_CHECK(vkMapMemory(m_device->handle(), m_memory, 0, size, 0, &map_data))

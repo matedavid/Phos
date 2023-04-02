@@ -20,8 +20,6 @@ class BufferUtils {
         VkMemoryPropertyFlags properties
     );
 
-    static void copy_buffer(VkBuffer src, VkBuffer dest, VkDeviceSize size);
-
     static std::optional<uint32_t> find_memory_type(
         VkPhysicalDevice device,
         uint32_t filter,
