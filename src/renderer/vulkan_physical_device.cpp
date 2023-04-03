@@ -9,9 +9,9 @@ bool VulkanPhysicalDevice::is_suitable(const Requirements& requirements) const {
     // Supports extensions
     const auto extension_properties = get_extension_properties();
 
-    for (const std::string extension : requirements.extensions) {
+    for (const auto& extension : requirements.extensions) {
         const bool contained = std::ranges::any_of(extension_properties, [&extension](const auto& property) {
-            return std::string(property.extensionName) == extension;
+            return std::string_view(property.extensionName) == extension;
         });
 
         if (!contained) return false;

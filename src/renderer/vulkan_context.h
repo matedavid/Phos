@@ -44,7 +44,4 @@ class VulkanContext {
     VkFence in_flight_fence;
 
     VkQueue m_graphics_queue;
-
-    [[nodiscard]] VulkanPhysicalDevice select_physical_device(const std::vector<VulkanPhysicalDevice>& physical_devices,
-                                                              const std::vector<const char*>& extensions) const;
 };

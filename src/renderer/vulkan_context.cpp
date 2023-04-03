@@ -10,14 +10,20 @@
 VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
     m_instance = std::make_unique<VulkanInstance>(window);
 
-    const auto physical_devices = m_instance->get_physical_devices();
+    const std::vector<std::string_view> device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-    const std::vector<const char*> device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-    const auto selected_physical_device = select_physical_device(physical_devices, device_extensions);
+    //    const auto physical_devices = m_instance->get_physical_devices();
+    //    const auto selected_physical_device = select_physical_device(physical_devices, device_extensions);
 
-    fmt::print("Selected physical device: {}\n", selected_physical_device.get_properties().deviceName);
+    const auto device_requirements = VulkanPhysicalDevice::Requirements{
+        .graphics = true,
+        .transfer = true,
+        .presentation = true,
+        .surface = m_instance->get_surface(),
 
-    m_device = std::make_shared<VulkanDevice>(selected_physical_device, m_instance->get_surface(), device_extensions);
+        .extensions = device_extensions,
+    };
+    m_device = std::make_shared<VulkanDevice>(m_instance, device_requirements);
     m_swapchain = std::make_shared<VulkanSwapchain>(m_device, m_instance->get_surface(), window);
 
     const auto vertex = std::make_shared<VulkanShaderModule>(
@@ -73,8 +79,6 @@ VulkanContext::~VulkanContext() {
     vkDestroySemaphore(m_device->handle(), render_finished_semaphore, nullptr);
     vkDestroyFence(m_device->handle(), in_flight_fence, nullptr);
 }
-
-static uint32_t current_frame = 0;
 
 void VulkanContext::update() {
     vkWaitForFences(m_device->handle(), 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
@@ -154,48 +158,4 @@ void VulkanContext::update() {
     } else if (result != VK_SUCCESS) {
         CORE_FAIL("Failed to present image")
     }
-
-    current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
-}
-
-VulkanPhysicalDevice VulkanContext::select_physical_device(const std::vector<VulkanPhysicalDevice>& physical_devices,
-                                                           const std::vector<const char*>& extensions) const {
-    const VulkanPhysicalDevice::Requirements requirements = {
-        .graphics = true,
-        .transfer = true,
-        .presentation = true,
-        .surface = m_instance->get_surface(),
-
-        .extensions = extensions,
-    };
-
-    const auto is_device_suitable = [&requirements](const VulkanPhysicalDevice& device) -> bool {
-        return device.is_suitable(requirements);
-    };
-
-    // TODO: Should make these parameters configurable
-    constexpr bool graphics_transfer_same_queue = true;
-    constexpr bool graphics_presentation_same_queue = false;
-
-    uint32_t max_score = 0;
-    std::optional<VulkanPhysicalDevice> max_device;
-
-    for (const auto& device : physical_devices | std::views::filter(is_device_suitable)) {
-        uint32_t score = 0;
-
-        const auto queue_families = device.get_queue_families(requirements);
-
-        if (graphics_transfer_same_queue && queue_families.graphics == queue_families.transfer) score += 10;
-
-        if (graphics_presentation_same_queue && queue_families.graphics == queue_families.presentation) score += 10;
-
-        if (score > max_score) {
-            max_device = device;
-            max_score = score;
-        }
-    }
-
-    CORE_ASSERT(max_device.has_value(), "There are no suitable devices")
-
-    return max_device.value();
 }
