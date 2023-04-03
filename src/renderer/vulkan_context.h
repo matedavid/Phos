@@ -12,6 +12,7 @@
 #include "renderer/vulkan_command_buffer.h"
 #include "renderer/vulkan_command_pool.h"
 #include "renderer/vulkan_buffers.h"
+#include "renderer/vulkan_queue.h"
 
 // Forward declarations
 class Window;
@@ -43,5 +44,6 @@ class VulkanContext {
     VkSemaphore render_finished_semaphore;
     VkFence in_flight_fence;
 
-    VkQueue m_graphics_queue;
+    std::shared_ptr<VulkanQueue> m_graphics_queue;
+    std::shared_ptr<VulkanQueue> m_presentation_queue;
 };

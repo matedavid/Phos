@@ -24,6 +24,10 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
         .extensions = device_extensions,
     };
     m_device = std::make_shared<VulkanDevice>(m_instance, device_requirements);
+
+    m_graphics_queue = m_device->get_graphics_queue();
+    m_presentation_queue = m_device->get_presentation_queue();
+
     m_swapchain = std::make_shared<VulkanSwapchain>(m_device, m_instance->get_surface(), window);
 
     const auto vertex = std::make_shared<VulkanShaderModule>(
@@ -42,8 +46,6 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
     const auto graphics_queue_family = m_device->physical_device().get_queue_families({.graphics = true}).graphics;
     m_command_pool = std::make_shared<VulkanCommandPool>(m_device, graphics_queue_family, MAX_FRAMES_IN_FLIGHT);
     m_command_buffer = m_command_pool->get_command_buffers()[0];
-
-    vkGetDeviceQueue(m_device->handle(), graphics_queue_family, 0, &m_graphics_queue);
 
     for (const auto& view : m_swapchain->get_image_views()) {
         const std::vector<VkImageView> attachments = {view};
@@ -120,41 +122,18 @@ void VulkanContext::update() {
     // ===========================
 
     // Submit command buffer
-    const std::array<VkPipelineStageFlags, 1> wait_stages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    const std::array<VkSemaphore, 1> wait_semaphores = {image_available_semaphore};
-    const std::array<VkSemaphore, 1> signal_semaphores = {render_finished_semaphore};
+    const std::vector<VkPipelineStageFlags> wait_stages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    const std::vector<VkSemaphore> wait_semaphores = {image_available_semaphore};
+    const std::vector<VkSemaphore> signal_semaphores = {render_finished_semaphore};
 
-    const std::array<VkCommandBuffer, 1> command_buffers = {command_buffer->handle()};
+    // Submit queue
+    m_graphics_queue->submit(command_buffer, wait_semaphores, wait_stages, signal_semaphores, in_flight_fence);
 
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = wait_semaphores.data();
-    submitInfo.pWaitDstStageMask = wait_stages.data();
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = command_buffers.data();
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signal_semaphores.data();
-
-    if (vkQueueSubmit(m_graphics_queue, 1, &submitInfo, in_flight_fence) != VK_SUCCESS) {
-        assert(false && "Failed to submit command buffer");
-    }
-
-    const std::array<VkSwapchainKHR, 1> swapchains = {m_swapchain->handle()};
-
-    // Submit result to the swap chain
-    VkPresentInfoKHR present_info{};
-    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &render_finished_semaphore;
-    present_info.swapchainCount = 1;
-    present_info.pSwapchains = swapchains.data();
-    present_info.pImageIndices = &next_image;
-
-    const auto result = vkQueuePresentKHR(m_graphics_queue, &present_info);
+    // Present image
+    const auto result = m_presentation_queue->submitKHR(m_swapchain, next_image, signal_semaphores);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        // recreateSwapchain();
+        // TODO: recreate swapchain
     } else if (result != VK_SUCCESS) {
         CORE_FAIL("Failed to present image")
     }

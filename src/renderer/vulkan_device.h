@@ -12,25 +12,26 @@
 
 // Forward declarations
 class VulkanInstance;
+class VulkanQueue;
 
 class VulkanDevice {
   public:
-    //    VulkanDevice(VulkanPhysicalDevice physical_device,
-    //                 VkSurfaceKHR surface,
-    //                 const std::vector<const char*>& extensions);
-
     VulkanDevice(const std::unique_ptr<VulkanInstance>& instance,
                  const VulkanPhysicalDevice::Requirements& requirements);
     ~VulkanDevice();
+
+    [[nodiscard]] std::shared_ptr<VulkanQueue> get_graphics_queue() const { return m_graphics_queue; }
+    [[nodiscard]] std::shared_ptr<VulkanQueue> get_presentation_queue() const { return m_presentation_queue; }
 
     [[nodiscard]] VkDevice handle() const { return m_device; }
     [[nodiscard]] VulkanPhysicalDevice physical_device() const { return m_physical_device; }
 
   private:
-    VkDevice m_device;
+    VkDevice m_device{};
     VulkanPhysicalDevice m_physical_device;
 
-    VkQueue m_graphics_queue;
+    std::shared_ptr<VulkanQueue> m_graphics_queue;
+    std::shared_ptr<VulkanQueue> m_presentation_queue;
 
     [[nodiscard]] VulkanPhysicalDevice select_physical_device(const std::unique_ptr<VulkanInstance>& instance,
                                                               const VulkanPhysicalDevice::Requirements& reqs) const;
