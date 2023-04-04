@@ -2,6 +2,8 @@
 
 #include "vk_core.h"
 
+#include <glm/glm.hpp>
+
 #include "renderer/vulkan_instance.h"
 #include "renderer/vulkan_physical_device.h"
 #include "renderer/vulkan_swapchain.h"
@@ -18,6 +20,10 @@
 class Window;
 
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+
+struct Vertex {
+    glm::vec3 position;
+};
 
 class VulkanContext {
   public:
@@ -37,7 +43,7 @@ class VulkanContext {
     std::shared_ptr<VulkanCommandBuffer> m_command_buffer;
     std::vector<std::shared_ptr<VulkanFramebuffer>> m_present_framebuffers;
 
-    std::unique_ptr<VulkanVertexBuffer> m_vertex_buffer;
+    std::unique_ptr<VulkanVertexBuffer<Vertex>> m_vertex_buffer;
     std::unique_ptr<VulkanIndexBuffer> m_index_buffer;
 
     VkSemaphore image_available_semaphore;

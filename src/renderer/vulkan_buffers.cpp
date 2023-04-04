@@ -1,10 +1,5 @@
 #include "vulkan_buffers.h"
 
-#include <optional>
-
-#include "renderer/vulkan_device.h"
-#include "renderer/vulkan_command_buffer.h"
-
 std::pair<VkBuffer, VkDeviceMemory> BufferUtils::create_buffer(const std::shared_ptr<VulkanDevice>& device,
                                                                VkDeviceSize size,
                                                                VkBufferUsageFlags usage,
@@ -59,35 +54,8 @@ std::optional<uint32_t> BufferUtils::find_memory_type(VkPhysicalDevice device,
 //
 // Vertex Buffer
 //
-VulkanVertexBuffer::VulkanVertexBuffer(std::shared_ptr<VulkanDevice> device, const std::vector<float>& data)
-      : m_device(std::move(device)) {
-    const VkDeviceSize size = data.size() * sizeof(float);
 
-    std::tie(m_buffer, m_memory) =
-        BufferUtils::create_buffer(m_device,
-                                   size,
-                                   VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    // TODO: Should look into using a staging buffer
-
-    void* map_data;
-    VK_CHECK(vkMapMemory(m_device->handle(), m_memory, 0, size, 0, &map_data))
-    memcpy(map_data, data.data(), (size_t)size);
-    vkUnmapMemory(m_device->handle(), m_memory);
-}
-
-VulkanVertexBuffer::~VulkanVertexBuffer() {
-    vkDestroyBuffer(m_device->handle(), m_buffer, nullptr);
-    vkFreeMemory(m_device->handle(), m_memory, nullptr);
-}
-
-void VulkanVertexBuffer::bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const {
-    std::array<VkBuffer, 1> vertex_buffers = {m_buffer};
-    VkDeviceSize offsets[] = {0};
-
-    vkCmdBindVertexBuffers(command_buffer->handle(), 0, vertex_buffers.size(), vertex_buffers.data(), offsets);
-}
+// Vertex buffer implementation in header file
 
 //
 // Index Buffer
