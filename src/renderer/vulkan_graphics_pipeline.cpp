@@ -103,19 +103,18 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> dev
 
     // TODO: At this moment descriptor sets are probably separated by shader module (vertex, fragment), leaving like
     // this at the moment but probably not the most efficient way to organize descriptor sets
-    for (const auto& shader : description.shader_modules) {
-        for (const auto& set_layout_create_info : shader->get_descriptor_sets()) {
-            VkDescriptorSetLayout set_layout;
-            VK_CHECK(vkCreateDescriptorSetLayout(m_device->handle(), &set_layout_create_info, nullptr, &set_layout));
 
-            m_descriptor_set_layouts.push_back(set_layout);
+    std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
+    for (const auto& shader : description.shader_modules) {
+        for (const auto& set_layout : shader->get_descriptor_sets_layout()) {
+            descriptor_sets_layout.push_back(set_layout);
         }
     }
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.setLayoutCount = (uint32_t)m_descriptor_set_layouts.size();
-    pipeline_layout_create_info.pSetLayouts = m_descriptor_set_layouts.data();
+    pipeline_layout_create_info.setLayoutCount = (uint32_t)descriptor_sets_layout.size();
+    pipeline_layout_create_info.pSetLayouts = descriptor_sets_layout.data();
     pipeline_layout_create_info.pushConstantRangeCount = 0;
 
     VK_CHECK(vkCreatePipelineLayout(m_device->handle(), &pipeline_layout_create_info, nullptr, &m_pipeline_layout))
@@ -144,11 +143,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> dev
 }
 
 VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
-    // Destroy descriptor sets
-    for (const auto& descriptor_set_layout : m_descriptor_set_layouts) {
-        vkDestroyDescriptorSetLayout(m_device->handle(), descriptor_set_layout, nullptr);
-    }
-
     // Destroy pipeline layout
     vkDestroyPipelineLayout(m_device->handle(), m_pipeline_layout, nullptr);
 

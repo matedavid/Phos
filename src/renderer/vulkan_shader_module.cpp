@@ -8,6 +8,7 @@
 
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_utils.h"
+#include "renderer/vulkan_buffers.h"
 
 #define SPIRV_REFLECT_CHECK(expression)             \
     if (expression != SPV_REFLECT_RESULT_SUCCESS) { \
@@ -33,7 +34,9 @@ VulkanShaderModule::VulkanShaderModule(const std::string& path, Stage stage, std
     CORE_ASSERT(static_cast<VkShaderStageFlagBits>(module.shader_stage) == get_vulkan_stage(m_stage),
                 "Stage does not match");
 
-    if (m_stage == Stage::Vertex) retrieve_vertex_input_info(module);
+    // Retrieve SPIR-V info
+    if (m_stage == Stage::Vertex)
+        retrieve_vertex_input_info(module);
 
     retrieve_descriptor_sets_info(module);
 
@@ -42,6 +45,12 @@ VulkanShaderModule::VulkanShaderModule(const std::string& path, Stage stage, std
 }
 
 VulkanShaderModule::~VulkanShaderModule() {
+    // Destroy descriptor sets
+    for (const auto& descriptor_set_layout : m_descriptor_sets_layout) {
+        vkDestroyDescriptorSetLayout(m_device->handle(), descriptor_set_layout, nullptr);
+    }
+
+    // Destroy shader module
     vkDestroyShaderModule(m_device->handle(), m_shader, nullptr);
 }
 
@@ -70,7 +79,7 @@ std::vector<char> VulkanShaderModule::read_shader_file(const std::string& path) 
     return content;
 }
 
-VkShaderStageFlagBits VulkanShaderModule::get_vulkan_stage(Stage stage) const {
+VkShaderStageFlagBits VulkanShaderModule::get_vulkan_stage(Stage stage) {
     switch (stage) {
     default:
     case Stage::Vertex:
@@ -94,7 +103,8 @@ void VulkanShaderModule::retrieve_vertex_input_info(const SpvReflectShaderModule
 
     std::vector<SpvReflectInterfaceVariable*> non_builtin_variables;
     std::ranges::copy_if(input_variables, std::back_inserter(non_builtin_variables), is_not_built_in);
-    if (non_builtin_variables.empty()) return;
+    if (non_builtin_variables.empty())
+        return;
 
     m_binding_description = VkVertexInputBindingDescription{};
     m_binding_description->binding = 0;
@@ -125,10 +135,14 @@ void VulkanShaderModule::retrieve_descriptor_sets_info(const SpvReflectShaderMod
     std::vector<SpvReflectDescriptorSet*> descriptor_sets(descriptor_sets_count);
     SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&module, &descriptor_sets_count, descriptor_sets.data()))
 
+    CORE_INFO("Reading {} descriptor sets", descriptor_sets_count)
+
     for (const auto* set : descriptor_sets) {
         VkDescriptorSetLayoutCreateInfo descriptor_set_create_info{};
         descriptor_set_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         descriptor_set_create_info.bindingCount = set->binding_count;
+
+        std::vector<VkDescriptorSetLayoutBinding> bindings;
 
         for (uint32_t i = 0; i < set->binding_count; ++i) {
             const auto* set_binding = set->bindings[i];
@@ -140,15 +154,20 @@ void VulkanShaderModule::retrieve_descriptor_sets_info(const SpvReflectShaderMod
             binding.stageFlags = get_vulkan_stage(m_stage);
             binding.pImmutableSamplers = VK_NULL_HANDLE;
 
-            // Dont know why but it's done this way in the example
+            // Don't know why, but it's done this way in the example
             // (https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_descriptors.cpp)
             for (uint32_t i_dim = 0; i_dim < set_binding->array.dims_count; ++i_dim)
                 binding.descriptorCount *= set_binding->array.dims[i_dim];
 
-            m_bindings.push_back(binding);
+            bindings.push_back(binding);
         }
 
-        descriptor_set_create_info.pBindings = m_bindings.data();
-        m_descriptor_sets.push_back(descriptor_set_create_info);
+        descriptor_set_create_info.pBindings = bindings.data();
+
+        VkDescriptorSetLayout descriptor_layout;
+        VK_CHECK(
+            vkCreateDescriptorSetLayout(m_device->handle(), &descriptor_set_create_info, nullptr, &descriptor_layout))
+
+        m_descriptor_sets_layout.push_back(descriptor_layout);
     }
 }

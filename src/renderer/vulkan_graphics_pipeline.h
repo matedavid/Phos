@@ -25,7 +25,6 @@ class VulkanGraphicsPipeline {
   private:
     VkPipeline m_pipeline{};
     VkPipelineLayout m_pipeline_layout{};
-    std::vector<VkDescriptorSetLayout> m_descriptor_set_layouts;
 
     std::shared_ptr<VulkanDevice> m_device;
 };
