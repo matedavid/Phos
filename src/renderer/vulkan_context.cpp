@@ -95,9 +95,9 @@ void VulkanContext::update() {
 
     vkResetFences(m_device->handle(), 1, &in_flight_fence);
 
+    // Record command buffer
     const auto& command_buffer = m_command_buffer;
 
-    // Record command buffer
     command_buffer->begin();
     m_render_pass->begin(command_buffer, m_present_framebuffers[next_image]);
 

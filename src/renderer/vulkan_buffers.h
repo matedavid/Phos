@@ -27,7 +27,7 @@ class BufferUtils {
 };
 
 //
-// Vertex buffer
+// Vertex Buffer
 //
 template <typename T>
 class VulkanVertexBuffer {
@@ -77,7 +77,7 @@ class VulkanVertexBuffer {
 };
 
 //
-// Index buffer
+// Index Buffer
 //
 class VulkanIndexBuffer {
   public:
@@ -92,6 +92,7 @@ class VulkanIndexBuffer {
   private:
     VkBuffer m_buffer{};
     VkDeviceMemory m_memory{};
+
     uint32_t m_count;
 
     std::shared_ptr<VulkanDevice> m_device;
