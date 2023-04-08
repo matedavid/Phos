@@ -26,6 +26,10 @@ struct Vertex {
     glm::vec3 position;
 };
 
+struct ColorUniformBuffer {
+    glm::vec4 color;
+};
+
 class VulkanContext {
   public:
     explicit VulkanContext(const std::shared_ptr<Window>& window);
@@ -58,5 +62,5 @@ class VulkanContext {
     std::shared_ptr<VulkanDescriptorAllocator> m_allocator;
 
     VkDescriptorSet m_uniform_buffer_set{VK_NULL_HANDLE};
-    std::shared_ptr<VulkanUniformBuffer> m_uniform_buffer;
+    std::shared_ptr<VulkanUniformBuffer<ColorUniformBuffer>> m_color_ubo;
 };

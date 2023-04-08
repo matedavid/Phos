@@ -1,6 +1,7 @@
 #include "vulkan_context.h"
 
 #include <ranges>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "core/window.h"
 
@@ -84,19 +85,19 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
 
     // Uniform buffer stuff
     // =======================
-    m_uniform_buffer = std::make_shared<VulkanUniformBuffer>(m_device, 16);
 
-    VkDescriptorBufferInfo buffer_info{};
-    buffer_info.buffer = m_uniform_buffer->handle();
-    buffer_info.offset = 0;
-    buffer_info.range = 16;
+    m_color_ubo = std::make_shared<VulkanUniformBuffer<ColorUniformBuffer>>(m_device);
+
+    VkDescriptorBufferInfo color_info{};
+    color_info.buffer = m_color_ubo->handle();
+    color_info.offset = 0;
+    color_info.range = m_color_ubo->size();
 
     bool result = VulkanDescriptorBuilder::begin(m_device, m_layout_cache, m_allocator)
-                      .bind_buffer(0, buffer_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                      .bind_buffer(0, color_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
                       .build(m_uniform_buffer_set);
 
     CORE_ASSERT(result, "Error creating descriptor set")
-    CORE_ASSERT(m_uniform_buffer_set != VK_NULL_HANDLE, "not null handle")
     // =======================
 }
 
@@ -116,8 +117,10 @@ void VulkanContext::update() {
     vkResetFences(m_device->handle(), 1, &in_flight_fence);
 
     // Update uniform buffer
-    const glm::vec4 color_data = {1.0f, 1.0f, 0.0f, 1.0f};
-    m_uniform_buffer->update((void*)(&color_data[0]));
+    const auto color = ColorUniformBuffer{
+        .color = glm::vec4(0.7f, 0.3f, 0.4f, 1.0f),
+    };
+    m_color_ubo->update(color);
 
     // Record command buffer
     const auto& command_buffer = m_command_buffer;
@@ -145,14 +148,12 @@ void VulkanContext::update() {
     m_index_buffer->bind(command_buffer);
 
     // Uniform buffer
-    const std::vector<VkDescriptorSet> descriptor_sets = {m_uniform_buffer_set};
-
     vkCmdBindDescriptorSets(command_buffer->handle(),
                             VK_PIPELINE_BIND_POINT_GRAPHICS,
                             m_pipeline->layout(),
                             0,
-                            (uint32_t)descriptor_sets.size(),
-                            descriptor_sets.data(),
+                            1,
+                            &m_uniform_buffer_set,
                             0,
                             nullptr);
     // =================

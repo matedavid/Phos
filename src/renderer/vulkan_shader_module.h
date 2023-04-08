@@ -10,7 +10,6 @@
 
 // Forward declarations
 class VulkanDevice;
-class VulkanUniformBuffer;
 class VulkanDescriptorLayoutCache;
 struct SpvReflectShaderModule;
 

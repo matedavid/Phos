@@ -101,10 +101,12 @@ class VulkanIndexBuffer {
 //
 // Uniform Buffer
 //
+
+template <typename T>
 class VulkanUniformBuffer {
   public:
-    VulkanUniformBuffer(std::shared_ptr<VulkanDevice> device, uint32_t size)
-          : m_size(size), m_device(std::move(device)) {
+    explicit VulkanUniformBuffer(std::shared_ptr<VulkanDevice> device) : m_device(std::move(device)) {
+        m_size = sizeof(T);
         std::tie(m_buffer, m_memory) =
             BufferUtils::create_buffer(m_device,
                                        m_size,
@@ -121,16 +123,16 @@ class VulkanUniformBuffer {
         vkFreeMemory(m_device->handle(), m_memory, nullptr);
     }
 
-    void update(void* data) { memcpy(m_map_data, data, m_size); }
+    void update(const T& data) { memcpy(m_map_data, &data, m_size); }
 
+    [[nodiscard]] uint32_t size() const { return m_size; }
     [[nodiscard]] VkBuffer handle() const { return m_buffer; }
 
   private:
     VkBuffer m_buffer{};
     VkDeviceMemory m_memory{};
 
-    void* m_map_data;
-
+    void* m_map_data{nullptr};
     uint32_t m_size;
 
     std::shared_ptr<VulkanDevice> m_device;
