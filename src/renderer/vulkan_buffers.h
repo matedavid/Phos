@@ -97,3 +97,41 @@ class VulkanIndexBuffer {
 
     std::shared_ptr<VulkanDevice> m_device;
 };
+
+//
+// Uniform Buffer
+//
+class VulkanUniformBuffer {
+  public:
+    VulkanUniformBuffer(std::shared_ptr<VulkanDevice> device, uint32_t size)
+          : m_size(size), m_device(std::move(device)) {
+        std::tie(m_buffer, m_memory) =
+            BufferUtils::create_buffer(m_device,
+                                       m_size,
+                                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        VK_CHECK(vkMapMemory(m_device->handle(), m_memory, 0, m_size, 0, &m_map_data))
+    }
+
+    ~VulkanUniformBuffer() {
+        vkUnmapMemory(m_device->handle(), m_memory);
+
+        vkDestroyBuffer(m_device->handle(), m_buffer, nullptr);
+        vkFreeMemory(m_device->handle(), m_memory, nullptr);
+    }
+
+    void update(void* data) { memcpy(m_map_data, data, m_size); }
+
+    [[nodiscard]] VkBuffer handle() const { return m_buffer; }
+
+  private:
+    VkBuffer m_buffer{};
+    VkDeviceMemory m_memory{};
+
+    void* m_map_data;
+
+    uint32_t m_size;
+
+    std::shared_ptr<VulkanDevice> m_device;
+};

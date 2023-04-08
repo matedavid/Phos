@@ -2,6 +2,10 @@
 
 layout (location = 0) out vec4 ResultColor;
 
+layout (binding = 0) uniform ColorUniformBuffer {
+    vec4 Color;
+};
+
 void main() {
-    ResultColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    ResultColor = Color;
 }

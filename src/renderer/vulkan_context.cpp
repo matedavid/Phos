@@ -29,10 +29,13 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
 
     m_swapchain = std::make_shared<VulkanSwapchain>(m_device, m_instance->get_surface(), window);
 
+    m_layout_cache = std::make_shared<VulkanDescriptorLayoutCache>(m_device);
+    m_allocator = std::make_shared<VulkanDescriptorAllocator>(m_device);
+
     const auto vertex = std::make_shared<VulkanShaderModule>(
-        "../assets/shaders/vertex.spv", VulkanShaderModule::Stage::Vertex, m_device);
+        "../assets/shaders/vertex.spv", VulkanShaderModule::Stage::Vertex, m_device, m_layout_cache);
     const auto fragment = std::make_shared<VulkanShaderModule>(
-        "../assets/shaders/fragment.spv", VulkanShaderModule::Stage::Fragment, m_device);
+        "../assets/shaders/fragment.spv", VulkanShaderModule::Stage::Fragment, m_device, m_layout_cache);
 
     m_render_pass = std::make_shared<VulkanRenderPass>(m_device);
 
@@ -78,6 +81,23 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
 
     const std::vector<uint32_t> indices = {0, 2, 1, 1, 2, 3};
     m_index_buffer = std::make_unique<VulkanIndexBuffer>(m_device, indices);
+
+    // Uniform buffer stuff
+    // =======================
+    m_uniform_buffer = std::make_shared<VulkanUniformBuffer>(m_device, 16);
+
+    VkDescriptorBufferInfo buffer_info{};
+    buffer_info.buffer = m_uniform_buffer->handle();
+    buffer_info.offset = 0;
+    buffer_info.range = 16;
+
+    bool result = VulkanDescriptorBuilder::begin(m_device, m_layout_cache, m_allocator)
+                      .bind_buffer(0, buffer_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                      .build(m_uniform_buffer_set);
+
+    CORE_ASSERT(result, "Error creating descriptor set")
+    CORE_ASSERT(m_uniform_buffer_set != VK_NULL_HANDLE, "not null handle")
+    // =======================
 }
 
 VulkanContext::~VulkanContext() {
@@ -94,6 +114,10 @@ void VulkanContext::update() {
     const auto next_image = m_swapchain->acquire_next_image(image_available_semaphore);
 
     vkResetFences(m_device->handle(), 1, &in_flight_fence);
+
+    // Update uniform buffer
+    const glm::vec4 color_data = {1.0f, 1.0f, 0.0f, 1.0f};
+    m_uniform_buffer->update((void*)(&color_data[0]));
 
     // Record command buffer
     const auto& command_buffer = m_command_buffer;
@@ -119,6 +143,19 @@ void VulkanContext::update() {
 
     m_vertex_buffer->bind(command_buffer);
     m_index_buffer->bind(command_buffer);
+
+    // Uniform buffer
+    const std::vector<VkDescriptorSet> descriptor_sets = {m_uniform_buffer_set};
+
+    vkCmdBindDescriptorSets(command_buffer->handle(),
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            m_pipeline->layout(),
+                            0,
+                            (uint32_t)descriptor_sets.size(),
+                            descriptor_sets.data(),
+                            0,
+                            nullptr);
+    // =================
 
     vkCmdDrawIndexed(m_command_buffer->handle(), m_index_buffer->get_count(), 1, 0, 0, 0);
 

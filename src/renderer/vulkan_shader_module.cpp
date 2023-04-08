@@ -8,15 +8,18 @@
 
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_utils.h"
-#include "renderer/vulkan_buffers.h"
+#include "renderer/vulkan_descriptors.h"
 
 #define SPIRV_REFLECT_CHECK(expression)             \
     if (expression != SPV_REFLECT_RESULT_SUCCESS) { \
         CORE_FAIL("Spirv-reflect call failed");     \
     }
 
-VulkanShaderModule::VulkanShaderModule(const std::string& path, Stage stage, std::shared_ptr<VulkanDevice> device)
-      : m_stage(stage), m_device(std::move(device)) {
+VulkanShaderModule::VulkanShaderModule(const std::string& path,
+                                       Stage stage,
+                                       std::shared_ptr<VulkanDevice> device,
+                                       std::shared_ptr<VulkanDescriptorLayoutCache> layout_cache)
+      : m_stage(stage), m_device(std::move(device)), m_layout_cache(std::move(layout_cache)) {
     const auto content = read_shader_file(path);
 
     VkShaderModuleCreateInfo create_info{};
@@ -45,11 +48,6 @@ VulkanShaderModule::VulkanShaderModule(const std::string& path, Stage stage, std
 }
 
 VulkanShaderModule::~VulkanShaderModule() {
-    // Destroy descriptor sets
-    for (const auto& descriptor_set_layout : m_descriptor_sets_layout) {
-        vkDestroyDescriptorSetLayout(m_device->handle(), descriptor_set_layout, nullptr);
-    }
-
     // Destroy shader module
     vkDestroyShaderModule(m_device->handle(), m_shader, nullptr);
 }
@@ -164,10 +162,9 @@ void VulkanShaderModule::retrieve_descriptor_sets_info(const SpvReflectShaderMod
 
         descriptor_set_create_info.pBindings = bindings.data();
 
-        VkDescriptorSetLayout descriptor_layout;
-        VK_CHECK(
-            vkCreateDescriptorSetLayout(m_device->handle(), &descriptor_set_create_info, nullptr, &descriptor_layout))
+        const auto layout = m_layout_cache->create_descriptor_layout(descriptor_set_create_info);
+        CORE_ASSERT(layout != VK_NULL_HANDLE, "Layout has null")
 
-        m_descriptor_sets_layout.push_back(descriptor_layout);
+        m_descriptor_sets_layout.push_back(layout);
     }
 }

@@ -22,6 +22,9 @@ class VulkanGraphicsPipeline {
 
     void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;
 
+    [[nodiscard]] VkPipeline handle() const { return m_pipeline; }
+    [[nodiscard]] VkPipelineLayout layout() const { return m_pipeline_layout; }
+
   private:
     VkPipeline m_pipeline{};
     VkPipelineLayout m_pipeline_layout{};
