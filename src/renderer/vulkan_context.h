@@ -44,7 +44,6 @@ class VulkanContext {
     std::shared_ptr<VulkanRenderPass> m_render_pass;
     std::shared_ptr<VulkanGraphicsPipeline> m_pipeline;
 
-    std::shared_ptr<VulkanCommandPool> m_command_pool;
     std::shared_ptr<VulkanCommandBuffer> m_command_buffer;
     std::vector<std::shared_ptr<VulkanFramebuffer>> m_present_framebuffers;
 

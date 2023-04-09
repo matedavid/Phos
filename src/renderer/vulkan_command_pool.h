@@ -6,25 +6,20 @@
 #include <memory>
 
 // Forward declarations
-class VulkanDevice;
 class VulkanCommandBuffer;
 
 class VulkanCommandPool {
   public:
-    // TODO: Do not like this api, probably should change
-    VulkanCommandPool(std::shared_ptr<VulkanDevice> device, uint32_t queue_family, uint32_t command_buffer_count);
+    VulkanCommandPool(VkDevice raw_device, uint32_t queue_family);
     ~VulkanCommandPool();
 
-    [[nodiscard]] std::vector<std::shared_ptr<VulkanCommandBuffer>> get_command_buffers() const {
-        return m_command_buffers;
-    }
+    [[nodiscard]] std::vector<std::shared_ptr<VulkanCommandBuffer>> allocate(uint32_t count) const;
+
     [[nodiscard]] uint32_t get_queue_family() const { return m_queue_family; }
 
   private:
-    VkCommandPool m_command_pool;
+    VkCommandPool m_command_pool{VK_NULL_HANDLE};
     uint32_t m_queue_family;
 
-    std::vector<std::shared_ptr<VulkanCommandBuffer>> m_command_buffers;
-
-    std::shared_ptr<VulkanDevice> m_device;
+    VkDevice m_raw_device{VK_NULL_HANDLE};
 };

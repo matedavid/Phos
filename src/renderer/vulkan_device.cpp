@@ -2,10 +2,10 @@
 
 #include <optional>
 #include <ranges>
-#include <algorithm>
 
 #include "renderer/vulkan_instance.h"
 #include "renderer/vulkan_queue.h"
+#include "renderer/vulkan_command_buffer.h"
 
 VulkanDevice::VulkanDevice(const std::unique_ptr<VulkanInstance>& instance,
                            const VulkanPhysicalDevice::Requirements& requirements)
@@ -65,18 +65,48 @@ VulkanDevice::VulkanDevice(const std::unique_ptr<VulkanInstance>& instance,
 
     if (requirements.presentation) {
         // TODO: What if graphics queue is null pointer...
-        if (queue_families.presentation == queue_families.graphics) m_presentation_queue = m_graphics_queue;
-        else {
+        if (queue_families.presentation == queue_families.graphics) {
+            m_presentation_queue = m_graphics_queue;
+        } else {
             VkQueue presentation_queue;
             vkGetDeviceQueue(m_device, queue_families.presentation, 0, &presentation_queue);
 
             m_presentation_queue = std::make_shared<VulkanQueue>(presentation_queue);
         }
     }
+
+    // Create command pools
+    if (requirements.graphics) {
+        m_graphics_command_pool = std::make_unique<VulkanCommandPool>(m_device, queue_families.graphics);
+    }
 }
 
 VulkanDevice::~VulkanDevice() {
+    // Delete graphics_pool
+    m_graphics_command_pool.reset();
+
     vkDestroyDevice(m_device, nullptr);
+}
+
+std::shared_ptr<VulkanCommandBuffer> VulkanDevice::create_command_buffer(VulkanQueue::Type type) {
+    switch (type) {
+    case VulkanQueue::Type::Graphics:
+        CORE_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
+        return m_graphics_command_pool->allocate(1)[0];
+    default:
+        CORE_FAIL("Not implemented")
+    }
+}
+
+std::vector<std::shared_ptr<VulkanCommandBuffer>> VulkanDevice::create_command_buffers(VulkanQueue::Type type,
+                                                                                       uint32_t count) {
+    switch (type) {
+    case VulkanQueue::Type::Graphics:
+        CORE_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
+        return m_graphics_command_pool->allocate(count);
+    default:
+        CORE_FAIL("Not implemented")
+    }
 }
 
 VulkanPhysicalDevice VulkanDevice::select_physical_device(const std::unique_ptr<VulkanInstance>& instance,
@@ -99,9 +129,11 @@ VulkanPhysicalDevice VulkanDevice::select_physical_device(const std::unique_ptr<
 
         const auto queue_families = device.get_queue_families(reqs);
 
-        if (graphics_transfer_same_queue && queue_families.graphics == queue_families.transfer) score += 10;
+        if (graphics_transfer_same_queue && queue_families.graphics == queue_families.transfer)
+            score += 10;
 
-        if (graphics_presentation_same_queue && queue_families.graphics == queue_families.presentation) score += 10;
+        if (graphics_presentation_same_queue && queue_families.graphics == queue_families.presentation)
+            score += 10;
 
         if (score > max_score) {
             max_device = device;

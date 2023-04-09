@@ -46,9 +46,7 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
     };
     m_pipeline = std::make_shared<VulkanGraphicsPipeline>(m_device, pipeline_description);
 
-    const auto graphics_queue_family = m_device->physical_device().get_queue_families({.graphics = true}).graphics;
-    m_command_pool = std::make_shared<VulkanCommandPool>(m_device, graphics_queue_family, MAX_FRAMES_IN_FLIGHT);
-    m_command_buffer = m_command_pool->get_command_buffers()[0];
+    m_command_buffer = m_device->create_command_buffer(VulkanQueue::Type::Graphics);
 
     for (const auto& view : m_swapchain->get_image_views()) {
         const std::vector<VkImageView> attachments = {view};
@@ -117,10 +115,9 @@ void VulkanContext::update() {
     vkResetFences(m_device->handle(), 1, &in_flight_fence);
 
     // Update uniform buffer
-    const auto color = ColorUniformBuffer{
+    m_color_ubo->update({
         .color = glm::vec4(0.7f, 0.3f, 0.4f, 1.0f),
-    };
-    m_color_ubo->update(color);
+    });
 
     // Record command buffer
     const auto& command_buffer = m_command_buffer;
