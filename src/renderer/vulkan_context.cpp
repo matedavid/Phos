@@ -167,7 +167,19 @@ void VulkanContext::update() {
     const std::vector<VkSemaphore> signal_semaphores = {render_finished_semaphore};
 
     // Submit queue
-    m_graphics_queue->submit(command_buffer, wait_semaphores, wait_stages, signal_semaphores, in_flight_fence);
+    const std::array<VkCommandBuffer, 1> command_buffers = {command_buffer->handle()};
+
+    VkSubmitInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    info.waitSemaphoreCount = (uint32_t)wait_semaphores.size();
+    info.pWaitSemaphores = wait_semaphores.data();
+    info.pWaitDstStageMask = wait_stages.data();
+    info.commandBufferCount = 1;
+    info.pCommandBuffers = command_buffers.data();
+    info.signalSemaphoreCount = (uint32_t)signal_semaphores.size();
+    info.pSignalSemaphores = signal_semaphores.data();
+
+    m_graphics_queue->submit(info, in_flight_fence);
 
     // Present image
     const auto result = m_presentation_queue->submitKHR(m_swapchain, next_image, signal_semaphores);

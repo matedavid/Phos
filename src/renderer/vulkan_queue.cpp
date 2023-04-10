@@ -7,23 +7,7 @@
 
 VulkanQueue::VulkanQueue(VkQueue queue) : m_queue(queue) {}
 
-void VulkanQueue::submit(const std::shared_ptr<VulkanCommandBuffer>& command_buffer,
-                         const std::vector<VkSemaphore>& wait_semaphores,
-                         const std::vector<VkPipelineStageFlags>& wait_stages,
-                         const std::vector<VkSemaphore>& signal_semaphores,
-                         VkFence fence) {
-    const std::array<VkCommandBuffer, 1> command_buffers = {command_buffer->handle()};
-
-    VkSubmitInfo info{};
-    info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    info.waitSemaphoreCount = (uint32_t)wait_semaphores.size();
-    info.pWaitSemaphores = wait_semaphores.data();
-    info.pWaitDstStageMask = wait_stages.data();
-    info.commandBufferCount = 1;
-    info.pCommandBuffers = command_buffers.data();
-    info.signalSemaphoreCount = (uint32_t)signal_semaphores.size();
-    info.pSignalSemaphores = signal_semaphores.data();
-
+void VulkanQueue::submit(VkSubmitInfo info, VkFence fence) {
     VK_CHECK(vkQueueSubmit(m_queue, 1, &info, fence))
 }
 

@@ -22,8 +22,8 @@ class VulkanDevice {
                  const VulkanPhysicalDevice::Requirements& requirements);
     ~VulkanDevice();
 
-    std::shared_ptr<VulkanCommandBuffer> create_command_buffer(VulkanQueue::Type type);
-    std::vector<std::shared_ptr<VulkanCommandBuffer>> create_command_buffers(VulkanQueue::Type type, uint32_t count);
+    [[nodiscard]] std::shared_ptr<VulkanCommandBuffer> create_command_buffer(VulkanQueue::Type type);
+    void free_command_buffer(const std::shared_ptr<VulkanCommandBuffer>& command_buffer, VulkanQueue::Type type) const;
 
     [[nodiscard]] std::shared_ptr<VulkanQueue> get_graphics_queue() const {
         CORE_ASSERT(m_graphics_queue != nullptr, "Graphics queue was not requested")

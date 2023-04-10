@@ -15,6 +15,8 @@ class VulkanCommandPool {
 
     [[nodiscard]] std::vector<std::shared_ptr<VulkanCommandBuffer>> allocate(uint32_t count) const;
 
+    void free_command_buffer(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;
+
     [[nodiscard]] uint32_t get_queue_family() const { return m_queue_family; }
 
   private:

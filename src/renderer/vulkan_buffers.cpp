@@ -52,28 +52,34 @@ std::optional<uint32_t> BufferUtils::find_memory_type(VkPhysicalDevice device,
 }
 
 //
-// Vertex Buffer
-//
-
-// Vertex buffer implementation in header file
-
-//
 // Index Buffer
 //
 VulkanIndexBuffer::VulkanIndexBuffer(std::shared_ptr<VulkanDevice> device, const std::vector<uint32_t>& indices)
       : m_count((uint32_t)indices.size()), m_device(std::move(device)) {
     const VkDeviceSize size = indices.size() * sizeof(uint32_t);
 
-    std::tie(m_buffer, m_memory) =
+    const auto& [staging_buffer, staging_buffer_memory] =
         BufferUtils::create_buffer(m_device,
                                    size,
-                                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                   VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     void* map_data;
-    VK_CHECK(vkMapMemory(m_device->handle(), m_memory, 0, size, 0, &map_data))
+    VK_CHECK(vkMapMemory(m_device->handle(), staging_buffer_memory, 0, size, 0, &map_data))
     memcpy(map_data, indices.data(), (size_t)size);
-    vkUnmapMemory(m_device->handle(), m_memory);
+    vkUnmapMemory(m_device->handle(), staging_buffer_memory);
+
+    std::tie(m_buffer, m_memory) =
+        BufferUtils::create_buffer(m_device,
+                                   size,
+                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    BufferUtils::copy_buffer(m_device, staging_buffer, m_buffer, size);
+
+    // Destroy staging buffer
+    vkDestroyBuffer(m_device->handle(), staging_buffer, nullptr);
+    vkFreeMemory(m_device->handle(), staging_buffer_memory, nullptr);
 }
 
 VulkanIndexBuffer::~VulkanIndexBuffer() {

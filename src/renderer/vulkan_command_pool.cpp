@@ -12,6 +12,10 @@ VulkanCommandPool::VulkanCommandPool(VkDevice raw_device, uint32_t queue_family)
     VK_CHECK(vkCreateCommandPool(m_raw_device, &create_info, nullptr, &m_command_pool))
 }
 
+VulkanCommandPool::~VulkanCommandPool() {
+    vkDestroyCommandPool(m_raw_device, m_command_pool, nullptr);
+}
+
 std::vector<std::shared_ptr<VulkanCommandBuffer>> VulkanCommandPool::allocate(uint32_t count) const {
     VkCommandBufferAllocateInfo allocate_info{};
     allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -30,6 +34,7 @@ std::vector<std::shared_ptr<VulkanCommandBuffer>> VulkanCommandPool::allocate(ui
     return command_buffers;
 }
 
-VulkanCommandPool::~VulkanCommandPool() {
-    vkDestroyCommandPool(m_raw_device, m_command_pool, nullptr);
+void VulkanCommandPool::free_command_buffer(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const {
+    const std::array<VkCommandBuffer, 1> command_buffers = {command_buffer->handle()};
+    vkFreeCommandBuffers(m_raw_device, m_command_pool, 1, command_buffers.data());
 }

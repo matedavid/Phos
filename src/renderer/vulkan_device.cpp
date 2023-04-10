@@ -98,12 +98,13 @@ std::shared_ptr<VulkanCommandBuffer> VulkanDevice::create_command_buffer(VulkanQ
     }
 }
 
-std::vector<std::shared_ptr<VulkanCommandBuffer>> VulkanDevice::create_command_buffers(VulkanQueue::Type type,
-                                                                                       uint32_t count) {
+void VulkanDevice::free_command_buffer(const std::shared_ptr<VulkanCommandBuffer>& command_buffer,
+                                       VulkanQueue::Type type) const {
     switch (type) {
     case VulkanQueue::Type::Graphics:
         CORE_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
-        return m_graphics_command_pool->allocate(count);
+        m_graphics_command_pool->free_command_buffer(command_buffer);
+        break;
     default:
         CORE_FAIL("Not implemented")
     }

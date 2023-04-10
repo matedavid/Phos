@@ -6,15 +6,16 @@
 
 class VulkanCommandBuffer {
   public:
-    explicit VulkanCommandBuffer(VkCommandBuffer command_buffer);
+    VulkanCommandBuffer(VkCommandBuffer command_buffer);
     ~VulkanCommandBuffer() = default;
 
-    void begin();
+    void begin(bool one_time = false);
     void end();
 
     [[nodiscard]] VkCommandBuffer handle() const { return m_command_buffer; }
 
   private:
     VkCommandBuffer m_command_buffer;
+
     bool m_recording = false;
 };
