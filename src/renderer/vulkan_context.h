@@ -16,6 +16,7 @@
 #include "renderer/vulkan_buffers.h"
 #include "renderer/vulkan_queue.h"
 #include "renderer/vulkan_descriptors.h"
+#include "renderer/vulkan_texture.h"
 
 // Forward declarations
 class Window;
@@ -24,6 +25,7 @@ constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 struct Vertex {
     glm::vec3 position;
+    glm::vec2 texture_coords;
 };
 
 struct ColorUniformBuffer {
@@ -49,6 +51,7 @@ class VulkanContext {
 
     std::unique_ptr<VulkanVertexBuffer<Vertex>> m_vertex_buffer;
     std::unique_ptr<VulkanIndexBuffer> m_index_buffer;
+    std::unique_ptr<VulkanTexture> m_texture;
 
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;

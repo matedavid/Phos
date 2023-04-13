@@ -70,16 +70,19 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
 
     // Vertex and Index buffers
     const std::vector<Vertex> data = {
-        {.position = {-0.5f, -0.5f, 0.0f}},
-        {.position = {0.5f, -0.5f, 0.0f}},
-        {.position = {-0.5f, 0.5f, 0.0f}},
-        {.position = {0.5f, 0.5f, 0.0f}},
+        {.position = {-0.5f, -0.5f, 0.0f}, .texture_coords = {0.0f, 0.0f}},
+        {.position = {0.5f, -0.5f, 0.0f}, .texture_coords = {1.0f, 0.0f}},
+        {.position = {-0.5f, 0.5f, 0.0f}, .texture_coords = {0.0f, 1.0f}},
+        {.position = {0.5f, 0.5f, 0.0f}, .texture_coords = {1.0f, 1.0f}},
     };
 
     m_vertex_buffer = std::make_unique<VulkanVertexBuffer<Vertex>>(m_device, data);
 
     const std::vector<uint32_t> indices = {0, 2, 1, 1, 2, 3};
     m_index_buffer = std::make_unique<VulkanIndexBuffer>(m_device, indices);
+
+    // Texture
+    m_texture = std::make_unique<VulkanTexture>(m_device, "../assets/texture.jpg");
 
     // Uniform buffer stuff
     // =======================
@@ -91,9 +94,16 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
     color_info.offset = 0;
     color_info.range = m_color_ubo->size();
 
-    bool result = VulkanDescriptorBuilder::begin(m_device, m_layout_cache, m_allocator)
-                      .bind_buffer(0, color_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-                      .build(m_uniform_buffer_set);
+    VkDescriptorImageInfo image_info{};
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageView = m_texture->image_view();
+    image_info.sampler = m_texture->sampler();
+
+    bool result =
+        VulkanDescriptorBuilder::begin(m_device, m_layout_cache, m_allocator)
+            .bind_buffer(0, color_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .bind_image(1, image_info, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .build(m_uniform_buffer_set);
 
     CORE_ASSERT(result, "Error creating descriptor set")
     // =======================
@@ -116,7 +126,7 @@ void VulkanContext::update() {
 
     // Update uniform buffer
     m_color_ubo->update({
-        .color = glm::vec4(0.7f, 0.3f, 0.4f, 1.0f),
+        .color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
     });
 
     // Record command buffer

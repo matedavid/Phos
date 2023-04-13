@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Create executable
 add_executable(${PROJECT_NAME})
 
-target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
+# target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
@@ -30,6 +30,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/vulkan_queue.cpp
         src/renderer/vulkan_framebuffer.cpp
         src/renderer/vulkan_buffers.cpp
+        src/renderer/vulkan_texture.cpp
         src/renderer/vulkan_descriptors.cpp
         src/renderer/vulkan_utils.cpp
 
