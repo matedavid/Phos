@@ -9,6 +9,7 @@
 
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_command_buffer.h"
+#include "renderer/vulkan_buffer.h"
 
 // Forward declarations
 class VulkanDevice;
@@ -61,6 +62,7 @@ class BufferUtils {
                                                     VkMemoryPropertyFlags properties);
 };
 
+#include <iostream>
 //
 // Vertex Buffer
 //
@@ -70,39 +72,29 @@ class VulkanVertexBuffer {
     VulkanVertexBuffer(std::shared_ptr<VulkanDevice> device, const std::vector<T>& data) : m_device(std::move(device)) {
         const VkDeviceSize size = data.size() * sizeof(T);
 
-        const auto& [staging_buffer, staging_buffer_memory] =
-            BufferUtils::create_buffer(m_device,
-                                       size,
-                                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        const auto staging_buffer = VulkanBuffer{
+            m_device,
+            size,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        };
 
-        void* map_data;
-        VK_CHECK(vkMapMemory(m_device->handle(), staging_buffer_memory, 0, size, 0, &map_data))
-        memcpy(map_data, data.data(), (size_t)size);
-        vkUnmapMemory(m_device->handle(), staging_buffer_memory);
+        staging_buffer.copy_data(data.data());
 
-        std::tie(m_buffer, m_memory) =
-            BufferUtils::create_buffer(m_device,
-                                       size,
-                                       VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        m_buffer = std::make_unique<VulkanBuffer>(m_device,
+                                                  size,
+                                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        BufferUtils::copy_buffer(m_device, staging_buffer, m_buffer, size);
-
-        // Destroy staging buffer
-        vkDestroyBuffer(m_device->handle(), staging_buffer, nullptr);
-        vkFreeMemory(m_device->handle(), staging_buffer_memory, nullptr);
+        staging_buffer.copy_to_buffer(*m_buffer);
 
         m_size = (uint32_t)data.size();
     }
 
-    ~VulkanVertexBuffer() {
-        vkDestroyBuffer(m_device->handle(), m_buffer, nullptr);
-        vkFreeMemory(m_device->handle(), m_memory, nullptr);
-    }
+    ~VulkanVertexBuffer() = default;
 
     void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const {
-        std::array<VkBuffer, 1> vertex_buffers = {m_buffer};
+        std::array<VkBuffer, 1> vertex_buffers = {m_buffer->handle()};
         VkDeviceSize offsets[] = {0};
 
         vkCmdBindVertexBuffers(command_buffer->handle(), 0, vertex_buffers.size(), vertex_buffers.data(), offsets);
@@ -110,12 +102,10 @@ class VulkanVertexBuffer {
 
     [[nodiscard]] uint32_t get_size() const { return m_size; }
 
-    [[nodiscard]] VkBuffer handle() const { return m_buffer; }
+    [[nodiscard]] VkBuffer handle() const { return m_buffer->handle(); }
 
   private:
-    VkBuffer m_buffer{};
-    VkDeviceMemory m_memory{};
-
+    std::unique_ptr<VulkanBuffer> m_buffer;
     uint32_t m_size;
 
     std::shared_ptr<VulkanDevice> m_device;
@@ -127,17 +117,15 @@ class VulkanVertexBuffer {
 class VulkanIndexBuffer {
   public:
     VulkanIndexBuffer(std::shared_ptr<VulkanDevice> device, const std::vector<uint32_t>& indices);
-    ~VulkanIndexBuffer();
+    ~VulkanIndexBuffer() = default;
 
     void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;
     [[nodiscard]] uint32_t get_count() const { return m_count; }
 
-    [[nodiscard]] VkBuffer handle() const { return m_buffer; }
+    [[nodiscard]] VkBuffer handle() const { return m_buffer->handle(); }
 
   private:
-    VkBuffer m_buffer{};
-    VkDeviceMemory m_memory{};
-
+    std::unique_ptr<VulkanBuffer> m_buffer;
     uint32_t m_count;
 
     std::shared_ptr<VulkanDevice> m_device;
@@ -152,30 +140,24 @@ class VulkanUniformBuffer {
   public:
     explicit VulkanUniformBuffer(std::shared_ptr<VulkanDevice> device) : m_device(std::move(device)) {
         m_size = sizeof(T);
-        std::tie(m_buffer, m_memory) =
-            BufferUtils::create_buffer(m_device,
-                                       m_size,
-                                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        m_buffer =
+            std::make_unique<VulkanBuffer>(m_device,
+                                           m_size,
+                                           VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        VK_CHECK(vkMapMemory(m_device->handle(), m_memory, 0, m_size, 0, &m_map_data))
+        m_buffer->map_memory(m_map_data);
     }
 
-    ~VulkanUniformBuffer() {
-        vkUnmapMemory(m_device->handle(), m_memory);
-
-        vkDestroyBuffer(m_device->handle(), m_buffer, nullptr);
-        vkFreeMemory(m_device->handle(), m_memory, nullptr);
-    }
+    ~VulkanUniformBuffer() { m_buffer->unmap_memory(); }
 
     void update(const T& data) { memcpy(m_map_data, &data, m_size); }
 
     [[nodiscard]] uint32_t size() const { return m_size; }
-    [[nodiscard]] VkBuffer handle() const { return m_buffer; }
+    [[nodiscard]] VkBuffer handle() const { return m_buffer->handle(); }
 
   private:
-    VkBuffer m_buffer{};
-    VkDeviceMemory m_memory{};
+    std::unique_ptr<VulkanBuffer> m_buffer;
 
     void* m_map_data{nullptr};
     uint32_t m_size;

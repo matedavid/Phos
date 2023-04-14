@@ -14,7 +14,8 @@ bool VulkanPhysicalDevice::is_suitable(const Requirements& requirements) const {
             return std::string_view(property.extensionName) == extension;
         });
 
-        if (!contained) return false;
+        if (!contained)
+            return false;
     }
 
     // Contains queue families
@@ -32,20 +33,24 @@ bool VulkanPhysicalDevice::is_suitable(const Requirements& requirements) const {
         const auto& property = queue_family_properties[idx];
 
         // Supports graphics queue
-        if (property.queueFlags & VK_QUEUE_GRAPHICS_BIT) graphics = true;
+        if (property.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            graphics = true;
 
         // Supports compute queue
-        if (property.queueFlags & VK_QUEUE_COMPUTE_BIT) compute = true;
+        if (property.queueFlags & VK_QUEUE_COMPUTE_BIT)
+            compute = true;
 
         // Supports transfer queue
-        if (property.queueFlags & VK_QUEUE_TRANSFER_BIT) transfer = true;
+        if (property.queueFlags & VK_QUEUE_TRANSFER_BIT)
+            transfer = true;
 
         // Supports presentation queue
         VkBool32 presentation_supported;
         VK_CHECK(
             vkGetPhysicalDeviceSurfaceSupportKHR(m_physical_device, idx, requirements.surface, &presentation_supported))
 
-        if (presentation_supported) presentation = true;
+        if (presentation_supported)
+            presentation = true;
     }
 
     return graphics && compute && transfer && presentation;
@@ -59,18 +64,22 @@ VulkanPhysicalDevice::QueueFamilies VulkanPhysicalDevice::get_queue_families(con
     for (uint32_t idx = 0; idx < queue_family_properties.size(); ++idx) {
         const auto& property = queue_family_properties[idx];
 
-        if (requirements.graphics && (property.queueFlags & VK_QUEUE_GRAPHICS_BIT)) queue_families.graphics = idx;
+        if (requirements.graphics && (property.queueFlags & VK_QUEUE_GRAPHICS_BIT))
+            queue_families.graphics = idx;
 
-        if (requirements.compute && (property.queueFlags & VK_QUEUE_COMPUTE_BIT)) queue_families.compute = idx;
+        if (requirements.compute && (property.queueFlags & VK_QUEUE_COMPUTE_BIT))
+            queue_families.compute = idx;
 
-        if (requirements.transfer && (property.queueFlags & VK_QUEUE_TRANSFER_BIT)) queue_families.transfer = idx;
+        if (requirements.transfer && (property.queueFlags & VK_QUEUE_TRANSFER_BIT))
+            queue_families.transfer = idx;
 
         if (requirements.presentation) {
             VkBool32 presentation_supported;
             VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR(
                 m_physical_device, idx, requirements.surface, &presentation_supported))
 
-            if (presentation_supported) queue_families.presentation = idx;
+            if (presentation_supported)
+                queue_families.presentation = idx;
         }
     }
 
@@ -104,4 +113,11 @@ VkPhysicalDeviceProperties VulkanPhysicalDevice::get_properties() const {
     vkGetPhysicalDeviceProperties(m_physical_device, &properties);
 
     return properties;
+}
+
+VkPhysicalDeviceMemoryProperties VulkanPhysicalDevice::get_memory_properties() const {
+    VkPhysicalDeviceMemoryProperties memory_properties;
+    vkGetPhysicalDeviceMemoryProperties(m_physical_device, &memory_properties);
+
+    return memory_properties;
 }

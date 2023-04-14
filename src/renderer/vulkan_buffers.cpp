@@ -58,35 +58,23 @@ VulkanIndexBuffer::VulkanIndexBuffer(std::shared_ptr<VulkanDevice> device, const
       : m_count((uint32_t)indices.size()), m_device(std::move(device)) {
     const VkDeviceSize size = indices.size() * sizeof(uint32_t);
 
-    const auto& [staging_buffer, staging_buffer_memory] =
-        BufferUtils::create_buffer(m_device,
-                                   size,
-                                   VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    const auto staging_buffer = VulkanBuffer{
+        m_device,
+        size,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+    };
 
-    void* map_data;
-    VK_CHECK(vkMapMemory(m_device->handle(), staging_buffer_memory, 0, size, 0, &map_data))
-    memcpy(map_data, indices.data(), (size_t)size);
-    vkUnmapMemory(m_device->handle(), staging_buffer_memory);
+    staging_buffer.copy_data(indices.data());
 
-    std::tie(m_buffer, m_memory) =
-        BufferUtils::create_buffer(m_device,
-                                   size,
-                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    m_buffer = std::make_unique<VulkanBuffer>(m_device,
+                                              size,
+                                              VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    BufferUtils::copy_buffer(m_device, staging_buffer, m_buffer, size);
-
-    // Destroy staging buffer
-    vkDestroyBuffer(m_device->handle(), staging_buffer, nullptr);
-    vkFreeMemory(m_device->handle(), staging_buffer_memory, nullptr);
-}
-
-VulkanIndexBuffer::~VulkanIndexBuffer() {
-    vkDestroyBuffer(m_device->handle(), m_buffer, nullptr);
-    vkFreeMemory(m_device->handle(), m_memory, nullptr);
+    staging_buffer.copy_to_buffer(*m_buffer);
 }
 
 void VulkanIndexBuffer::bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const {
-    vkCmdBindIndexBuffer(command_buffer->handle(), m_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(command_buffer->handle(), m_buffer->handle(), 0, VK_INDEX_TYPE_UINT32);
 }

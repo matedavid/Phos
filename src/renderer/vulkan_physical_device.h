@@ -34,6 +34,7 @@ class VulkanPhysicalDevice {
     [[nodiscard]] std::vector<VkExtensionProperties> get_extension_properties() const;
     [[nodiscard]] std::vector<VkQueueFamilyProperties> get_queue_family_properties() const;
     [[nodiscard]] VkPhysicalDeviceProperties get_properties() const;
+    [[nodiscard]] VkPhysicalDeviceMemoryProperties get_memory_properties() const;
 
     [[nodiscard]] VkPhysicalDevice handle() const { return m_physical_device; }
 
