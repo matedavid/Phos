@@ -86,6 +86,19 @@ VulkanPhysicalDevice::QueueFamilies VulkanPhysicalDevice::get_queue_families(con
     return queue_families;
 }
 
+std::optional<uint32_t> VulkanPhysicalDevice::find_memory_type(uint32_t filter,
+                                                               VkMemoryPropertyFlags properties) const {
+    const auto memory_properties = get_memory_properties();
+
+    for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
+        if (filter & (1 << i) && (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+
+    return {};
+}
+
 std::vector<VkExtensionProperties> VulkanPhysicalDevice::get_extension_properties() const {
     uint32_t extension_properties_count;
     VK_CHECK(vkEnumerateDeviceExtensionProperties(m_physical_device, nullptr, &extension_properties_count, nullptr))

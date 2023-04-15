@@ -15,54 +15,6 @@
 class VulkanDevice;
 class VulkanCommandBuffer;
 
-class BufferUtils {
-  public:
-    static std::pair<VkBuffer, VkDeviceMemory> create_buffer(const std::shared_ptr<VulkanDevice>& device,
-                                                             VkDeviceSize size,
-                                                             VkBufferUsageFlags usage,
-                                                             VkMemoryPropertyFlags properties);
-
-    static void copy_buffer(const std::shared_ptr<VulkanDevice>& device,
-                            VkBuffer source,
-                            VkBuffer dest,
-                            VkDeviceSize size) {
-        // TODO: Maybe should be transfer queue instead of graphics
-        const auto command_buffer = device->create_command_buffer(VulkanQueue::Type::Graphics);
-        const auto graphics_queue = device->get_graphics_queue();
-
-        command_buffer->begin(true);
-
-        VkBufferCopy copy{};
-        copy.srcOffset = 0;
-        copy.dstOffset = 0;
-        copy.size = size;
-
-        vkCmdCopyBuffer(command_buffer->handle(), source, dest, 1, &copy);
-
-        command_buffer->end();
-
-        // Submit queue
-        const std::array<VkCommandBuffer, 1> command_buffers = {command_buffer->handle()};
-
-        VkSubmitInfo info{};
-        info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        info.commandBufferCount = 1;
-        info.pCommandBuffers = command_buffers.data();
-
-        graphics_queue->submit(info, VK_NULL_HANDLE);
-        vkQueueWaitIdle(graphics_queue->handle());
-
-        // Free command buffer
-        // TODO: Maybe should be transfer queue instead of graphics
-        device->free_command_buffer(command_buffer, VulkanQueue::Type::Graphics);
-    }
-
-    static std::optional<uint32_t> find_memory_type(VkPhysicalDevice device,
-                                                    uint32_t filter,
-                                                    VkMemoryPropertyFlags properties);
-};
-
-#include <iostream>
 //
 // Vertex Buffer
 //

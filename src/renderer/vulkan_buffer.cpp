@@ -2,6 +2,7 @@
 
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_command_buffer.h"
+#include "renderer/vulkan_image.h"
 
 VulkanBuffer::VulkanBuffer(std::shared_ptr<VulkanDevice> device,
                            VkDeviceSize size,
@@ -21,8 +22,9 @@ VulkanBuffer::VulkanBuffer(std::shared_ptr<VulkanDevice> device,
     VkMemoryRequirements memory_requirements;
     vkGetBufferMemoryRequirements(m_device->handle(), m_buffer, &memory_requirements);
 
-    const auto memory_type_index = find_memory_type(memory_requirements.memoryTypeBits, properties);
-    CORE_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate vertex buffer")
+    const auto memory_type_index =
+        m_device->physical_device().find_memory_type(memory_requirements.memoryTypeBits, properties);
+    CORE_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate buffer")
 
     VkMemoryAllocateInfo allocate_info{};
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -90,14 +92,40 @@ void VulkanBuffer::copy_to_buffer(const VulkanBuffer& buffer) const {
     m_device->free_command_buffer(command_buffer, VulkanQueue::Type::Graphics);
 }
 
-std::optional<uint32_t> VulkanBuffer::find_memory_type(uint32_t filter, VkMemoryPropertyFlags properties) {
-    const auto memory_properties = m_device->physical_device().get_memory_properties();
+void VulkanBuffer::copy_to_image(const VulkanImage& image) const {
+    const auto command_buffer = m_device->create_command_buffer(VulkanQueue::Type::Graphics);
 
-    for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
-        if (filter & (1 << i) && (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
-        }
-    }
+    command_buffer->begin(true);
 
-    return {};
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {image.width(), image.height(), 1};
+
+    vkCmdCopyBufferToImage(
+        command_buffer->handle(), m_buffer, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    command_buffer->end();
+
+    // Submit
+    const std::array<VkCommandBuffer, 1> command_buffers = {command_buffer->handle()};
+
+    VkSubmitInfo submit_info{};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = command_buffers.data();
+
+    m_device->get_graphics_queue()->submit(submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_device->get_graphics_queue()->handle());
+
+    // Free command buffer
+    m_device->free_command_buffer(command_buffer, VulkanQueue::Type::Graphics);
 }

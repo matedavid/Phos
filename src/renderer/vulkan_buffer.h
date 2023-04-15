@@ -10,6 +10,7 @@
 
 // Forward declarations
 class VulkanDevice;
+class VulkanImage;
 
 class VulkanBuffer {
   public:
@@ -24,6 +25,7 @@ class VulkanBuffer {
 
     void copy_data(const void* data) const;
     void copy_to_buffer(const VulkanBuffer& buffer) const;
+    void copy_to_image(const VulkanImage& image) const ;
 
     [[nodiscard]] VkBuffer handle() const { return m_buffer; }
 
@@ -34,6 +36,4 @@ class VulkanBuffer {
     VkDeviceSize m_size;
 
     std::shared_ptr<VulkanDevice> m_device;
-
-    std::optional<uint32_t> find_memory_type(uint32_t filter, VkMemoryPropertyFlags properties);
 };

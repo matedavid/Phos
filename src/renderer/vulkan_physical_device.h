@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan.h>
 #include <vector>
+#include <optional>
 
 class VulkanPhysicalDevice {
   public:
@@ -30,6 +31,8 @@ class VulkanPhysicalDevice {
 
     [[nodiscard]] bool is_suitable(const Requirements& requirements) const;
     [[nodiscard]] QueueFamilies get_queue_families(const Requirements& requirements) const;
+
+    [[nodiscard]] std::optional<uint32_t> find_memory_type(uint32_t filter, VkMemoryPropertyFlags properties) const;
 
     [[nodiscard]] std::vector<VkExtensionProperties> get_extension_properties() const;
     [[nodiscard]] std::vector<VkQueueFamilyProperties> get_queue_family_properties() const;

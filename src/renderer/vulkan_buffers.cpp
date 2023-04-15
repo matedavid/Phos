@@ -1,56 +1,5 @@
 #include "vulkan_buffers.h"
 
-std::pair<VkBuffer, VkDeviceMemory> BufferUtils::create_buffer(const std::shared_ptr<VulkanDevice>& device,
-                                                               VkDeviceSize size,
-                                                               VkBufferUsageFlags usage,
-                                                               VkMemoryPropertyFlags properties) {
-    VkBufferCreateInfo create_info{};
-    create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    create_info.size = size;
-    create_info.usage = usage;
-    create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VkBuffer buffer;
-    VK_CHECK(vkCreateBuffer(device->handle(), &create_info, nullptr, &buffer))
-
-    VkMemoryRequirements memory_requirements;
-    vkGetBufferMemoryRequirements(device->handle(), buffer, &memory_requirements);
-
-    const auto memory_type_index =
-        find_memory_type(device->physical_device().handle(), memory_requirements.memoryTypeBits, properties);
-
-    CORE_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate vertex buffer")
-
-    VkMemoryAllocateInfo allocate_info{};
-    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = memory_type_index.value();
-
-    // Allocate memory
-    VkDeviceMemory memory;
-    VK_CHECK(vkAllocateMemory(device->handle(), &allocate_info, nullptr, &memory))
-
-    // Bind memory to buffer
-    VK_CHECK(vkBindBufferMemory(device->handle(), buffer, memory, 0))
-
-    return {buffer, memory};
-}
-
-std::optional<uint32_t> BufferUtils::find_memory_type(VkPhysicalDevice device,
-                                                      uint32_t filter,
-                                                      VkMemoryPropertyFlags properties) {
-    VkPhysicalDeviceMemoryProperties memory_properties;
-    vkGetPhysicalDeviceMemoryProperties(device, &memory_properties);
-
-    for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
-        if (filter & (1 << i) && (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
-        }
-    }
-
-    return {};
-}
-
 //
 // Index Buffer
 //
