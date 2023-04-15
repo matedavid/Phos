@@ -61,71 +61,33 @@ void VulkanBuffer::copy_to_buffer(const VulkanBuffer& buffer) const {
     CORE_ASSERT(m_size == buffer.m_size, "Size of buffers do not match")
 
     // TODO: Maybe should use transfer queue instead of graphics
-    const auto& graphics_queue = m_device->get_graphics_queue();
-    const auto command_buffer = m_device->create_command_buffer(VulkanQueue::Type::Graphics);
+    m_device->single_time_command_buffer(VulkanQueue::Type::Graphics, [&](const VulkanCommandBuffer& command_buffer) {
+        VkBufferCopy copy{};
+        copy.srcOffset = 0;
+        copy.dstOffset = 0;
+        copy.size = m_size;
 
-    command_buffer->begin(true);
-
-    VkBufferCopy copy{};
-    copy.srcOffset = 0;
-    copy.dstOffset = 0;
-    copy.size = m_size;
-
-    vkCmdCopyBuffer(command_buffer->handle(), m_buffer, buffer.handle(), 1, &copy);
-
-    command_buffer->end();
-
-    // Submit queue
-
-    // Submit queue
-    const std::array<VkCommandBuffer, 1> command_buffers = {command_buffer->handle()};
-
-    VkSubmitInfo info{};
-    info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    info.commandBufferCount = 1;
-    info.pCommandBuffers = command_buffers.data();
-
-    graphics_queue->submit(info, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphics_queue->handle());
-
-    // Free command buffer
-    m_device->free_command_buffer(command_buffer, VulkanQueue::Type::Graphics);
+        vkCmdCopyBuffer(command_buffer.handle(), m_buffer, buffer.handle(), 1, &copy);
+    });
 }
 
 void VulkanBuffer::copy_to_image(const VulkanImage& image) const {
-    const auto command_buffer = m_device->create_command_buffer(VulkanQueue::Type::Graphics);
+    // TODO: Maybe should use transfer queue instead of graphics
+    m_device->single_time_command_buffer(VulkanQueue::Type::Graphics, [&](const VulkanCommandBuffer& command_buffer) {
+        VkBufferImageCopy region{};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
 
-    command_buffer->begin(true);
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
 
-    VkBufferImageCopy region{};
-    region.bufferOffset = 0;
-    region.bufferRowLength = 0;
-    region.bufferImageHeight = 0;
+        region.imageOffset = {0, 0, 0};
+        region.imageExtent = {image.width(), image.height(), 1};
 
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
-
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent = {image.width(), image.height(), 1};
-
-    vkCmdCopyBufferToImage(
-        command_buffer->handle(), m_buffer, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-    command_buffer->end();
-
-    // Submit
-    const std::array<VkCommandBuffer, 1> command_buffers = {command_buffer->handle()};
-
-    VkSubmitInfo submit_info{};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = command_buffers.data();
-
-    m_device->get_graphics_queue()->submit(submit_info, VK_NULL_HANDLE);
-    vkQueueWaitIdle(m_device->get_graphics_queue()->handle());
-
-    // Free command buffer
-    m_device->free_command_buffer(command_buffer, VulkanQueue::Type::Graphics);
+        vkCmdCopyBufferToImage(
+            command_buffer.handle(), m_buffer, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    });
 }

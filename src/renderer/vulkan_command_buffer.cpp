@@ -2,10 +2,29 @@
 
 VulkanCommandBuffer::VulkanCommandBuffer(VkCommandBuffer command_buffer) : m_command_buffer(command_buffer) {}
 
-void VulkanCommandBuffer::begin(bool one_time) {
-    CORE_ASSERT(!m_recording, "Can't begin a new command buffer while recording another one")
-    m_recording = true;
+void VulkanCommandBuffer::record(const std::function<void(void)>& func) const {
+    // Begin command buffer
+    begin(false);
 
+    // Call command buffer function
+    func();
+
+    // End command buffer
+    VK_CHECK(vkEndCommandBuffer(m_command_buffer))
+}
+
+void VulkanCommandBuffer::record_single_time(const std::function<void(const VulkanCommandBuffer&)>& func) const {
+    // Begin single time command buffer
+    begin(true);
+
+    // Call command buffer function
+    func(*this);
+
+    // End command buffer
+    VK_CHECK(vkEndCommandBuffer(m_command_buffer))
+}
+
+void VulkanCommandBuffer::begin(bool one_time) const {
     VK_CHECK(vkResetCommandBuffer(m_command_buffer, 0))
 
     VkCommandBufferBeginInfo info{};
@@ -17,9 +36,6 @@ void VulkanCommandBuffer::begin(bool one_time) {
     VK_CHECK(vkBeginCommandBuffer(m_command_buffer, &info))
 }
 
-void VulkanCommandBuffer::end() {
-    CORE_ASSERT(m_recording, "Can't end a command buffer while not recording")
-    m_recording = false;
-
-    VK_CHECK(vkEndCommandBuffer(m_command_buffer));
+void VulkanCommandBuffer::end() const {
+    VK_CHECK(vkEndCommandBuffer(m_command_buffer))
 }

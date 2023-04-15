@@ -88,7 +88,7 @@ VulkanDevice::~VulkanDevice() {
     vkDestroyDevice(m_device, nullptr);
 }
 
-std::shared_ptr<VulkanCommandBuffer> VulkanDevice::create_command_buffer(VulkanQueue::Type type) {
+std::shared_ptr<VulkanCommandBuffer> VulkanDevice::create_command_buffer(VulkanQueue::Type type) const {
     switch (type) {
     case VulkanQueue::Type::Graphics:
         CORE_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
@@ -105,6 +105,38 @@ void VulkanDevice::free_command_buffer(const std::shared_ptr<VulkanCommandBuffer
         CORE_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
         m_graphics_command_pool->free_command_buffer(command_buffer);
         break;
+    default:
+        CORE_FAIL("Not implemented")
+    }
+}
+
+void VulkanDevice::single_time_command_buffer(VulkanQueue::Type type,
+                                              const std::function<void(const VulkanCommandBuffer&)>& func) const {
+    // Record command buffer
+    const auto command_buffer = create_command_buffer(type);
+    command_buffer->record_single_time(func);
+
+    // Submit to queue
+    const std::array<VkCommandBuffer, 1> command_buffers = {command_buffer->handle()};
+
+    VkSubmitInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    info.commandBufferCount = 1;
+    info.pCommandBuffers = command_buffers.data();
+
+    const auto& queue = get_queue_from_type(type);
+    queue->submit(info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(queue->handle());
+
+    // Free command buffer
+    free_command_buffer(command_buffer, type);
+}
+
+const std::shared_ptr<VulkanQueue>& VulkanDevice::get_queue_from_type(VulkanQueue::Type type) const {
+    switch (type) {
+    case VulkanQueue::Type::Graphics:
+        CORE_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
+        return m_graphics_queue;
     default:
         CORE_FAIL("Not implemented")
     }

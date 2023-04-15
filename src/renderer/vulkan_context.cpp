@@ -132,44 +132,42 @@ void VulkanContext::update() {
     // Record command buffer
     const auto& command_buffer = m_command_buffer;
 
-    command_buffer->begin();
-    m_render_pass->begin(command_buffer, m_present_framebuffers[next_image]);
+    command_buffer->record([&]() {
+        m_render_pass->begin(*command_buffer, *m_present_framebuffers[next_image]);
 
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = (float)m_present_framebuffers[0]->width();
-    viewport.height = (float)m_present_framebuffers[0]->height();
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = (float)m_present_framebuffers[0]->width();
+        viewport.height = (float)m_present_framebuffers[0]->height();
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
 
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = {m_present_framebuffers[next_image]->width(), m_present_framebuffers[next_image]->height()};
+        VkRect2D scissor{};
+        scissor.offset = {0, 0};
+        scissor.extent = {m_present_framebuffers[next_image]->width(), m_present_framebuffers[next_image]->height()};
 
-    m_pipeline->bind(command_buffer);
-    vkCmdSetViewport(command_buffer->handle(), 0, 1, &viewport);
-    vkCmdSetScissor(command_buffer->handle(), 0, 1, &scissor);
+        m_pipeline->bind(command_buffer);
+        vkCmdSetViewport(command_buffer->handle(), 0, 1, &viewport);
+        vkCmdSetScissor(command_buffer->handle(), 0, 1, &scissor);
 
-    m_vertex_buffer->bind(command_buffer);
-    m_index_buffer->bind(command_buffer);
+        m_vertex_buffer->bind(command_buffer);
+        m_index_buffer->bind(command_buffer);
 
-    // Uniform buffer
-    vkCmdBindDescriptorSets(command_buffer->handle(),
-                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            m_pipeline->layout(),
-                            0,
-                            1,
-                            &m_uniform_buffer_set,
-                            0,
-                            nullptr);
-    // =================
+        // Descriptor sets
+        vkCmdBindDescriptorSets(command_buffer->handle(),
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                m_pipeline->layout(),
+                                0,
+                                1,
+                                &m_uniform_buffer_set,
+                                0,
+                                nullptr);
 
-    vkCmdDrawIndexed(m_command_buffer->handle(), m_index_buffer->get_count(), 1, 0, 0, 0);
+        vkCmdDrawIndexed(m_command_buffer->handle(), m_index_buffer->get_count(), 1, 0, 0, 0);
 
-    m_render_pass->end(command_buffer);
-    command_buffer->end();
-    // ===========================
+        m_render_pass->end(*command_buffer);
+    });
 
     // Submit command buffer
     const std::vector<VkPipelineStageFlags> wait_stages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};

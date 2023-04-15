@@ -50,23 +50,22 @@ VulkanRenderPass::~VulkanRenderPass() {
     vkDestroyRenderPass(m_device->handle(), m_render_pass, nullptr);
 }
 
-void VulkanRenderPass::begin(const std::shared_ptr<VulkanCommandBuffer>& command_buffer,
-                             const std::shared_ptr<VulkanFramebuffer>& framebuffer) {
+void VulkanRenderPass::begin(const VulkanCommandBuffer& command_buffer, const VulkanFramebuffer& framebuffer) {
     VkClearValue clear{};
     clear.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
 
     VkRenderPassBeginInfo info{};
     info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     info.renderPass = m_render_pass;
-    info.framebuffer = framebuffer->handle();
+    info.framebuffer = framebuffer.handle();
     info.renderArea.offset = {0, 0};
-    info.renderArea.extent = {framebuffer->width(), framebuffer->height()};
+    info.renderArea.extent = {framebuffer.width(), framebuffer.height()};
     info.clearValueCount = 1;
     info.pClearValues = &clear;
 
-    vkCmdBeginRenderPass(command_buffer->handle(), &info, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(command_buffer.handle(), &info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void VulkanRenderPass::end(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) {
-    vkCmdEndRenderPass(command_buffer->handle());
+void VulkanRenderPass::end(const VulkanCommandBuffer& command_buffer) {
+    vkCmdEndRenderPass(command_buffer.handle());
 }

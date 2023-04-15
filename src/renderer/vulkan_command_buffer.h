@@ -3,19 +3,21 @@
 #include "vk_core.h"
 
 #include <vulkan/vulkan.h>
+#include <functional>
 
 class VulkanCommandBuffer {
   public:
-    VulkanCommandBuffer(VkCommandBuffer command_buffer);
+    explicit VulkanCommandBuffer(VkCommandBuffer command_buffer);
     ~VulkanCommandBuffer() = default;
 
-    void begin(bool one_time = false);
-    void end();
+    void record(const std::function<void(void)>& func) const;
+    void record_single_time(const std::function<void(const VulkanCommandBuffer&)>& func) const;
 
     [[nodiscard]] VkCommandBuffer handle() const { return m_command_buffer; }
 
   private:
     VkCommandBuffer m_command_buffer;
 
-    bool m_recording = false;
+    void begin(bool one_time = false) const;
+    void end() const;
 };
