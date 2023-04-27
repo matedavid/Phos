@@ -66,6 +66,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE vendor/stb/)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog)
 target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
 
+# assimp
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/assimp)
+target_link_libraries(${PROJECT_NAME} PRIVATE assimp)
+
 # Spirv-reflect
 set(SPIRV_REFLECT_EXECUTABLE OFF CACHE BOOL "" FORCE)
 set(SPIRV_REFLECT_EXAMPLES OFF CACHE BOOL "" FORCE)

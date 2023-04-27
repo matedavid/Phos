@@ -10,3 +10,6 @@
 [submodule "vendor/spirv-reflect"]
 	path = vendor/spirv-reflect
 	url = git@github.com:KhronosGroup/SPIRV-Reflect.git
+[submodule "vendor/assimp"]
+	path = vendor/assimp
+	url = git@github.com:assimp/assimp.git
