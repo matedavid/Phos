@@ -28,8 +28,6 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
     m_graphics_queue = m_device->get_graphics_queue();
     m_presentation_queue = m_device->get_presentation_queue();
 
-    m_swapchain = std::make_shared<VulkanSwapchain>(m_device, m_instance->get_surface(), window);
-
     m_layout_cache = std::make_shared<VulkanDescriptorLayoutCache>(m_device);
     m_allocator = std::make_shared<VulkanDescriptorAllocator>(m_device);
 
@@ -48,13 +46,8 @@ VulkanContext::VulkanContext(const std::shared_ptr<Window>& window) {
 
     m_command_buffer = m_device->create_command_buffer(VulkanQueue::Type::Graphics);
 
-    for (const auto& view : m_swapchain->get_image_views()) {
-        const std::vector<VkImageView> attachments = {view};
-        const auto framebuffer = std::make_shared<VulkanFramebuffer>(
-            m_device, m_render_pass, window->get_width(), window->get_height(), attachments);
-
-        m_present_framebuffers.push_back(framebuffer);
-    }
+    // Swapchain
+    m_swapchain = std::make_shared<VulkanSwapchain>(m_device, m_instance->get_surface(), window, m_render_pass);
 
     // Synchronization
     VkSemaphoreCreateInfo semaphoreCreateInfo{};
@@ -120,7 +113,10 @@ VulkanContext::~VulkanContext() {
 void VulkanContext::update() {
     vkWaitForFences(m_device->handle(), 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
 
-    const auto next_image = m_swapchain->acquire_next_image(image_available_semaphore);
+    // const auto next_image = m_swapchain->acquire_next_image(image_available_semaphore);
+
+    m_swapchain->acquire_next_image(image_available_semaphore);
+    const auto& swapchain_framebuffer = m_swapchain->get_current_framebuffer();
 
     vkResetFences(m_device->handle(), 1, &in_flight_fence);
 
@@ -133,19 +129,19 @@ void VulkanContext::update() {
     const auto& command_buffer = m_command_buffer;
 
     command_buffer->record([&]() {
-        m_render_pass->begin(*command_buffer, *m_present_framebuffers[next_image]);
+        m_render_pass->begin(*command_buffer, *swapchain_framebuffer);
 
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
-        viewport.width = (float)m_present_framebuffers[0]->width();
-        viewport.height = (float)m_present_framebuffers[0]->height();
+        viewport.width = (float)swapchain_framebuffer->width();
+        viewport.height = (float)swapchain_framebuffer->height();
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 
         VkRect2D scissor{};
         scissor.offset = {0, 0};
-        scissor.extent = {m_present_framebuffers[next_image]->width(), m_present_framebuffers[next_image]->height()};
+        scissor.extent = {swapchain_framebuffer->width(), swapchain_framebuffer->height()};
 
         m_pipeline->bind(command_buffer);
         vkCmdSetViewport(command_buffer->handle(), 0, 1, &viewport);
@@ -190,7 +186,8 @@ void VulkanContext::update() {
     m_graphics_queue->submit(info, in_flight_fence);
 
     // Present image
-    const auto result = m_presentation_queue->submitKHR(m_swapchain, next_image, signal_semaphores);
+    const auto result =
+        m_presentation_queue->submitKHR(m_swapchain, m_swapchain->get_current_image_idx(), signal_semaphores);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         // TODO: recreate swapchain

@@ -47,7 +47,6 @@ class VulkanContext {
     std::shared_ptr<VulkanGraphicsPipeline> m_pipeline;
 
     std::shared_ptr<VulkanCommandBuffer> m_command_buffer;
-    std::vector<std::shared_ptr<VulkanFramebuffer>> m_present_framebuffers;
 
     std::unique_ptr<VulkanVertexBuffer<Vertex>> m_vertex_buffer;
     std::unique_ptr<VulkanIndexBuffer> m_index_buffer;

@@ -2,11 +2,15 @@
 
 #include "core/window.h"
 #include "renderer/vulkan_device.h"
+#include "renderer/vulkan_render_pass.h"
+#include "renderer/vulkan_framebuffer.h"
 
 VulkanSwapchain::VulkanSwapchain(std::shared_ptr<VulkanDevice> device,
                                  VkSurfaceKHR surface,
-                                 std::shared_ptr<Window> window)
-      : m_device(std::move(device)), m_surface(surface), m_window(std::move(window)) {
+                                 std::shared_ptr<Window> window,
+                                 std::shared_ptr<VulkanRenderPass> render_pass)
+      : m_device(std::move(device)), m_surface(surface), m_window(std::move(window)),
+        m_render_pass(std::move(render_pass)) {
     m_swapchain_info = get_swapchain_information();
 
     VulkanPhysicalDevice::QueueFamilies queue_families =
@@ -48,6 +52,8 @@ VulkanSwapchain::VulkanSwapchain(std::shared_ptr<VulkanDevice> device,
 
     // Retrieve swapchain images
     retrieve_swapchain_images();
+    // Create presentation framebuffers
+    create_framebuffers();
 }
 
 VulkanSwapchain::~VulkanSwapchain() {
@@ -60,13 +66,10 @@ VulkanSwapchain::~VulkanSwapchain() {
     vkDestroySwapchainKHR(m_device->handle(), m_swapchain, nullptr);
 }
 
-uint32_t VulkanSwapchain::acquire_next_image(VkSemaphore semaphore) const {
-    uint32_t image_index;
+void VulkanSwapchain::acquire_next_image(VkSemaphore semaphore) {
     // TODO: Check of out of date error
-    VK_CHECK(
-        vkAcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &image_index))
-
-    return image_index;
+    VK_CHECK(vkAcquireNextImageKHR(
+        m_device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_current_image_idx));
 }
 
 VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information() const {
@@ -168,5 +171,13 @@ void VulkanSwapchain::retrieve_swapchain_images() {
         create_info.subresourceRange.layerCount = 1;
 
         VK_CHECK(vkCreateImageView(m_device->handle(), &create_info, nullptr, &m_image_views[idx]))
+    }
+}
+
+void VulkanSwapchain::create_framebuffers() {
+    for (const auto& view : m_image_views) {
+        const std::vector<VkImageView> attachments = {view};
+        m_framebuffers.push_back(std::make_unique<VulkanFramebuffer>(
+            m_device, m_render_pass, m_window->get_width(), m_window->get_height(), attachments));
     }
 }
