@@ -86,8 +86,8 @@ struct SwapchainInformation {
             actualExtent.height = std::clamp(actualExtent.height, surfaceCapabilities.minImageExtent.height,
                                              surfaceCapabilities.maxImageExtent.height);
 
-            information.extent.width = (uint32_t)width;
-            information.extent.height = (uint32_t)height;
+            information.extent.width = (uint32_t)actualExtent.width;
+            information.extent.height = (uint32_t)actualExtent.height;
         }
 
         // Get Surface formats

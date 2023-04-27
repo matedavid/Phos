@@ -11,18 +11,56 @@ VulkanSwapchain::VulkanSwapchain(std::shared_ptr<VulkanDevice> device,
                                  std::shared_ptr<VulkanRenderPass> render_pass)
       : m_device(std::move(device)), m_surface(surface), m_window(std::move(window)),
         m_render_pass(std::move(render_pass)) {
+    // Create swapchain
+    create();
+    // Retrieve swapchain images
+    retrieve_swapchain_images();
+    // Create presentation framebuffers
+    create_framebuffers();
+}
+
+VulkanSwapchain::~VulkanSwapchain() {
+    cleanup();
+}
+
+void VulkanSwapchain::acquire_next_image(VkSemaphore semaphore) {
+    const auto result = vkAcquireNextImageKHR(
+        m_device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_current_image_idx);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        recreate();
+        VK_CHECK(vkAcquireNextImageKHR(
+            m_device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_current_image_idx))
+    } else if (result != VK_SUBOPTIMAL_KHR) {
+        VK_CHECK(result)
+    }
+}
+
+void VulkanSwapchain::recreate() {
+    vkDeviceWaitIdle(m_device->handle());
+    cleanup();
+
+    // Create swapchain
+    create();
+    // Retrieve swapchain images
+    retrieve_swapchain_images();
+    // Create presentation framebuffers
+    create_framebuffers();
+}
+
+void VulkanSwapchain::create() {
     m_swapchain_info = get_swapchain_information();
 
     VulkanPhysicalDevice::QueueFamilies queue_families =
         m_device->physical_device().get_queue_families(VulkanPhysicalDevice::Requirements{
             .graphics = true,
             .presentation = true,
-            .surface = surface,
+            .surface = m_surface,
         });
 
     VkSwapchainCreateInfoKHR create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    create_info.surface = surface;
+    create_info.surface = m_surface;
     create_info.minImageCount = m_swapchain_info.capabilities.minImageCount + 1;
     create_info.imageFormat = m_swapchain_info.surface_format.format;
     create_info.imageColorSpace = m_swapchain_info.surface_format.colorSpace;
@@ -49,27 +87,22 @@ VulkanSwapchain::VulkanSwapchain(std::shared_ptr<VulkanDevice> device,
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
     VK_CHECK(vkCreateSwapchainKHR(m_device->handle(), &create_info, nullptr, &m_swapchain))
-
-    // Retrieve swapchain images
-    retrieve_swapchain_images();
-    // Create presentation framebuffers
-    create_framebuffers();
 }
 
-VulkanSwapchain::~VulkanSwapchain() {
+void VulkanSwapchain::cleanup() {
+    // Destroy framebuffers
+    m_framebuffers.clear();
+
     // Destroy image views
     for (const auto& image_view : m_image_views) {
         vkDestroyImageView(m_device->handle(), image_view, nullptr);
     }
 
+    // Clear images
+    m_images.clear();
+
     // Destroy swapchain
     vkDestroySwapchainKHR(m_device->handle(), m_swapchain, nullptr);
-}
-
-void VulkanSwapchain::acquire_next_image(VkSemaphore semaphore) {
-    // TODO: Check of out of date error
-    VK_CHECK(vkAcquireNextImageKHR(
-        m_device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_current_image_idx));
 }
 
 VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information() const {
@@ -93,8 +126,8 @@ VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information
         actualExtent.height = std::clamp(
             actualExtent.height, info.capabilities.minImageExtent.height, info.capabilities.maxImageExtent.height);
 
-        info.extent.width = width;
-        info.extent.height = height;
+        info.extent.width = actualExtent.width;
+        info.extent.height = actualExtent.height;
     }
 
     // Surface formats
@@ -178,6 +211,6 @@ void VulkanSwapchain::create_framebuffers() {
     for (const auto& view : m_image_views) {
         const std::vector<VkImageView> attachments = {view};
         m_framebuffers.push_back(std::make_unique<VulkanFramebuffer>(
-            m_device, m_render_pass, m_window->get_width(), m_window->get_height(), attachments));
+            m_device, m_render_pass, m_swapchain_info.extent.width, m_swapchain_info.extent.height, attachments));
     }
 }

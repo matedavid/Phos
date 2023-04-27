@@ -26,6 +26,8 @@ class VulkanSwapchain {
     }
     [[nodiscard]] uint32_t get_current_image_idx() const { return m_current_image_idx; }
 
+    void recreate();
+
     [[nodiscard]] VkSwapchainKHR handle() { return m_swapchain; }
 
   private:
@@ -53,6 +55,9 @@ class VulkanSwapchain {
     std::shared_ptr<VulkanRenderPass> m_render_pass;
 
     // Private methods
+    void create();
+    void cleanup();
+
     [[nodiscard]] SwapchainInformation get_swapchain_information() const;
     void retrieve_swapchain_images();
     void create_framebuffers();

@@ -190,7 +190,7 @@ void VulkanContext::update() {
         m_presentation_queue->submitKHR(m_swapchain, m_swapchain->get_current_image_idx(), signal_semaphores);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        // TODO: recreate swapchain
+        m_swapchain->recreate();
     } else if (result != VK_SUCCESS) {
         CORE_FAIL("Failed to present image")
     }
