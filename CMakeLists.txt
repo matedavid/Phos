@@ -18,6 +18,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/core/window.cpp
         src/core/glfw_window.cpp
 
+        src/renderer/vulkan_context.cpp
         src/renderer/vulkan_instance.cpp
         src/renderer/vulkan_physical_device.cpp
         src/renderer/vulkan_device.cpp
@@ -36,7 +37,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/vulkan_descriptors.cpp
         src/renderer/vulkan_utils.cpp
 
-        src/renderer/vulkan_context.cpp
+        src/renderer/vulkan_renderer.cpp
 
         src/main.cpp
         )
