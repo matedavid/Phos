@@ -1,9 +1,10 @@
 #include "vulkan_descriptors.h"
 
-#include "renderer/vulkan_device.h"
-
 #include <algorithm>
 #include <ranges>
+
+#include "renderer/vulkan_device.h"
+#include "renderer/vulkan_context.h"
 
 //
 // DescriptorAllocator
@@ -32,16 +33,13 @@ static VkDescriptorPool create_pool(VkDevice device,
     return descriptorPool;
 }
 
-VulkanDescriptorAllocator::VulkanDescriptorAllocator(std::shared_ptr<VulkanDevice> device)
-      : m_device(std::move(device)) {}
-
 VulkanDescriptorAllocator::~VulkanDescriptorAllocator() {
     for (const auto& p : m_free_pools) {
-        vkDestroyDescriptorPool(m_device->handle(), p, nullptr);
+        vkDestroyDescriptorPool(VulkanContext::device->handle(), p, nullptr);
     }
 
     for (const auto& p : m_used_pools) {
-        vkDestroyDescriptorPool(m_device->handle(), p, nullptr);
+        vkDestroyDescriptorPool(VulkanContext::device->handle(), p, nullptr);
     }
 }
 
@@ -58,7 +56,7 @@ bool VulkanDescriptorAllocator::allocate(VkDescriptorSetLayout layout, VkDescrip
     info.descriptorPool = m_current_pool;
     info.descriptorSetCount = 1;
 
-    auto result = vkAllocateDescriptorSets(m_device->handle(), &info, &set);
+    auto result = vkAllocateDescriptorSets(VulkanContext::device->handle(), &info, &set);
     bool needReallocate = false;
 
     switch (result) {
@@ -80,7 +78,7 @@ bool VulkanDescriptorAllocator::allocate(VkDescriptorSetLayout layout, VkDescrip
         m_current_pool = grab_pool();
         m_used_pools.push_back(m_current_pool);
 
-        result = vkAllocateDescriptorSets(m_device->handle(), &info, &set);
+        result = vkAllocateDescriptorSets(VulkanContext::device->handle(), &info, &set);
 
         // if it still fails then we have big issues
         if (result == VK_SUCCESS)
@@ -92,7 +90,7 @@ bool VulkanDescriptorAllocator::allocate(VkDescriptorSetLayout layout, VkDescrip
 
 void VulkanDescriptorAllocator::reset_pools() {
     for (const auto& p : m_used_pools)
-        vkResetDescriptorPool(m_device->handle(), p, 0);
+        vkResetDescriptorPool(VulkanContext::device->handle(), p, 0);
 
     m_free_pools = m_used_pools;
     m_used_pools.clear();
@@ -101,7 +99,7 @@ void VulkanDescriptorAllocator::reset_pools() {
 
 VkDescriptorPool VulkanDescriptorAllocator::grab_pool() {
     if (m_free_pools.empty())
-        return create_pool(m_device->handle(), m_descriptor_sizes, 1000, 0);
+        return create_pool(VulkanContext::device->handle(), m_descriptor_sizes, 1000, 0);
 
     const auto pool = m_free_pools.back();
     m_free_pools.pop_back();
@@ -113,12 +111,9 @@ VkDescriptorPool VulkanDescriptorAllocator::grab_pool() {
 // DescriptorLayoutCache
 //
 
-VulkanDescriptorLayoutCache::VulkanDescriptorLayoutCache(std::shared_ptr<VulkanDevice> device)
-      : m_device(std::move(device)) {}
-
 VulkanDescriptorLayoutCache::~VulkanDescriptorLayoutCache() {
     for (const auto& [_, layout] : m_layout_cache) {
-        vkDestroyDescriptorSetLayout(m_device->handle(), layout, nullptr);
+        vkDestroyDescriptorSetLayout(VulkanContext::device->handle(), layout, nullptr);
     }
 }
 
@@ -150,7 +145,7 @@ VkDescriptorSetLayout VulkanDescriptorLayoutCache::create_descriptor_layout(
     }
 
     VkDescriptorSetLayout layout;
-    vkCreateDescriptorSetLayout(m_device->handle(), &info, nullptr, &layout);
+    vkCreateDescriptorSetLayout(VulkanContext::device->handle(), &info, nullptr, &layout);
 
     m_layout_cache[layout_info] = layout;
     return layout;
@@ -198,14 +193,12 @@ size_t VulkanDescriptorLayoutCache::DescriptorLayoutInfo::hash() const {
 // Descriptor Builder
 //
 
-VulkanDescriptorBuilder VulkanDescriptorBuilder::begin(std::shared_ptr<VulkanDevice> device,
-                                                       std::shared_ptr<VulkanDescriptorLayoutCache> cache,
+VulkanDescriptorBuilder VulkanDescriptorBuilder::begin(std::shared_ptr<VulkanDescriptorLayoutCache> cache,
                                                        std::shared_ptr<VulkanDescriptorAllocator> allocator) {
     VulkanDescriptorBuilder builder{};
 
     builder.m_cache = std::move(cache);
     builder.m_allocator = std::move(allocator);
-    builder.m_device = std::move(device);
 
     return builder;
 }
@@ -281,7 +274,7 @@ bool VulkanDescriptorBuilder::build(VkDescriptorSet& set, VkDescriptorSetLayout&
         w.dstSet = set;
     }
 
-    vkUpdateDescriptorSets(m_device->handle(), (uint32_t)writes.size(), writes.data(), 0, nullptr);
+    vkUpdateDescriptorSets(VulkanContext::device->handle(), (uint32_t)writes.size(), writes.data(), 0, nullptr);
 
     return true;
 }

@@ -19,7 +19,7 @@ class VulkanImage {
         VkImageUsageFlags usage;
     };
 
-    VulkanImage(std::shared_ptr<VulkanDevice> device, const Description& description);
+    explicit VulkanImage(const Description& description);
     ~VulkanImage();
 
     void transition_layout(VkImageLayout old_layout, VkImageLayout new_layout) const;
@@ -34,6 +34,4 @@ class VulkanImage {
     VkDeviceMemory m_memory;
 
     uint32_t m_width, m_height;
-
-    std::shared_ptr<VulkanDevice> m_device;
 };

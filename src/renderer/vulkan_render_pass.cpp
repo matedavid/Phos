@@ -3,8 +3,9 @@
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_framebuffer.h"
 #include "renderer/vulkan_command_buffer.h"
+#include "renderer/vulkan_context.h"
 
-VulkanRenderPass::VulkanRenderPass(std::shared_ptr<VulkanDevice> device) : m_device(std::move(device)) {
+VulkanRenderPass::VulkanRenderPass() {
     // TODO: This should definitely be configurable
 
     VkAttachmentDescription attachment_description{};
@@ -43,11 +44,11 @@ VulkanRenderPass::VulkanRenderPass(std::shared_ptr<VulkanDevice> device) : m_dev
     render_pass_create_info.dependencyCount = 1;
     render_pass_create_info.pDependencies = &subpass_dependency;
 
-    VK_CHECK(vkCreateRenderPass(m_device->handle(), &render_pass_create_info, nullptr, &m_render_pass))
+    VK_CHECK(vkCreateRenderPass(VulkanContext::device->handle(), &render_pass_create_info, nullptr, &m_render_pass))
 }
 
 VulkanRenderPass::~VulkanRenderPass() {
-    vkDestroyRenderPass(m_device->handle(), m_render_pass, nullptr);
+    vkDestroyRenderPass(VulkanContext::device->handle(), m_render_pass, nullptr);
 }
 
 void VulkanRenderPass::begin(const VulkanCommandBuffer& command_buffer, const VulkanFramebuffer& framebuffer) {

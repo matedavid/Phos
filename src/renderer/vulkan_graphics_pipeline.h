@@ -17,7 +17,7 @@ class VulkanGraphicsPipeline {
         std::shared_ptr<VulkanRenderPass> render_pass;
     };
 
-    VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> device, const Description& description);
+    explicit VulkanGraphicsPipeline(const Description& description);
     ~VulkanGraphicsPipeline();
 
     void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;

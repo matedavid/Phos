@@ -11,8 +11,7 @@ class VulkanRenderPass;
 
 class VulkanFramebuffer {
   public:
-    VulkanFramebuffer(std::shared_ptr<VulkanDevice> device,
-                      const std::shared_ptr<VulkanRenderPass>& render_pass,
+    VulkanFramebuffer(const std::shared_ptr<VulkanRenderPass>& render_pass,
                       uint32_t width,
                       uint32_t height,
                       const std::vector<VkImageView>& attachments);
@@ -24,7 +23,7 @@ class VulkanFramebuffer {
     [[nodiscard]] VkFramebuffer handle() const { return m_framebuffer; }
 
   private:
-    VkFramebuffer m_framebuffer;
+    VkFramebuffer m_framebuffer{VK_NULL_HANDLE};
 
     uint32_t m_width;
     uint32_t m_height;

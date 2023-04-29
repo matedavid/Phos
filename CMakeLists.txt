@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Create executable
 add_executable(${PROJECT_NAME})
 
-# target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
+target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
@@ -18,6 +18,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/core/window.cpp
         src/core/glfw_window.cpp
 
+        src/renderer/vulkan_context.cpp
         src/renderer/vulkan_instance.cpp
         src/renderer/vulkan_physical_device.cpp
         src/renderer/vulkan_device.cpp
@@ -36,7 +37,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/vulkan_descriptors.cpp
         src/renderer/vulkan_utils.cpp
 
-        src/renderer/vulkan_context.cpp
+        src/renderer/vulkan_renderer.cpp
 
         src/main.cpp
         )
@@ -60,7 +61,8 @@ find_package(Vulkan REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
 
 # stb
-target_include_directories(${PROJECT_NAME} PRIVATE vendor/stb/)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb/)
+target_link_libraries(${PROJECT_NAME} PRIVATE stb)
 
 # spdlog
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog)

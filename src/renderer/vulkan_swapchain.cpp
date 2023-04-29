@@ -4,13 +4,12 @@
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_render_pass.h"
 #include "renderer/vulkan_framebuffer.h"
+#include "renderer/vulkan_context.h"
 
-VulkanSwapchain::VulkanSwapchain(std::shared_ptr<VulkanDevice> device,
-                                 VkSurfaceKHR surface,
+VulkanSwapchain::VulkanSwapchain(VkSurfaceKHR surface,
                                  std::shared_ptr<Window> window,
                                  std::shared_ptr<VulkanRenderPass> render_pass)
-      : m_device(std::move(device)), m_surface(surface), m_window(std::move(window)),
-        m_render_pass(std::move(render_pass)) {
+      : m_surface(surface), m_window(std::move(window)), m_render_pass(std::move(render_pass)) {
     // Create swapchain
     create();
     // Retrieve swapchain images
@@ -25,19 +24,19 @@ VulkanSwapchain::~VulkanSwapchain() {
 
 void VulkanSwapchain::acquire_next_image(VkSemaphore semaphore) {
     const auto result = vkAcquireNextImageKHR(
-        m_device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_current_image_idx);
+        VulkanContext::device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_current_image_idx);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         recreate();
         VK_CHECK(vkAcquireNextImageKHR(
-            m_device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_current_image_idx))
+            VulkanContext::device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_current_image_idx))
     } else if (result != VK_SUBOPTIMAL_KHR) {
         VK_CHECK(result)
     }
 }
 
 void VulkanSwapchain::recreate() {
-    vkDeviceWaitIdle(m_device->handle());
+    vkDeviceWaitIdle(VulkanContext::device->handle());
     cleanup();
 
     // Create swapchain
@@ -52,7 +51,7 @@ void VulkanSwapchain::create() {
     m_swapchain_info = get_swapchain_information();
 
     VulkanPhysicalDevice::QueueFamilies queue_families =
-        m_device->physical_device().get_queue_families(VulkanPhysicalDevice::Requirements{
+        VulkanContext::device->physical_device().get_queue_families(VulkanPhysicalDevice::Requirements{
             .graphics = true,
             .presentation = true,
             .surface = m_surface,
@@ -86,7 +85,7 @@ void VulkanSwapchain::create() {
     create_info.clipped = VK_TRUE;
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    VK_CHECK(vkCreateSwapchainKHR(m_device->handle(), &create_info, nullptr, &m_swapchain))
+    VK_CHECK(vkCreateSwapchainKHR(VulkanContext::device->handle(), &create_info, nullptr, &m_swapchain))
 }
 
 void VulkanSwapchain::cleanup() {
@@ -95,22 +94,22 @@ void VulkanSwapchain::cleanup() {
 
     // Destroy image views
     for (const auto& image_view : m_image_views) {
-        vkDestroyImageView(m_device->handle(), image_view, nullptr);
+        vkDestroyImageView(VulkanContext::device->handle(), image_view, nullptr);
     }
 
     // Clear images
     m_images.clear();
 
     // Destroy swapchain
-    vkDestroySwapchainKHR(m_device->handle(), m_swapchain, nullptr);
+    vkDestroySwapchainKHR(VulkanContext::device->handle(), m_swapchain, nullptr);
 }
 
 VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information() const {
     SwapchainInformation info{};
 
     // Capabilities
-    VK_CHECK(
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_device->physical_device().handle(), m_surface, &info.capabilities))
+    VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+        VulkanContext::device->physical_device().handle(), m_surface, &info.capabilities))
 
     // Extent
     if (info.capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
@@ -133,13 +132,13 @@ VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information
     // Surface formats
     uint32_t surface_format_count;
     VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
-        m_device->physical_device().handle(), m_surface, &surface_format_count, nullptr))
+        VulkanContext::device->physical_device().handle(), m_surface, &surface_format_count, nullptr))
 
     CORE_ASSERT(surface_format_count > 0, "No surface formats supported")
 
     std::vector<VkSurfaceFormatKHR> surface_formats(surface_format_count);
     VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
-        m_device->physical_device().handle(), m_surface, &surface_format_count, surface_formats.data()))
+        VulkanContext::device->physical_device().handle(), m_surface, &surface_format_count, surface_formats.data()))
 
     // TODO: Make surface format selection configurable?
     info.surface_format = surface_formats[0];
@@ -154,13 +153,13 @@ VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information
     // Present mode
     uint32_t present_mode_count;
     VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
-        m_device->physical_device().handle(), m_surface, &present_mode_count, nullptr))
+        VulkanContext::device->physical_device().handle(), m_surface, &present_mode_count, nullptr))
 
     CORE_ASSERT(present_mode_count > 0, "No present modes supported")
 
     std::vector<VkPresentModeKHR> present_modes(present_mode_count);
     VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
-        m_device->physical_device().handle(), m_surface, &present_mode_count, present_modes.data()))
+        VulkanContext::device->physical_device().handle(), m_surface, &present_mode_count, present_modes.data()))
 
     // TODO: Make present mode selection configurable?
     info.present_mode = present_modes[0];
@@ -178,10 +177,10 @@ VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information
 void VulkanSwapchain::retrieve_swapchain_images() {
     // Retrieve images
     uint32_t image_count;
-    vkGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, nullptr);
+    vkGetSwapchainImagesKHR(VulkanContext::device->handle(), m_swapchain, &image_count, nullptr);
 
     m_images.resize(image_count);
-    vkGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, m_images.data());
+    vkGetSwapchainImagesKHR(VulkanContext::device->handle(), m_swapchain, &image_count, m_images.data());
 
     // Create image views
     m_image_views.resize(image_count);
@@ -203,7 +202,7 @@ void VulkanSwapchain::retrieve_swapchain_images() {
         create_info.subresourceRange.baseArrayLayer = 0;
         create_info.subresourceRange.layerCount = 1;
 
-        VK_CHECK(vkCreateImageView(m_device->handle(), &create_info, nullptr, &m_image_views[idx]))
+        VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &create_info, nullptr, &m_image_views[idx]))
     }
 }
 
@@ -211,6 +210,6 @@ void VulkanSwapchain::create_framebuffers() {
     for (const auto& view : m_image_views) {
         const std::vector<VkImageView> attachments = {view};
         m_framebuffers.push_back(std::make_unique<VulkanFramebuffer>(
-            m_device, m_render_pass, m_swapchain_info.extent.width, m_swapchain_info.extent.height, attachments));
+            m_render_pass, m_swapchain_info.extent.width, m_swapchain_info.extent.height, attachments));
     }
 }
