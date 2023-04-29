@@ -1,6 +1,5 @@
 #include "vulkan_texture.h"
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include "renderer/vulkan_device.h"
