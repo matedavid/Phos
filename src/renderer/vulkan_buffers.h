@@ -21,11 +21,10 @@ class VulkanCommandBuffer;
 template <typename T>
 class VulkanVertexBuffer {
   public:
-    VulkanVertexBuffer(std::shared_ptr<VulkanDevice> device, const std::vector<T>& data) : m_device(std::move(device)) {
+    VulkanVertexBuffer(const std::vector<T>& data) {
         const VkDeviceSize size = data.size() * sizeof(T);
 
         const auto staging_buffer = VulkanBuffer{
-            m_device,
             size,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -33,8 +32,7 @@ class VulkanVertexBuffer {
 
         staging_buffer.copy_data(data.data());
 
-        m_buffer = std::make_unique<VulkanBuffer>(m_device,
-                                                  size,
+        m_buffer = std::make_unique<VulkanBuffer>(size,
                                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -59,8 +57,6 @@ class VulkanVertexBuffer {
   private:
     std::unique_ptr<VulkanBuffer> m_buffer;
     uint32_t m_size;
-
-    std::shared_ptr<VulkanDevice> m_device;
 };
 
 //
@@ -68,7 +64,7 @@ class VulkanVertexBuffer {
 //
 class VulkanIndexBuffer {
   public:
-    VulkanIndexBuffer(std::shared_ptr<VulkanDevice> device, const std::vector<uint32_t>& indices);
+    VulkanIndexBuffer(const std::vector<uint32_t>& indices);
     ~VulkanIndexBuffer() = default;
 
     void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;
@@ -79,8 +75,6 @@ class VulkanIndexBuffer {
   private:
     std::unique_ptr<VulkanBuffer> m_buffer;
     uint32_t m_count;
-
-    std::shared_ptr<VulkanDevice> m_device;
 };
 
 //
@@ -90,11 +84,10 @@ class VulkanIndexBuffer {
 template <typename T>
 class VulkanUniformBuffer {
   public:
-    explicit VulkanUniformBuffer(std::shared_ptr<VulkanDevice> device) : m_device(std::move(device)) {
+    explicit VulkanUniformBuffer() {
         m_size = sizeof(T);
         m_buffer =
-            std::make_unique<VulkanBuffer>(m_device,
-                                           m_size,
+            std::make_unique<VulkanBuffer>(m_size,
                                            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
@@ -113,6 +106,4 @@ class VulkanUniformBuffer {
 
     void* m_map_data{nullptr};
     uint32_t m_size;
-
-    std::shared_ptr<VulkanDevice> m_device;
 };

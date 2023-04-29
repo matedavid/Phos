@@ -6,9 +6,9 @@
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_buffer.h"
 #include "renderer/vulkan_image.h"
+#include "renderer/vulkan_context.h"
 
-VulkanTexture::VulkanTexture(std::shared_ptr<VulkanDevice> device, const std::string& path)
-      : m_device(std::move(device)) {
+VulkanTexture::VulkanTexture(const std::string& path) {
     // Load image
     int32_t width, height, channels;
     stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
@@ -21,7 +21,6 @@ VulkanTexture::VulkanTexture(std::shared_ptr<VulkanDevice> device, const std::st
     const VkDeviceSize image_size = width * height * 4;
 
     const auto staging_buffer = VulkanBuffer{
-        m_device,
         image_size,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -40,7 +39,7 @@ VulkanTexture::VulkanTexture(std::shared_ptr<VulkanDevice> device, const std::st
         .initial_layout = VK_IMAGE_LAYOUT_UNDEFINED,
         .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
     };
-    m_image = std::make_unique<VulkanImage>(m_device, description);
+    m_image = std::make_unique<VulkanImage>(description);
 
     // Transition image layout for copying
     m_image->transition_layout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -63,7 +62,7 @@ VulkanTexture::VulkanTexture(std::shared_ptr<VulkanDevice> device, const std::st
     view_info.subresourceRange.baseArrayLayer = 0;
     view_info.subresourceRange.layerCount = 1;
 
-    VK_CHECK(vkCreateImageView(m_device->handle(), &view_info, nullptr, &m_image_view))
+    VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &view_info, nullptr, &m_image_view))
 
     // Create sampler
     VkSamplerCreateInfo sampler_info{};
@@ -84,10 +83,10 @@ VulkanTexture::VulkanTexture(std::shared_ptr<VulkanDevice> device, const std::st
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    VK_CHECK(vkCreateSampler(m_device->handle(), &sampler_info, nullptr, &m_sampler))
+    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler))
 }
 
 VulkanTexture::~VulkanTexture() {
-    vkDestroySampler(m_device->handle(), m_sampler, nullptr);
-    vkDestroyImageView(m_device->handle(), m_image_view, nullptr);
+    vkDestroySampler(VulkanContext::device->handle(), m_sampler, nullptr);
+    vkDestroyImageView(VulkanContext::device->handle(), m_image_view, nullptr);
 }

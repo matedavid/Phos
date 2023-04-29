@@ -11,7 +11,7 @@ class VulkanImage;
 
 class VulkanTexture {
   public:
-    VulkanTexture(std::shared_ptr<VulkanDevice> device, const std::string& path);
+    explicit VulkanTexture(const std::string& path);
     ~VulkanTexture();
 
     [[nodiscard]] VkImageView image_view() const { return m_image_view; }
@@ -22,6 +22,4 @@ class VulkanTexture {
 
     VkImageView m_image_view{};
     VkSampler m_sampler{};
-
-    std::shared_ptr<VulkanDevice> m_device;
 };

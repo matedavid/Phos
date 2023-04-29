@@ -20,10 +20,7 @@ class VulkanShaderModule {
         Fragment
     };
 
-    VulkanShaderModule(const std::string& path,
-                       Stage stage,
-                       std::shared_ptr<VulkanDevice> device,
-                       std::shared_ptr<VulkanDescriptorLayoutCache> layout_cache);
+    VulkanShaderModule(const std::string& path, Stage stage, std::shared_ptr<VulkanDescriptorLayoutCache> layout_cache);
     ~VulkanShaderModule();
 
     [[nodiscard]] Stage get_stage() const { return m_stage; }
@@ -45,7 +42,6 @@ class VulkanShaderModule {
     VkShaderModule m_shader{};
     Stage m_stage;
 
-    std::shared_ptr<VulkanDevice> m_device;
     std::shared_ptr<VulkanDescriptorLayoutCache> m_layout_cache;
 
     std::optional<VkVertexInputBindingDescription> m_binding_description;

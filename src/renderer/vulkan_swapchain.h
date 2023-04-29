@@ -14,8 +14,7 @@ class Window;
 
 class VulkanSwapchain {
   public:
-    VulkanSwapchain(std::shared_ptr<VulkanDevice> device,
-                    VkSurfaceKHR surface,
+    VulkanSwapchain(VkSurfaceKHR surface,
                     std::shared_ptr<Window> window,
                     std::shared_ptr<VulkanRenderPass> render_pass);
     ~VulkanSwapchain();
@@ -49,7 +48,6 @@ class VulkanSwapchain {
     uint32_t m_current_image_idx;
 
     // Reference members
-    std::shared_ptr<VulkanDevice> m_device;
     VkSurfaceKHR m_surface;
     std::shared_ptr<Window> m_window;
     std::shared_ptr<VulkanRenderPass> m_render_pass;

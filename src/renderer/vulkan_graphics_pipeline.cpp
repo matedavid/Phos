@@ -6,9 +6,9 @@
 #include "renderer/vulkan_shader_module.h"
 #include "renderer/vulkan_render_pass.h"
 #include "renderer/vulkan_command_buffer.h"
+#include "renderer/vulkan_context.h"
 
-VulkanGraphicsPipeline::VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> device, const Description& description)
-      : m_device(std::move(device)) {
+VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     // Shaders
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
     for (const auto& shader : description.shader_modules) {
@@ -117,7 +117,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> dev
     pipeline_layout_create_info.pSetLayouts = descriptor_sets_layout.data();
     pipeline_layout_create_info.pushConstantRangeCount = 0;
 
-    VK_CHECK(vkCreatePipelineLayout(m_device->handle(), &pipeline_layout_create_info, nullptr, &m_pipeline_layout))
+    VK_CHECK(vkCreatePipelineLayout(
+        VulkanContext::device->handle(), &pipeline_layout_create_info, nullptr, &m_pipeline_layout))
 
     //
     // Create pipeline
@@ -139,15 +140,15 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(std::shared_ptr<VulkanDevice> dev
     create_info.renderPass = description.render_pass->handle();
     create_info.subpass = 0;
 
-    VK_CHECK(vkCreateGraphicsPipelines(m_device->handle(), nullptr, 1, &create_info, nullptr, &m_pipeline))
+    VK_CHECK(vkCreateGraphicsPipelines(VulkanContext::device->handle(), nullptr, 1, &create_info, nullptr, &m_pipeline))
 }
 
 VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
     // Destroy pipeline layout
-    vkDestroyPipelineLayout(m_device->handle(), m_pipeline_layout, nullptr);
+    vkDestroyPipelineLayout(VulkanContext::device->handle(), m_pipeline_layout, nullptr);
 
     // Destroy pipeline
-    vkDestroyPipeline(m_device->handle(), m_pipeline, nullptr);
+    vkDestroyPipeline(VulkanContext::device->handle(), m_pipeline, nullptr);
 }
 
 void VulkanGraphicsPipeline::bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const {

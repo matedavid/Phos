@@ -26,7 +26,7 @@ class VulkanDescriptorAllocator {
         };
     };
 
-    explicit VulkanDescriptorAllocator(std::shared_ptr<VulkanDevice> device);
+    VulkanDescriptorAllocator() = default;
     ~VulkanDescriptorAllocator();
 
     [[nodiscard]] bool allocate(VkDescriptorSetLayout layout, VkDescriptorSet& set);
@@ -40,14 +40,12 @@ class VulkanDescriptorAllocator {
     std::vector<VkDescriptorPool> m_used_pools;
     std::vector<VkDescriptorPool> m_free_pools;
 
-    std::shared_ptr<VulkanDevice> m_device;
-
     VkDescriptorPool grab_pool();
 };
 
 class VulkanDescriptorLayoutCache {
   public:
-    explicit VulkanDescriptorLayoutCache(std::shared_ptr<VulkanDevice> device);
+    VulkanDescriptorLayoutCache() = default;
     ~VulkanDescriptorLayoutCache();
 
     [[nodiscard]] VkDescriptorSetLayout create_descriptor_layout(const VkDescriptorSetLayoutCreateInfo& info);
@@ -65,14 +63,11 @@ class VulkanDescriptorLayoutCache {
     };
 
     std::unordered_map<DescriptorLayoutInfo, VkDescriptorSetLayout, DescriptorLayoutHash> m_layout_cache;
-
-    std::shared_ptr<VulkanDevice> m_device;
 };
 
 class VulkanDescriptorBuilder {
   public:
-    static VulkanDescriptorBuilder begin(std::shared_ptr<VulkanDevice> device,
-                                         std::shared_ptr<VulkanDescriptorLayoutCache> cache,
+    static VulkanDescriptorBuilder begin(std::shared_ptr<VulkanDescriptorLayoutCache> cache,
                                          std::shared_ptr<VulkanDescriptorAllocator> allocator);
 
     [[nodiscard]] VulkanDescriptorBuilder& bind_buffer(uint32_t binding,
@@ -91,8 +86,6 @@ class VulkanDescriptorBuilder {
   private:
     std::shared_ptr<VulkanDescriptorLayoutCache> m_cache;
     std::shared_ptr<VulkanDescriptorAllocator> m_allocator;
-
-    std::shared_ptr<VulkanDevice> m_device;
 
     std::vector<VkWriteDescriptorSet> writes;
     std::vector<VkDescriptorSetLayoutBinding> bindings;

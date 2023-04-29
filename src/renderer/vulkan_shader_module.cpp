@@ -9,6 +9,7 @@
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_utils.h"
 #include "renderer/vulkan_descriptors.h"
+#include "renderer/vulkan_context.h"
 
 #define SPIRV_REFLECT_CHECK(expression)             \
     if (expression != SPV_REFLECT_RESULT_SUCCESS) { \
@@ -17,9 +18,8 @@
 
 VulkanShaderModule::VulkanShaderModule(const std::string& path,
                                        Stage stage,
-                                       std::shared_ptr<VulkanDevice> device,
                                        std::shared_ptr<VulkanDescriptorLayoutCache> layout_cache)
-      : m_stage(stage), m_device(std::move(device)), m_layout_cache(std::move(layout_cache)) {
+      : m_stage(stage), m_layout_cache(std::move(layout_cache)) {
     const auto content = read_shader_file(path);
 
     VkShaderModuleCreateInfo create_info{};
@@ -27,7 +27,7 @@ VulkanShaderModule::VulkanShaderModule(const std::string& path,
     create_info.codeSize = content.size();
     create_info.pCode = reinterpret_cast<const uint32_t*>(content.data());
 
-    VK_CHECK(vkCreateShaderModule(m_device->handle(), &create_info, nullptr, &m_shader))
+    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &create_info, nullptr, &m_shader))
 
     // Spirv reflection
     SpvReflectShaderModule module;
@@ -49,7 +49,7 @@ VulkanShaderModule::VulkanShaderModule(const std::string& path,
 
 VulkanShaderModule::~VulkanShaderModule() {
     // Destroy shader module
-    vkDestroyShaderModule(m_device->handle(), m_shader, nullptr);
+    vkDestroyShaderModule(VulkanContext::device->handle(), m_shader, nullptr);
 }
 
 VkPipelineShaderStageCreateInfo VulkanShaderModule::get_shader_stage_create_info() const {

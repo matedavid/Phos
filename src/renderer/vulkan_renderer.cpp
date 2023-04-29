@@ -4,32 +4,29 @@
 
 VulkanRenderer::VulkanRenderer(const std::shared_ptr<Window>& window) {
     // From previous VulkanContext
-    const auto& m_device = VulkanContext::device;
+    m_graphics_queue = VulkanContext::device->get_graphics_queue();
+    m_presentation_queue = VulkanContext::device->get_presentation_queue();
 
-    m_graphics_queue = m_device->get_graphics_queue();
-    m_presentation_queue = m_device->get_presentation_queue();
-
-    m_layout_cache = std::make_shared<VulkanDescriptorLayoutCache>(m_device);
-    m_allocator = std::make_shared<VulkanDescriptorAllocator>(m_device);
+    m_layout_cache = std::make_shared<VulkanDescriptorLayoutCache>();
+    m_allocator = std::make_shared<VulkanDescriptorAllocator>();
 
     const auto vertex = std::make_shared<VulkanShaderModule>(
-        "../assets/shaders/vertex.spv", VulkanShaderModule::Stage::Vertex, m_device, m_layout_cache);
+        "../assets/shaders/vertex.spv", VulkanShaderModule::Stage::Vertex, m_layout_cache);
     const auto fragment = std::make_shared<VulkanShaderModule>(
-        "../assets/shaders/fragment.spv", VulkanShaderModule::Stage::Fragment, m_device, m_layout_cache);
+        "../assets/shaders/fragment.spv", VulkanShaderModule::Stage::Fragment, m_layout_cache);
 
-    m_render_pass = std::make_shared<VulkanRenderPass>(m_device);
+    m_render_pass = std::make_shared<VulkanRenderPass>();
 
     const auto pipeline_description = VulkanGraphicsPipeline::Description{
         .shader_modules = {vertex, fragment},
         .render_pass = m_render_pass,
     };
-    m_pipeline = std::make_shared<VulkanGraphicsPipeline>(m_device, pipeline_description);
+    m_pipeline = std::make_shared<VulkanGraphicsPipeline>(pipeline_description);
 
-    m_command_buffer = m_device->create_command_buffer(VulkanQueue::Type::Graphics);
+    m_command_buffer = VulkanContext::device->create_command_buffer(VulkanQueue::Type::Graphics);
 
     // Swapchain
-    m_swapchain =
-        std::make_shared<VulkanSwapchain>(m_device, VulkanContext::instance->get_surface(), window, m_render_pass);
+    m_swapchain = std::make_shared<VulkanSwapchain>(VulkanContext::instance->get_surface(), window, m_render_pass);
 
     // Synchronization
     VkSemaphoreCreateInfo semaphoreCreateInfo{};
@@ -39,9 +36,11 @@ VulkanRenderer::VulkanRenderer(const std::shared_ptr<Window>& window) {
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    VK_CHECK(vkCreateSemaphore(m_device->handle(), &semaphoreCreateInfo, nullptr, &image_available_semaphore))
-    VK_CHECK(vkCreateSemaphore(m_device->handle(), &semaphoreCreateInfo, nullptr, &render_finished_semaphore))
-    VK_CHECK(vkCreateFence(m_device->handle(), &fenceCreateInfo, nullptr, &in_flight_fence))
+    VK_CHECK(
+        vkCreateSemaphore(VulkanContext::device->handle(), &semaphoreCreateInfo, nullptr, &image_available_semaphore))
+    VK_CHECK(
+        vkCreateSemaphore(VulkanContext::device->handle(), &semaphoreCreateInfo, nullptr, &render_finished_semaphore))
+    VK_CHECK(vkCreateFence(VulkanContext::device->handle(), &fenceCreateInfo, nullptr, &in_flight_fence))
 
     // Vertex and Index buffers
     const std::vector<Vertex> data = {
@@ -51,18 +50,18 @@ VulkanRenderer::VulkanRenderer(const std::shared_ptr<Window>& window) {
         {.position = {0.5f, 0.5f, 0.0f}, .texture_coords = {1.0f, 1.0f}},
     };
 
-    m_vertex_buffer = std::make_unique<VulkanVertexBuffer<Vertex>>(m_device, data);
+    m_vertex_buffer = std::make_unique<VulkanVertexBuffer<Vertex>>(data);
 
     const std::vector<uint32_t> indices = {0, 2, 1, 1, 2, 3};
-    m_index_buffer = std::make_unique<VulkanIndexBuffer>(m_device, indices);
+    m_index_buffer = std::make_unique<VulkanIndexBuffer>(indices);
 
     // Texture
-    m_texture = std::make_unique<VulkanTexture>(m_device, "../assets/texture.jpg");
+    m_texture = std::make_unique<VulkanTexture>("../assets/texture.jpg");
 
     // Uniform buffer stuff
     // =======================
 
-    m_color_ubo = std::make_shared<VulkanUniformBuffer<ColorUniformBuffer>>(m_device);
+    m_color_ubo = std::make_shared<VulkanUniformBuffer<ColorUniformBuffer>>();
 
     VkDescriptorBufferInfo color_info{};
     color_info.buffer = m_color_ubo->handle();
@@ -75,7 +74,7 @@ VulkanRenderer::VulkanRenderer(const std::shared_ptr<Window>& window) {
     image_info.sampler = m_texture->sampler();
 
     bool result =
-        VulkanDescriptorBuilder::begin(m_device, m_layout_cache, m_allocator)
+        VulkanDescriptorBuilder::begin(m_layout_cache, m_allocator)
             .bind_buffer(0, color_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .bind_image(1, image_info, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .build(m_uniform_buffer_set);
@@ -94,8 +93,6 @@ VulkanRenderer::~VulkanRenderer() {
 
 void VulkanRenderer::update() {
     vkWaitForFences(VulkanContext::device->handle(), 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
-
-    // const auto next_image = m_swapchain->acquire_next_image(image_available_semaphore);
 
     m_swapchain->acquire_next_image(image_available_semaphore);
     const auto& swapchain_framebuffer = m_swapchain->get_current_framebuffer();

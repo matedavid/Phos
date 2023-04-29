@@ -14,8 +14,7 @@ class VulkanImage;
 
 class VulkanBuffer {
   public:
-    VulkanBuffer(std::shared_ptr<VulkanDevice> device,
-                 VkDeviceSize size,
+    VulkanBuffer(VkDeviceSize size,
                  VkBufferUsageFlags usage,
                  VkMemoryPropertyFlags properties);
     ~VulkanBuffer();
@@ -34,6 +33,4 @@ class VulkanBuffer {
     VkDeviceMemory m_memory{};
 
     VkDeviceSize m_size;
-
-    std::shared_ptr<VulkanDevice> m_device;
 };
