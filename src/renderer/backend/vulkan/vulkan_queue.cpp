@@ -2,8 +2,8 @@
 
 #include <array>
 
-#include "renderer/vulkan_command_buffer.h"
-#include "renderer/vulkan_swapchain.h"
+#include "renderer/backend/vulkan/vulkan_command_buffer.h"
+#include "renderer/backend/vulkan/vulkan_swapchain.h"
 
 namespace Phos {
 

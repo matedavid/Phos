@@ -2,10 +2,10 @@
 
 #include <stb_image.h>
 
-#include "renderer/vulkan_device.h"
-#include "renderer/vulkan_buffer.h"
-#include "renderer/vulkan_image.h"
-#include "renderer/vulkan_context.h"
+#include "renderer/backend/vulkan/vulkan_device.h"
+#include "renderer/backend/vulkan/vulkan_buffer.h"
+#include "renderer/backend/vulkan/vulkan_image.h"
+#include "renderer/backend/vulkan/vulkan_context.h"
 
 namespace Phos {
 

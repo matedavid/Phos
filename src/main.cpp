@@ -1,8 +1,8 @@
 #include <memory>
 
 #include "core/window.h"
-#include "renderer/vulkan_renderer.h"
-#include "renderer/vulkan_context.h"
+#include "renderer/backend/vulkan/vulkan_renderer.h"
+#include "renderer/backend/vulkan/vulkan_context.h"
 
 constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 960;

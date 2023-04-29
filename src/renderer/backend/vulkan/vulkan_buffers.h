@@ -7,9 +7,9 @@
 #include <memory>
 #include <optional>
 
-#include "renderer/vulkan_device.h"
-#include "renderer/vulkan_command_buffer.h"
-#include "renderer/vulkan_buffer.h"
+#include "renderer/backend/vulkan/vulkan_device.h"
+#include "renderer/backend/vulkan/vulkan_command_buffer.h"
+#include "renderer/backend/vulkan/vulkan_buffer.h"
 
 namespace Phos {
 

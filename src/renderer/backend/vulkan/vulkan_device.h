@@ -9,9 +9,9 @@
 #include <string_view>
 #include <functional>
 
-#include "renderer/vulkan_physical_device.h"
-#include "renderer/vulkan_queue.h"
-#include "renderer/vulkan_command_pool.h"
+#include "renderer/backend/vulkan/vulkan_physical_device.h"
+#include "renderer/backend/vulkan/vulkan_queue.h"
+#include "renderer/backend/vulkan/vulkan_command_pool.h"
 
 namespace Phos {
 

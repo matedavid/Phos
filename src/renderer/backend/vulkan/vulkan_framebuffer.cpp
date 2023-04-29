@@ -1,8 +1,8 @@
 #include "vulkan_framebuffer.h"
 
-#include "renderer/vulkan_device.h"
-#include "renderer/vulkan_render_pass.h"
-#include "renderer/vulkan_context.h"
+#include "renderer/backend/vulkan/vulkan_device.h"
+#include "renderer/backend/vulkan/vulkan_render_pass.h"
+#include "renderer/backend/vulkan/vulkan_context.h"
 
 namespace Phos {
 

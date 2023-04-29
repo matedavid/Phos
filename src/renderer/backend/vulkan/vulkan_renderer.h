@@ -5,20 +5,20 @@
 #include <memory>
 #include <glm/glm.hpp>
 
-#include "renderer/vulkan_instance.h"
-#include "renderer/vulkan_physical_device.h"
-#include "renderer/vulkan_swapchain.h"
-#include "renderer/vulkan_device.h"
-#include "renderer/vulkan_render_pass.h"
-#include "renderer/vulkan_graphics_pipeline.h"
-#include "renderer/vulkan_framebuffer.h"
-#include "renderer/vulkan_command_buffer.h"
-#include "renderer/vulkan_command_pool.h"
-#include "renderer/vulkan_buffers.h"
-#include "renderer/vulkan_queue.h"
-#include "renderer/vulkan_descriptors.h"
-#include "renderer/vulkan_texture.h"
-#include "renderer/vulkan_shader_module.h"
+#include "renderer/backend/vulkan/vulkan_instance.h"
+#include "renderer/backend/vulkan/vulkan_physical_device.h"
+#include "renderer/backend/vulkan/vulkan_swapchain.h"
+#include "renderer/backend/vulkan/vulkan_device.h"
+#include "renderer/backend/vulkan/vulkan_render_pass.h"
+#include "renderer/backend/vulkan/vulkan_graphics_pipeline.h"
+#include "renderer/backend/vulkan/vulkan_framebuffer.h"
+#include "renderer/backend/vulkan/vulkan_command_buffer.h"
+#include "renderer/backend/vulkan/vulkan_command_pool.h"
+#include "renderer/backend/vulkan/vulkan_buffers.h"
+#include "renderer/backend/vulkan/vulkan_queue.h"
+#include "renderer/backend/vulkan/vulkan_descriptors.h"
+#include "renderer/backend/vulkan/vulkan_texture.h"
+#include "renderer/backend/vulkan/vulkan_shader_module.h"
 
 namespace Phos {
 

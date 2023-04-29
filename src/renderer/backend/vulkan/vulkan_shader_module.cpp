@@ -6,10 +6,10 @@
 #include <spirv_reflect.h>
 #include <vulkan/vk_format_utils.h>
 
-#include "renderer/vulkan_device.h"
-#include "renderer/vulkan_utils.h"
-#include "renderer/vulkan_descriptors.h"
-#include "renderer/vulkan_context.h"
+#include "renderer/backend/vulkan/vulkan_device.h"
+#include "renderer/backend/vulkan/vulkan_utils.h"
+#include "renderer/backend/vulkan/vulkan_descriptors.h"
+#include "renderer/backend/vulkan/vulkan_context.h"
 
 namespace Phos {
 

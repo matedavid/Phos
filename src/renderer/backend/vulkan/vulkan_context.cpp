@@ -1,9 +1,9 @@
 #include "vulkan_context.h"
 
 #include "core/window.h"
-#include "renderer/vulkan_instance.h"
-#include "renderer/vulkan_device.h"
-#include "renderer/vulkan_descriptors.h"
+#include "renderer/backend/vulkan/vulkan_instance.h"
+#include "renderer/backend/vulkan/vulkan_device.h"
+#include "renderer/backend/vulkan/vulkan_descriptors.h"
 
 namespace Phos {
 

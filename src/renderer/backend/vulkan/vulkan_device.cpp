@@ -3,9 +3,9 @@
 #include <optional>
 #include <ranges>
 
-#include "renderer/vulkan_instance.h"
-#include "renderer/vulkan_queue.h"
-#include "renderer/vulkan_command_buffer.h"
+#include "renderer/backend/vulkan/vulkan_instance.h"
+#include "renderer/backend/vulkan/vulkan_queue.h"
+#include "renderer/backend/vulkan/vulkan_command_buffer.h"
 
 namespace Phos {
 
