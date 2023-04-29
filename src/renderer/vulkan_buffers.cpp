@@ -1,5 +1,7 @@
 #include "vulkan_buffers.h"
 
+namespace Phos {
+
 //
 // Index Buffer
 //
@@ -23,3 +25,5 @@ VulkanIndexBuffer::VulkanIndexBuffer(const std::vector<uint32_t>& indices) : m_c
 void VulkanIndexBuffer::bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const {
     vkCmdBindIndexBuffer(command_buffer->handle(), m_buffer->handle(), 0, VK_INDEX_TYPE_UINT32);
 }
+
+} // namespace Phos

@@ -5,11 +5,13 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+namespace Phos {
+
 GLFWWindow::GLFWWindow(uint32_t width, uint32_t height) {
-    CORE_ASSERT(glfwInit(), "Failed to initialize GLFW")
+    PS_ASSERT(glfwInit(), "Failed to initialize GLFW")
     if (!glfwVulkanSupported()) {
         glfwTerminate();
-        CORE_FAIL("GLFW does not support vulkan");
+        PS_FAIL("GLFW does not support vulkan");
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -57,5 +59,7 @@ std::vector<const char*> GLFWWindow::get_vulkan_instance_extensions() const {
 VkResult GLFWWindow::create_surface(const VkInstance& instance, VkSurfaceKHR& surface) const {
     return glfwCreateWindowSurface(instance, m_window, nullptr, &surface);
 }
+
+} // namespace Phos
 
 #endif

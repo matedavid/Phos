@@ -8,11 +8,11 @@ constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 960;
 
 int main() {
-    auto window = std::make_shared<Window>(WIDTH, HEIGHT);
+    auto window = std::make_shared<Phos::Window>(WIDTH, HEIGHT);
 
-    VulkanContext::init(window);
+    Phos::VulkanContext::init(window);
 
-    auto* renderer = new VulkanRenderer(window);
+    auto* renderer = new Phos::VulkanRenderer(window);
 
     while (!window->should_close()) {
         renderer->update();
@@ -22,7 +22,7 @@ int main() {
 
     delete renderer;
 
-    VulkanContext::free();
+    Phos::VulkanContext::free();
 
     return 0;
 }

@@ -16,6 +16,8 @@
 // Forward declarations
 struct GLFWwindow;
 
+namespace Phos {
+
 class INativeWindow {
   public:
     virtual ~INativeWindow() {}
@@ -51,3 +53,5 @@ class Window {
   private:
     std::unique_ptr<INativeWindow> m_window;
 };
+
+} // namespace Phos

@@ -3,6 +3,8 @@
 #include "renderer/vulkan_physical_device.h"
 #include "core/window.h"
 
+namespace Phos {
+
 VulkanInstance::VulkanInstance(const std::shared_ptr<Window>& window) {
     const auto& required_extensions = window->get_vulkan_instance_extensions();
 
@@ -15,7 +17,7 @@ VulkanInstance::VulkanInstance(const std::shared_ptr<Window>& window) {
     application_info.apiVersion = VK_API_VERSION_1_3;
 
     const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
-    CORE_ASSERT(validation_layers_available(validation_layers), "Validation layers are not available")
+    PS_ASSERT(validation_layers_available(validation_layers), "Validation layers are not available")
 
     VkInstanceCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -61,8 +63,11 @@ bool VulkanInstance::validation_layers_available(const std::vector<const char*>&
     return std::all_of(validation_layers.begin(), validation_layers.end(), [&](const std::string_view& validation) {
         for (const auto& property : layers) {
             const std::string layer_name = property.layerName;
-            if (validation == layer_name) return true;
+            if (validation == layer_name)
+                return true;
         }
         return false;
     });
 }
+
+} // namespace Phos

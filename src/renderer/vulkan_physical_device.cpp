@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <string>
 
+namespace Phos {
+
 VulkanPhysicalDevice::VulkanPhysicalDevice(VkPhysicalDevice physical_device) : m_physical_device(physical_device) {}
 
 bool VulkanPhysicalDevice::is_suitable(const Requirements& requirements) const {
@@ -19,8 +21,8 @@ bool VulkanPhysicalDevice::is_suitable(const Requirements& requirements) const {
     }
 
     // Contains queue families
-    CORE_ASSERT(!requirements.presentation || requirements.surface != VK_NULL_HANDLE,
-                "Surface required to test presentation queue support")
+    PS_ASSERT(!requirements.presentation || requirements.surface != VK_NULL_HANDLE,
+              "Surface required to test presentation queue support")
 
     bool graphics = !requirements.graphics;
     bool compute = !requirements.compute;
@@ -134,3 +136,5 @@ VkPhysicalDeviceMemoryProperties VulkanPhysicalDevice::get_memory_properties() c
 
     return memory_properties;
 }
+
+} // namespace Phos

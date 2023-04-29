@@ -20,6 +20,8 @@
 #include "renderer/vulkan_texture.h"
 #include "renderer/vulkan_shader_module.h"
 
+namespace Phos {
+
 // Forward declarations
 class Window;
 
@@ -62,3 +64,5 @@ class VulkanRenderer {
     VkDescriptorSet m_uniform_buffer_set{VK_NULL_HANDLE};
     std::shared_ptr<VulkanUniformBuffer<ColorUniformBuffer>> m_color_ubo;
 };
+
+} // namespace Phos

@@ -4,6 +4,8 @@
 #include "renderer/vulkan_render_pass.h"
 #include "renderer/vulkan_context.h"
 
+namespace Phos {
+
 VulkanFramebuffer::VulkanFramebuffer(const std::shared_ptr<VulkanRenderPass>& render_pass,
                                      uint32_t width,
                                      uint32_t height,
@@ -24,3 +26,5 @@ VulkanFramebuffer::VulkanFramebuffer(const std::shared_ptr<VulkanRenderPass>& re
 VulkanFramebuffer::~VulkanFramebuffer() {
     vkDestroyFramebuffer(VulkanContext::device->handle(), m_framebuffer, nullptr);
 }
+
+} // namespace Phos

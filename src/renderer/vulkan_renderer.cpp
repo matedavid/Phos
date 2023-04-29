@@ -2,6 +2,8 @@
 
 #include "renderer/vulkan_context.h"
 
+namespace Phos {
+
 VulkanRenderer::VulkanRenderer(const std::shared_ptr<Window>& window) {
     // From previous VulkanContext
     m_graphics_queue = VulkanContext::device->get_graphics_queue();
@@ -78,7 +80,7 @@ VulkanRenderer::VulkanRenderer(const std::shared_ptr<Window>& window) {
             .bind_image(1, image_info, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .build(m_uniform_buffer_set);
 
-    CORE_ASSERT(result, "Error creating descriptor set")
+    PS_ASSERT(result, "Error creating descriptor set")
     // =======================
 }
 
@@ -170,6 +172,8 @@ void VulkanRenderer::update() {
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         m_swapchain->recreate();
     } else if (result != VK_SUCCESS) {
-        CORE_FAIL("Failed to present image")
+        PS_FAIL("Failed to present image")
     }
 }
+
+} // namespace Phos

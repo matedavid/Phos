@@ -5,6 +5,8 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
+namespace Phos {
+
 // Forward declarations
 class VulkanPhysicalDevice;
 class Window;
@@ -25,3 +27,5 @@ class VulkanInstance {
 
     bool validation_layers_available(const std::vector<const char*>& validation_layers);
 };
+
+} // namespace Phos

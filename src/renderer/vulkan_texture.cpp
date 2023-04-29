@@ -7,13 +7,15 @@
 #include "renderer/vulkan_image.h"
 #include "renderer/vulkan_context.h"
 
+namespace Phos {
+
 VulkanTexture::VulkanTexture(const std::string& path) {
     // Load image
     int32_t width, height, channels;
     stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 
     if (!pixels) {
-        CORE_ERROR("Failed to load image: {}", path)
+        PS_ERROR("Failed to load image: {}", path)
         return;
     }
 
@@ -89,3 +91,5 @@ VulkanTexture::~VulkanTexture() {
     vkDestroySampler(VulkanContext::device->handle(), m_sampler, nullptr);
     vkDestroyImageView(VulkanContext::device->handle(), m_image_view, nullptr);
 }
+
+} // namespace Phos

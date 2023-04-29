@@ -5,6 +5,8 @@
 #include <vulkan/vulkan.h>
 #include <functional>
 
+namespace Phos {
+
 class VulkanCommandBuffer {
   public:
     explicit VulkanCommandBuffer(VkCommandBuffer command_buffer);
@@ -21,3 +23,5 @@ class VulkanCommandBuffer {
     void begin(bool one_time = false) const;
     void end() const;
 };
+
+} // namespace Phos

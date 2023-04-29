@@ -6,6 +6,8 @@
 #include <memory>
 #include <vector>
 
+namespace Phos {
+
 // Forward declarations
 class VulkanDevice;
 class VulkanFramebuffer;
@@ -60,3 +62,5 @@ class VulkanSwapchain {
     void retrieve_swapchain_images();
     void create_framebuffers();
 };
+
+} // namespace Phos

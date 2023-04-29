@@ -4,6 +4,8 @@
 #include "renderer/vulkan_command_buffer.h"
 #include "renderer/vulkan_context.h"
 
+namespace Phos {
+
 VulkanImage::VulkanImage(const Description& description) {
     VkImageCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -30,7 +32,7 @@ VulkanImage::VulkanImage(const Description& description) {
 
     const auto memory_type_index = VulkanContext::device->physical_device().find_memory_type(
         memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    CORE_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate image")
+    PS_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate image")
 
     VkMemoryAllocateInfo allocate_info{};
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -81,10 +83,12 @@ void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_
                 source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
                 destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
             } else {
-                CORE_FAIL("Unsupported layout transition")
+                PS_FAIL("Unsupported layout transition")
             }
 
             vkCmdPipelineBarrier(
                 command_buffer.handle(), source_stage, destination_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         });
 }
+
+} // namespace Phos

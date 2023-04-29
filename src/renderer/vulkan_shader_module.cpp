@@ -11,9 +11,11 @@
 #include "renderer/vulkan_descriptors.h"
 #include "renderer/vulkan_context.h"
 
+namespace Phos {
+
 #define SPIRV_REFLECT_CHECK(expression)             \
     if (expression != SPV_REFLECT_RESULT_SUCCESS) { \
-        CORE_FAIL("Spirv-reflect call failed");     \
+        PS_FAIL("Spirv-reflect call failed");       \
     }
 
 VulkanShaderModule::VulkanShaderModule(const std::string& path, Stage stage) : m_stage(stage) {
@@ -31,8 +33,8 @@ VulkanShaderModule::VulkanShaderModule(const std::string& path, Stage stage) : m
     SPIRV_REFLECT_CHECK(
         spvReflectCreateShaderModule(content.size(), reinterpret_cast<const uint32_t*>(content.data()), &module))
 
-    CORE_ASSERT(static_cast<VkShaderStageFlagBits>(module.shader_stage) == get_vulkan_stage(m_stage),
-                "Stage does not match");
+    PS_ASSERT(static_cast<VkShaderStageFlagBits>(module.shader_stage) == get_vulkan_stage(m_stage),
+              "Stage does not match");
 
     // Retrieve SPIR-V info
     if (m_stage == Stage::Vertex)
@@ -61,7 +63,7 @@ VkPipelineShaderStageCreateInfo VulkanShaderModule::get_shader_stage_create_info
 
 std::vector<char> VulkanShaderModule::read_shader_file(const std::string& path) const {
     std::ifstream file(path, std::ios::ate | std::ios::binary);
-    CORE_ASSERT(file.is_open(), "Failed to open shader module file: {}", path)
+    PS_ASSERT(file.is_open(), "Failed to open shader module file: {}", path)
 
     const auto size = (uint32_t)file.tellg();
     std::vector<char> content(size);
@@ -130,7 +132,7 @@ void VulkanShaderModule::retrieve_descriptor_sets_info(const SpvReflectShaderMod
     std::vector<SpvReflectDescriptorSet*> descriptor_sets(descriptor_sets_count);
     SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&module, &descriptor_sets_count, descriptor_sets.data()))
 
-    CORE_INFO("Reading {} descriptor sets", descriptor_sets_count)
+    PS_INFO("Reading {} descriptor sets", descriptor_sets_count)
 
     for (const auto* set : descriptor_sets) {
         VkDescriptorSetLayoutCreateInfo descriptor_set_create_info{};
@@ -161,8 +163,10 @@ void VulkanShaderModule::retrieve_descriptor_sets_info(const SpvReflectShaderMod
 
         const auto layout =
             VulkanContext::descriptor_layout_cache->create_descriptor_layout(descriptor_set_create_info);
-        CORE_ASSERT(layout != VK_NULL_HANDLE, "Layout has null")
+        PS_ASSERT(layout != VK_NULL_HANDLE, "Layout has null")
 
         m_descriptor_sets_layout.push_back(layout);
     }
 }
+
+} // namespace Phos

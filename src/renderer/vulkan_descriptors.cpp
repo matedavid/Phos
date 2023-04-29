@@ -6,6 +6,8 @@
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_context.h"
 
+namespace Phos {
+
 //
 // DescriptorAllocator
 //
@@ -283,3 +285,5 @@ bool VulkanDescriptorBuilder::build(VkDescriptorSet& set) {
     VkDescriptorSetLayout layout;
     return build(set, layout);
 }
+
+} // namespace Phos

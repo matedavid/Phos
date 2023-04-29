@@ -6,6 +6,8 @@
 #include "renderer/vulkan_framebuffer.h"
 #include "renderer/vulkan_context.h"
 
+namespace Phos {
+
 VulkanSwapchain::VulkanSwapchain(VkSurfaceKHR surface,
                                  std::shared_ptr<Window> window,
                                  std::shared_ptr<VulkanRenderPass> render_pass)
@@ -134,7 +136,7 @@ VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information
     VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
         VulkanContext::device->physical_device().handle(), m_surface, &surface_format_count, nullptr))
 
-    CORE_ASSERT(surface_format_count > 0, "No surface formats supported")
+    PS_ASSERT(surface_format_count > 0, "No surface formats supported")
 
     std::vector<VkSurfaceFormatKHR> surface_formats(surface_format_count);
     VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
@@ -155,7 +157,7 @@ VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information
     VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
         VulkanContext::device->physical_device().handle(), m_surface, &present_mode_count, nullptr))
 
-    CORE_ASSERT(present_mode_count > 0, "No present modes supported")
+    PS_ASSERT(present_mode_count > 0, "No present modes supported")
 
     std::vector<VkPresentModeKHR> present_modes(present_mode_count);
     VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
@@ -213,3 +215,5 @@ void VulkanSwapchain::create_framebuffers() {
             m_render_pass, m_swapchain_info.extent.width, m_swapchain_info.extent.height, attachments));
     }
 }
+
+} // namespace Phos

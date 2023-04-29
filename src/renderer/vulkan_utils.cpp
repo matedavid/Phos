@@ -2,6 +2,8 @@
 
 #include <map>
 
+namespace Phos {
+
 struct VULKAN_FORMAT_INFO {
     uint32_t size;
     uint32_t channel_count;
@@ -211,3 +213,5 @@ uint32_t VulkanUtils::get_format_size(VkFormat format) {
     }
     return 0;
 }
+
+} // namespace Phos

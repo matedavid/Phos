@@ -2,6 +2,8 @@
 
 #include "renderer/vulkan_command_buffer.h"
 
+namespace Phos {
+
 VulkanCommandPool::VulkanCommandPool(VkDevice raw_device, uint32_t queue_family)
       : m_queue_family(queue_family), m_raw_device(raw_device) {
     VkCommandPoolCreateInfo create_info{};
@@ -38,3 +40,5 @@ void VulkanCommandPool::free_command_buffer(const std::shared_ptr<VulkanCommandB
     const std::array<VkCommandBuffer, 1> command_buffers = {command_buffer->handle()};
     vkFreeCommandBuffers(m_raw_device, m_command_pool, 1, command_buffers.data());
 }
+
+} // namespace Phos

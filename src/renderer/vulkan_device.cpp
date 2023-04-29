@@ -7,6 +7,8 @@
 #include "renderer/vulkan_queue.h"
 #include "renderer/vulkan_command_buffer.h"
 
+namespace Phos {
+
 VulkanDevice::VulkanDevice(const std::unique_ptr<VulkanInstance>& instance,
                            const VulkanPhysicalDevice::Requirements& requirements)
       : m_physical_device(select_physical_device(instance, requirements)) {
@@ -91,10 +93,10 @@ VulkanDevice::~VulkanDevice() {
 std::shared_ptr<VulkanCommandBuffer> VulkanDevice::create_command_buffer(VulkanQueue::Type type) const {
     switch (type) {
     case VulkanQueue::Type::Graphics:
-        CORE_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
+        PS_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
         return m_graphics_command_pool->allocate(1)[0];
     default:
-        CORE_FAIL("Not implemented")
+        PS_FAIL("Not implemented")
     }
 }
 
@@ -102,11 +104,11 @@ void VulkanDevice::free_command_buffer(const std::shared_ptr<VulkanCommandBuffer
                                        VulkanQueue::Type type) const {
     switch (type) {
     case VulkanQueue::Type::Graphics:
-        CORE_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
+        PS_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
         m_graphics_command_pool->free_command_buffer(command_buffer);
         break;
     default:
-        CORE_FAIL("Not implemented")
+        PS_FAIL("Not implemented")
     }
 }
 
@@ -135,10 +137,10 @@ void VulkanDevice::single_time_command_buffer(VulkanQueue::Type type,
 const std::shared_ptr<VulkanQueue>& VulkanDevice::get_queue_from_type(VulkanQueue::Type type) const {
     switch (type) {
     case VulkanQueue::Type::Graphics:
-        CORE_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
+        PS_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
         return m_graphics_queue;
     default:
-        CORE_FAIL("Not implemented")
+        PS_FAIL("Not implemented")
     }
 }
 
@@ -174,7 +176,9 @@ VulkanPhysicalDevice VulkanDevice::select_physical_device(const std::unique_ptr<
         }
     }
 
-    CORE_ASSERT(max_device.has_value(), "There are no suitable devices")
+    PS_ASSERT(max_device.has_value(), "There are no suitable devices")
 
     return max_device.value();
 }
+
+} // namespace Phos

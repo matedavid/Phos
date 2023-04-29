@@ -5,6 +5,8 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 
+namespace Phos {
+
 // Forward declarations
 class VulkanCommandBuffer;
 
@@ -25,3 +27,5 @@ class VulkanCommandPool {
 
     VkDevice m_raw_device{VK_NULL_HANDLE};
 };
+
+} // namespace Phos

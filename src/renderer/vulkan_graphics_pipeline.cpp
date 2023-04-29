@@ -8,6 +8,8 @@
 #include "renderer/vulkan_command_buffer.h"
 #include "renderer/vulkan_context.h"
 
+namespace Phos {
+
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     // Shaders
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
@@ -19,7 +21,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     const auto& iterator = std::ranges::find_if(
         description.shader_modules, [](const auto& s) { return s->get_stage() == VulkanShaderModule::Stage::Vertex; });
 
-    CORE_ASSERT(iterator != description.shader_modules.end(), "Pipeline must contain vertex shader");
+    PS_ASSERT(iterator != description.shader_modules.end(), "Pipeline must contain vertex shader");
     const auto& vertex_shader = iterator->get();
 
     const auto binding_description = vertex_shader->get_binding_description();
@@ -154,3 +156,5 @@ VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
 void VulkanGraphicsPipeline::bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const {
     vkCmdBindPipeline(command_buffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 }
+
+} // namespace Phos

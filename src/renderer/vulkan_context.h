@@ -5,6 +5,8 @@
 #include <glm/glm.hpp>
 #include <memory>
 
+namespace Phos {
+
 // Forward declarations
 class VulkanInstance;
 class VulkanDevice;
@@ -20,3 +22,5 @@ class VulkanContext {
     static void init(const std::shared_ptr<Window>& window);
     static void free();
 };
+
+} // namespace Phos

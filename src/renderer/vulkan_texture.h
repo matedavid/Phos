@@ -5,6 +5,8 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 
+namespace Phos {
+
 // Forward declarations
 class VulkanDevice;
 class VulkanImage;
@@ -23,3 +25,5 @@ class VulkanTexture {
     VkImageView m_image_view{};
     VkSampler m_sampler{};
 };
+
+} // namespace Phos

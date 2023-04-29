@@ -5,6 +5,8 @@
 #include "renderer/vulkan_command_buffer.h"
 #include "renderer/vulkan_context.h"
 
+namespace Phos {
+
 VulkanRenderPass::VulkanRenderPass() {
     // TODO: This should definitely be configurable
 
@@ -70,3 +72,5 @@ void VulkanRenderPass::begin(const VulkanCommandBuffer& command_buffer, const Vu
 void VulkanRenderPass::end(const VulkanCommandBuffer& command_buffer) {
     vkCmdEndRenderPass(command_buffer.handle());
 }
+
+} // namespace Phos

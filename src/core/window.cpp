@@ -4,6 +4,8 @@
 
 #include "core/glfw_window.h"
 
+namespace Phos {
+
 Window::Window(uint32_t width, uint32_t height) {
 #ifdef GLFW_WINDOW
     m_window = std::make_unique<GLFWWindow>(width, height);
@@ -37,3 +39,5 @@ uint32_t Window::get_height() const {
 NATIVE_WINDOW_TYPE Window::handle() const {
     return m_window->handle();
 }
+
+} // namespace Phos

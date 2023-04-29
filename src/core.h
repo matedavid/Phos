@@ -3,15 +3,19 @@
 #include <spdlog/spdlog.h>
 #include <cassert>
 
-#define CORE_INFO(...) spdlog::info(__VA_ARGS__);
-#define CORE_ERROR(...) spdlog::error(__VA_ARGS__);
+namespace Phos {
 
-#define CORE_ASSERT(condition, ...) \
+#define PS_INFO(...) spdlog::info(__VA_ARGS__);
+#define PS_ERROR(...) spdlog::error(__VA_ARGS__);
+
+#define PS_ASSERT(condition, ...) \
     if (!(condition)) {             \
-        CORE_ERROR(__VA_ARGS__)     \
+        PS_ERROR(__VA_ARGS__)       \
         assert(false);              \
     }
 
-#define CORE_FAIL(...)      \
-    CORE_ERROR(__VA_ARGS__) \
+#define PS_FAIL(...)    \
+    PS_ERROR(__VA_ARGS__) \
     assert(false);
+
+} // namespace Phos

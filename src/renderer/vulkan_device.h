@@ -13,6 +13,8 @@
 #include "renderer/vulkan_queue.h"
 #include "renderer/vulkan_command_pool.h"
 
+namespace Phos {
+
 // Forward declarations
 class VulkanInstance;
 class VulkanCommandBuffer;
@@ -30,11 +32,11 @@ class VulkanDevice {
                                     const std::function<void(const VulkanCommandBuffer&)>& func) const;
 
     [[nodiscard]] std::shared_ptr<VulkanQueue> get_graphics_queue() const {
-        CORE_ASSERT(m_graphics_queue != nullptr, "Graphics queue was not requested")
+        PS_ASSERT(m_graphics_queue != nullptr, "Graphics queue was not requested")
         return m_graphics_queue;
     }
     [[nodiscard]] std::shared_ptr<VulkanQueue> get_presentation_queue() const {
-        CORE_ASSERT(m_presentation_queue != nullptr, "Presentation queue was not requested")
+        PS_ASSERT(m_presentation_queue != nullptr, "Presentation queue was not requested")
         return m_presentation_queue;
     }
 
@@ -55,3 +57,5 @@ class VulkanDevice {
     [[nodiscard]] VulkanPhysicalDevice select_physical_device(const std::unique_ptr<VulkanInstance>& instance,
                                                               const VulkanPhysicalDevice::Requirements& reqs) const;
 };
+
+} // namespace Phos

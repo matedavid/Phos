@@ -5,6 +5,8 @@
 #include "renderer/vulkan_image.h"
 #include "renderer/vulkan_context.h"
 
+namespace Phos {
+
 VulkanBuffer::VulkanBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
       : m_size(size) {
     // Create buffer
@@ -22,7 +24,7 @@ VulkanBuffer::VulkanBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemory
 
     const auto memory_type_index =
         VulkanContext::device->physical_device().find_memory_type(memory_requirements.memoryTypeBits, properties);
-    CORE_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate buffer")
+    PS_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate buffer")
 
     VkMemoryAllocateInfo allocate_info{};
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -56,7 +58,7 @@ void VulkanBuffer::copy_data(const void* data) const {
 }
 
 void VulkanBuffer::copy_to_buffer(const VulkanBuffer& buffer) const {
-    CORE_ASSERT(m_size == buffer.m_size, "Size of buffers do not match")
+    PS_ASSERT(m_size == buffer.m_size, "Size of buffers do not match")
 
     // TODO: Maybe should use transfer queue instead of graphics
     VulkanContext::device->single_time_command_buffer(
@@ -91,3 +93,5 @@ void VulkanBuffer::copy_to_image(const VulkanImage& image) const {
                 command_buffer.handle(), m_buffer, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
         });
 }
+
+} // namespace Phos

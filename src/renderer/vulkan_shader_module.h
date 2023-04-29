@@ -9,9 +9,13 @@
 #include <unordered_map>
 
 // Forward declarations
+struct SpvReflectShaderModule;
+
+namespace Phos {
+
+// Forward declarations
 class VulkanDevice;
 class VulkanDescriptorLayoutCache;
-struct SpvReflectShaderModule;
 
 class VulkanShaderModule {
   public:
@@ -55,3 +59,5 @@ class VulkanShaderModule {
     void retrieve_vertex_input_info(const SpvReflectShaderModule& module);
     void retrieve_descriptor_sets_info(const SpvReflectShaderModule& module);
 };
+
+} // namespace Phos

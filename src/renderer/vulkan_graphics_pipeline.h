@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+namespace Phos {
+
 // Forward declarations
 class VulkanDevice;
 class VulkanShaderModule;
@@ -31,3 +33,5 @@ class VulkanGraphicsPipeline {
 
     std::shared_ptr<VulkanDevice> m_device;
 };
+
+} // namespace Phos

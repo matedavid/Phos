@@ -11,6 +11,8 @@
 #include "renderer/vulkan_command_buffer.h"
 #include "renderer/vulkan_buffer.h"
 
+namespace Phos {
+
 // Forward declarations
 class VulkanDevice;
 class VulkanCommandBuffer;
@@ -107,3 +109,5 @@ class VulkanUniformBuffer {
     void* m_map_data{nullptr};
     uint32_t m_size;
 };
+
+} // namespace Phos

@@ -9,6 +9,8 @@
 // Forward declarations
 struct GLFWwindow;
 
+namespace Phos {
+
 class GLFWWindow : public INativeWindow {
   public:
     GLFWWindow(uint32_t window, uint32_t height);
@@ -35,5 +37,7 @@ class GLFWWindow : public INativeWindow {
 
     WindowData m_data{};
 };
+
+} // namespace Phos
 
 #endif

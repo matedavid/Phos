@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+namespace Phos {
+
 // Forward declarations
 class VulkanCommandBuffer;
 class VulkanSwapchain;
@@ -31,3 +33,5 @@ class VulkanQueue {
   private:
     VkQueue m_queue;
 };
+
+} // namespace Phos

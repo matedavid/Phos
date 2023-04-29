@@ -6,6 +6,8 @@
 #include <vector>
 #include <optional>
 
+namespace Phos {
+
 class VulkanPhysicalDevice {
   public:
     struct Requirements {
@@ -44,3 +46,5 @@ class VulkanPhysicalDevice {
   private:
     VkPhysicalDevice m_physical_device;
 };
+
+} // namespace Phos

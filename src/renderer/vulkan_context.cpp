@@ -5,6 +5,8 @@
 #include "renderer/vulkan_device.h"
 #include "renderer/vulkan_descriptors.h"
 
+namespace Phos {
+
 std::unique_ptr<VulkanInstance> VulkanContext::instance = nullptr;
 std::unique_ptr<VulkanDevice> VulkanContext::device = nullptr;
 std::shared_ptr<VulkanDescriptorLayoutCache> VulkanContext::descriptor_layout_cache = nullptr;
@@ -32,3 +34,5 @@ void VulkanContext::free() {
     device.reset();
     instance.reset();
 }
+
+} // namespace Phos

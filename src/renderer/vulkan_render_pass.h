@@ -5,6 +5,8 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 
+namespace Phos {
+
 // Forward declarations
 class VulkanDevice;
 class VulkanFramebuffer;
@@ -23,3 +25,5 @@ class VulkanRenderPass {
   private:
     VkRenderPass m_render_pass{};
 };
+
+} // namespace Phos

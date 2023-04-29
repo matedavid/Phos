@@ -5,11 +5,11 @@
 #include "renderer/vulkan_command_buffer.h"
 #include "renderer/vulkan_swapchain.h"
 
+namespace Phos {
+
 VulkanQueue::VulkanQueue(VkQueue queue) : m_queue(queue) {}
 
-void VulkanQueue::submit(VkSubmitInfo info, VkFence fence) {
-    VK_CHECK(vkQueueSubmit(m_queue, 1, &info, fence))
-}
+void VulkanQueue::submit(VkSubmitInfo info, VkFence fence){VK_CHECK(vkQueueSubmit(m_queue, 1, &info, fence))}
 
 VkResult VulkanQueue::submitKHR(const std::shared_ptr<VulkanSwapchain>& swapchain,
                                 uint32_t image_index,
@@ -27,3 +27,5 @@ VkResult VulkanQueue::submitKHR(const std::shared_ptr<VulkanSwapchain>& swapchai
 
     return vkQueuePresentKHR(m_queue, &info);
 }
+
+} // namespace Phos

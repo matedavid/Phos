@@ -1,5 +1,7 @@
 #include "vulkan_command_buffer.h"
 
+namespace Phos {
+
 VulkanCommandBuffer::VulkanCommandBuffer(VkCommandBuffer command_buffer) : m_command_buffer(command_buffer) {}
 
 void VulkanCommandBuffer::record(const std::function<void(void)>& func) const {
@@ -39,3 +41,5 @@ void VulkanCommandBuffer::begin(bool one_time) const {
 void VulkanCommandBuffer::end() const {
     VK_CHECK(vkEndCommandBuffer(m_command_buffer))
 }
+
+} // namespace Phos
