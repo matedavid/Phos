@@ -8,7 +8,7 @@ constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 960;
 
 int main() {
-    auto window = std::make_shared<Phos::Window>(WIDTH, HEIGHT);
+    auto window = std::make_shared<Phos::Window>("Phos Engine", WIDTH, HEIGHT);
 
     Phos::VulkanContext::init(window);
 
