@@ -57,7 +57,6 @@ class VulkanRenderer {
     std::shared_ptr<VulkanQueue> m_graphics_queue;
     std::shared_ptr<VulkanQueue> m_presentation_queue;
 
-    std::shared_ptr<VulkanDescriptorLayoutCache> m_layout_cache;
     std::shared_ptr<VulkanDescriptorAllocator> m_allocator;
 
     VkDescriptorSet m_uniform_buffer_set{VK_NULL_HANDLE};

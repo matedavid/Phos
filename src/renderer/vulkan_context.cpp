@@ -3,9 +3,11 @@
 #include "core/window.h"
 #include "renderer/vulkan_instance.h"
 #include "renderer/vulkan_device.h"
+#include "renderer/vulkan_descriptors.h"
 
 std::unique_ptr<VulkanInstance> VulkanContext::instance = nullptr;
-std::shared_ptr<VulkanDevice> VulkanContext::device = nullptr;
+std::unique_ptr<VulkanDevice> VulkanContext::device = nullptr;
+std::shared_ptr<VulkanDescriptorLayoutCache> VulkanContext::descriptor_layout_cache = nullptr;
 
 void VulkanContext::init(const std::shared_ptr<Window>& window) {
     instance = std::make_unique<VulkanInstance>(window);
@@ -20,10 +22,13 @@ void VulkanContext::init(const std::shared_ptr<Window>& window) {
 
         .extensions = device_extensions,
     };
-    device = std::make_shared<VulkanDevice>(instance, device_requirements);
+    device = std::make_unique<VulkanDevice>(instance, device_requirements);
+
+    descriptor_layout_cache = std::make_shared<VulkanDescriptorLayoutCache>();
 }
 
 void VulkanContext::free() {
+    descriptor_layout_cache.reset();
     device.reset();
     instance.reset();
 }

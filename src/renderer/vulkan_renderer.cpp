@@ -7,13 +7,12 @@ VulkanRenderer::VulkanRenderer(const std::shared_ptr<Window>& window) {
     m_graphics_queue = VulkanContext::device->get_graphics_queue();
     m_presentation_queue = VulkanContext::device->get_presentation_queue();
 
-    m_layout_cache = std::make_shared<VulkanDescriptorLayoutCache>();
     m_allocator = std::make_shared<VulkanDescriptorAllocator>();
 
-    const auto vertex = std::make_shared<VulkanShaderModule>(
-        "../assets/shaders/vertex.spv", VulkanShaderModule::Stage::Vertex, m_layout_cache);
-    const auto fragment = std::make_shared<VulkanShaderModule>(
-        "../assets/shaders/fragment.spv", VulkanShaderModule::Stage::Fragment, m_layout_cache);
+    const auto vertex =
+        std::make_shared<VulkanShaderModule>("../assets/shaders/vertex.spv", VulkanShaderModule::Stage::Vertex);
+    const auto fragment =
+        std::make_shared<VulkanShaderModule>("../assets/shaders/fragment.spv", VulkanShaderModule::Stage::Fragment);
 
     m_render_pass = std::make_shared<VulkanRenderPass>();
 
@@ -74,7 +73,7 @@ VulkanRenderer::VulkanRenderer(const std::shared_ptr<Window>& window) {
     image_info.sampler = m_texture->sampler();
 
     bool result =
-        VulkanDescriptorBuilder::begin(m_layout_cache, m_allocator)
+        VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
             .bind_buffer(0, color_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .bind_image(1, image_info, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .build(m_uniform_buffer_set);

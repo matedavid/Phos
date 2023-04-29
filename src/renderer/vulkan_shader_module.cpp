@@ -16,10 +16,7 @@
         CORE_FAIL("Spirv-reflect call failed");     \
     }
 
-VulkanShaderModule::VulkanShaderModule(const std::string& path,
-                                       Stage stage,
-                                       std::shared_ptr<VulkanDescriptorLayoutCache> layout_cache)
-      : m_stage(stage), m_layout_cache(std::move(layout_cache)) {
+VulkanShaderModule::VulkanShaderModule(const std::string& path, Stage stage) : m_stage(stage) {
     const auto content = read_shader_file(path);
 
     VkShaderModuleCreateInfo create_info{};
@@ -162,7 +159,8 @@ void VulkanShaderModule::retrieve_descriptor_sets_info(const SpvReflectShaderMod
 
         descriptor_set_create_info.pBindings = bindings.data();
 
-        const auto layout = m_layout_cache->create_descriptor_layout(descriptor_set_create_info);
+        const auto layout =
+            VulkanContext::descriptor_layout_cache->create_descriptor_layout(descriptor_set_create_info);
         CORE_ASSERT(layout != VK_NULL_HANDLE, "Layout has null")
 
         m_descriptor_sets_layout.push_back(layout);
