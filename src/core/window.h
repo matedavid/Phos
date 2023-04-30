@@ -4,50 +4,48 @@
 
 #include <vector>
 #include <vulkan/vulkan.h>
+#include <functional>
 
-#define GLFW_WINDOW
-
-#ifdef GLFW_WINDOW
-#define NATIVE_WINDOW_TYPE GLFWwindow*
-#else
-#error Need to define a window
-#endif
+#include "input/events.h"
 
 // Forward declarations
 struct GLFWwindow;
 
-class INativeWindow {
-  public:
-    virtual ~INativeWindow() {}
-
-    virtual void update() const = 0;
-    [[nodiscard]] virtual bool should_close() const = 0;
-
-    [[nodiscard]] virtual uint32_t get_width() const = 0;
-    [[nodiscard]] virtual uint32_t get_height() const = 0;
-
-    [[nodiscard]] virtual std::vector<const char*> get_vulkan_instance_extensions() const = 0;
-    virtual VkResult create_surface(const VkInstance& instance, VkSurfaceKHR& surface) const = 0;
-
-    [[nodiscard]] virtual NATIVE_WINDOW_TYPE handle() const = 0;
-};
+namespace Phos {
 
 class Window {
   public:
-    Window(uint32_t width, uint32_t height);
-    ~Window() = default;
+    Window(std::string_view title, uint32_t width, uint32_t height);
+    ~Window();
 
     void update() const;
     [[nodiscard]] bool should_close() const;
+    [[nodiscard]] double get_current_time() const;
 
-    [[nodiscard]] std::vector<const char*> get_vulkan_instance_extensions() const;
+    void add_event_callback_func(std::function<void(Event&)> func);
+
+    [[nodiscard]] static std::vector<const char*> get_vulkan_instance_extensions();
     VkResult create_surface(const VkInstance& instance, VkSurfaceKHR& surface) const;
 
-    [[nodiscard]] uint32_t get_width() const;
-    [[nodiscard]] uint32_t get_height() const;
+    [[nodiscard]] uint32_t get_width() const { return m_data.width; }
+    [[nodiscard]] uint32_t get_height() const { return m_data.height; }
 
-    [[nodiscard]] NATIVE_WINDOW_TYPE handle() const;
+    [[nodiscard]] GLFWwindow* handle() const { return m_window; }
 
   private:
-    std::unique_ptr<INativeWindow> m_window;
+    GLFWwindow* m_window;
+
+    struct WindowData {
+        uint32_t width;
+        uint32_t height;
+
+        std::function<void(Event&)> event_callback;
+    };
+
+    WindowData m_data{};
+    std::vector<std::function<void(Event&)>> m_event_callback_funcs;
+
+    void on_event(Event& event);
 };
+
+} // namespace Phos

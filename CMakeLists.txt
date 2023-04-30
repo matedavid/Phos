@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(vulkan-renderer LANGUAGES CXX)
+project(Phos LANGUAGES CXX)
 
 # Project settings
 set(CMAKE_CXX_STANDARD 20)
@@ -15,29 +15,31 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
 # Sources and include directories
 target_sources(${PROJECT_NAME} PRIVATE
+        src/core/application.cpp
         src/core/window.cpp
-        src/core/glfw_window.cpp
+        src/core/entry_point.cpp
 
-        src/renderer/vulkan_context.cpp
-        src/renderer/vulkan_instance.cpp
-        src/renderer/vulkan_physical_device.cpp
-        src/renderer/vulkan_device.cpp
-        src/renderer/vulkan_swapchain.cpp
-        src/renderer/vulkan_shader_module.cpp
-        src/renderer/vulkan_render_pass.cpp
-        src/renderer/vulkan_graphics_pipeline.cpp
-        src/renderer/vulkan_command_pool.cpp
-        src/renderer/vulkan_command_buffer.cpp
-        src/renderer/vulkan_queue.cpp
-        src/renderer/vulkan_framebuffer.cpp
-        src/renderer/vulkan_buffers.cpp
-        src/renderer/vulkan_buffer.cpp
-        src/renderer/vulkan_image.cpp
-        src/renderer/vulkan_texture.cpp
-        src/renderer/vulkan_descriptors.cpp
-        src/renderer/vulkan_utils.cpp
+        src/input/input.cpp
 
-        src/renderer/vulkan_renderer.cpp
+        src/renderer/backend/vulkan/vulkan_context.cpp
+        src/renderer/backend/vulkan/vulkan_instance.cpp
+        src/renderer/backend/vulkan/vulkan_physical_device.cpp
+        src/renderer/backend/vulkan/vulkan_device.cpp
+        src/renderer/backend/vulkan/vulkan_swapchain.cpp
+        src/renderer/backend/vulkan/vulkan_shader_module.cpp
+        src/renderer/backend/vulkan/vulkan_render_pass.cpp
+        src/renderer/backend/vulkan/vulkan_graphics_pipeline.cpp
+        src/renderer/backend/vulkan/vulkan_command_pool.cpp
+        src/renderer/backend/vulkan/vulkan_command_buffer.cpp
+        src/renderer/backend/vulkan/vulkan_queue.cpp
+        src/renderer/backend/vulkan/vulkan_framebuffer.cpp
+        src/renderer/backend/vulkan/vulkan_buffers.cpp
+        src/renderer/backend/vulkan/vulkan_buffer.cpp
+        src/renderer/backend/vulkan/vulkan_image.cpp
+        src/renderer/backend/vulkan/vulkan_texture.cpp
+        src/renderer/backend/vulkan/vulkan_descriptors.cpp
+        src/renderer/backend/vulkan/vulkan_utils.cpp
+        src/renderer/backend/vulkan/vulkan_renderer.cpp
 
         src/main.cpp
         )
