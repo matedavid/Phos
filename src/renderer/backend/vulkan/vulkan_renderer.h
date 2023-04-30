@@ -36,7 +36,7 @@ struct ColorUniformBuffer {
 
 class VulkanRenderer {
   public:
-    explicit VulkanRenderer(const std::shared_ptr<Window>& window);
+    VulkanRenderer();
     ~VulkanRenderer();
 
     void update();

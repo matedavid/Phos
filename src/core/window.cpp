@@ -24,7 +24,6 @@ Window::Window(std::string_view title, uint32_t width, uint32_t height) {
         data->height = (uint32_t)h;
     });
 
-    m_data.title = title;
     m_data.width = width;
     m_data.height = height;
 }
@@ -42,7 +41,11 @@ bool Window::should_close() const {
     return glfwWindowShouldClose(m_window);
 }
 
-std::vector<const char*> Window::get_vulkan_instance_extensions() const {
+double Window::get_current_time() const {
+    return glfwGetTime();
+}
+
+std::vector<const char*> Window::get_vulkan_instance_extensions() {
     uint32_t number_extensions = 0;
     const auto& glfw_extensions = glfwGetRequiredInstanceExtensions(&number_extensions);
 

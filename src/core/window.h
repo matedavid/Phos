@@ -17,8 +17,9 @@ class Window {
 
     void update() const;
     [[nodiscard]] bool should_close() const;
+    [[nodiscard]] double get_current_time() const;
 
-    [[nodiscard]] std::vector<const char*> get_vulkan_instance_extensions() const;
+    [[nodiscard]] static std::vector<const char*> get_vulkan_instance_extensions();
     VkResult create_surface(const VkInstance& instance, VkSurfaceKHR& surface) const;
 
     [[nodiscard]] uint32_t get_width() const { return m_data.width; }
@@ -28,7 +29,6 @@ class Window {
     GLFWwindow* m_window;
 
     struct WindowData {
-        std::string_view title;
         uint32_t width;
         uint32_t height;
     };

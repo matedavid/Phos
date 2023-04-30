@@ -10,8 +10,10 @@ namespace Phos {
 std::unique_ptr<VulkanInstance> VulkanContext::instance = nullptr;
 std::unique_ptr<VulkanDevice> VulkanContext::device = nullptr;
 std::shared_ptr<VulkanDescriptorLayoutCache> VulkanContext::descriptor_layout_cache = nullptr;
+std::shared_ptr<Window> VulkanContext::window = nullptr;
 
-void VulkanContext::init(const std::shared_ptr<Window>& window) {
+void VulkanContext::init(std::shared_ptr<Window> wnd) {
+    window = std::move(wnd);
     instance = std::make_unique<VulkanInstance>(window);
 
     const std::vector<std::string_view> device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};

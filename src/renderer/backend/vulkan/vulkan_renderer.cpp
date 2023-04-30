@@ -4,7 +4,7 @@
 
 namespace Phos {
 
-VulkanRenderer::VulkanRenderer(const std::shared_ptr<Window>& window) {
+VulkanRenderer::VulkanRenderer() {
     // From previous VulkanContext
     m_graphics_queue = VulkanContext::device->get_graphics_queue();
     m_presentation_queue = VulkanContext::device->get_presentation_queue();
@@ -27,7 +27,7 @@ VulkanRenderer::VulkanRenderer(const std::shared_ptr<Window>& window) {
     m_command_buffer = VulkanContext::device->create_command_buffer(VulkanQueue::Type::Graphics);
 
     // Swapchain
-    m_swapchain = std::make_shared<VulkanSwapchain>(VulkanContext::instance->get_surface(), window, m_render_pass);
+    m_swapchain = std::make_shared<VulkanSwapchain>(m_render_pass);
 
     // Synchronization
     VkSemaphoreCreateInfo semaphoreCreateInfo{};

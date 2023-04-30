@@ -6,13 +6,13 @@
 namespace Phos {
 
 VulkanInstance::VulkanInstance(const std::shared_ptr<Window>& window) {
-    const auto& required_extensions = window->get_vulkan_instance_extensions();
+    const auto& required_extensions = Window::get_vulkan_instance_extensions();
 
     VkApplicationInfo application_info{};
     application_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    application_info.pApplicationName = "vulkan-renderer";
+    application_info.pApplicationName = "Phos";
     application_info.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
-    application_info.pEngineName = "vulkan-renderer";
+    application_info.pEngineName = "Phos";
     application_info.engineVersion = VK_MAKE_VERSION(0, 1, 0);
     application_info.apiVersion = VK_API_VERSION_1_3;
 

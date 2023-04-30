@@ -18,8 +18,9 @@ class VulkanContext {
     static std::unique_ptr<VulkanInstance> instance;
     static std::unique_ptr<VulkanDevice> device;
     static std::shared_ptr<VulkanDescriptorLayoutCache> descriptor_layout_cache;
+    static std::shared_ptr<Window> window;
 
-    static void init(const std::shared_ptr<Window>& window);
+    static void init(std::shared_ptr<Window> wnd);
     static void free();
 };
 

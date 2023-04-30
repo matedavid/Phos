@@ -1,6 +1,7 @@
 #include "vulkan_swapchain.h"
 
 #include "core/window.h"
+#include "renderer/backend/vulkan/vulkan_instance.h"
 #include "renderer/backend/vulkan/vulkan_device.h"
 #include "renderer/backend/vulkan/vulkan_render_pass.h"
 #include "renderer/backend/vulkan/vulkan_framebuffer.h"
@@ -8,10 +9,10 @@
 
 namespace Phos {
 
-VulkanSwapchain::VulkanSwapchain(VkSurfaceKHR surface,
-                                 std::shared_ptr<Window> window,
-                                 std::shared_ptr<VulkanRenderPass> render_pass)
-      : m_surface(surface), m_window(std::move(window)), m_render_pass(std::move(render_pass)) {
+VulkanSwapchain::VulkanSwapchain(std::shared_ptr<VulkanRenderPass> render_pass)
+      : m_render_pass(std::move(render_pass)) {
+    m_surface = VulkanContext::instance->get_surface();
+
     // Create swapchain
     create();
     // Retrieve swapchain images
@@ -61,7 +62,7 @@ void VulkanSwapchain::create() {
 
     VkSwapchainCreateInfoKHR create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    create_info.surface = m_surface;
+    create_info.surface = VulkanContext::instance->get_surface();
     create_info.minImageCount = m_swapchain_info.capabilities.minImageCount + 1;
     create_info.imageFormat = m_swapchain_info.surface_format.format;
     create_info.imageColorSpace = m_swapchain_info.surface_format.colorSpace;
@@ -117,8 +118,8 @@ VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information
     if (info.capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         info.extent = info.capabilities.currentExtent;
     } else {
-        const auto width = m_window->get_width();
-        const auto height = m_window->get_height();
+        const auto width = VulkanContext::window->get_width();
+        const auto height = VulkanContext::window->get_height();
 
         VkExtent2D actualExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 

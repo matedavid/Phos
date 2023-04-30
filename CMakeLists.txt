@@ -15,7 +15,9 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
 # Sources and include directories
 target_sources(${PROJECT_NAME} PRIVATE
+        src/core/application.cpp
         src/core/window.cpp
+        src/core/entry_point.cpp
 
         src/renderer/backend/vulkan/vulkan_context.cpp
         src/renderer/backend/vulkan/vulkan_instance.cpp
@@ -35,7 +37,6 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_texture.cpp
         src/renderer/backend/vulkan/vulkan_descriptors.cpp
         src/renderer/backend/vulkan/vulkan_utils.cpp
-
         src/renderer/backend/vulkan/vulkan_renderer.cpp
 
         src/main.cpp
