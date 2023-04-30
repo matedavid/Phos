@@ -19,6 +19,8 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/core/window.cpp
         src/core/entry_point.cpp
 
+        src/input/input.cpp
+
         src/renderer/backend/vulkan/vulkan_context.cpp
         src/renderer/backend/vulkan/vulkan_instance.cpp
         src/renderer/backend/vulkan/vulkan_physical_device.cpp

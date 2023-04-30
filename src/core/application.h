@@ -3,6 +3,7 @@
 #include "core.h"
 
 #include "core/layer.h"
+#include "input/events.h"
 
 int main(int argc, const char* argv[]);
 
@@ -24,9 +25,17 @@ class Application {
         m_layers.push_back(std::make_unique<T>());
     }
 
+    [[nodiscard]] const std::shared_ptr<Window>& get_window() const { return m_window; }
+
+    [[nodiscard]] static Application* instance() { return m_instance; }
+
   private:
     std::shared_ptr<Window> m_window = nullptr;
     std::vector<std::unique_ptr<Layer>> m_layers;
+
+    static Application* m_instance;
+
+    void on_event(Event& event);
 };
 
 } // namespace Phos
