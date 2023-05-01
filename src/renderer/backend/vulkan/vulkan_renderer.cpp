@@ -45,13 +45,22 @@ VulkanRenderer::VulkanRenderer() {
 
     // Vertex and Index buffers
     const std::vector<Vertex> data = {
-        {.position = {-0.5f, -0.5f, 0.0f}, .texture_coords = {0.0f, 0.0f}},
-        {.position = {0.5f, -0.5f, 0.0f}, .texture_coords = {1.0f, 0.0f}},
-        {.position = {-0.5f, 0.5f, 0.0f}, .texture_coords = {0.0f, 1.0f}},
-        {.position = {0.5f, 0.5f, 0.0f}, .texture_coords = {1.0f, 1.0f}},
+        {.position = {-0.5f, -0.5f, 0.6f}, .texture_coords = {0.0f, 0.0f}},
+        {.position = {0.5f, -0.5f, 0.6f}, .texture_coords = {1.0f, 0.0f}},
+        {.position = {-0.5f, 0.5f, 0.6f}, .texture_coords = {0.0f, 1.0f}},
+        {.position = {0.5f, 0.5f, 0.6f}, .texture_coords = {1.0f, 1.0f}},
     };
 
     m_vertex_buffer = std::make_unique<VulkanVertexBuffer<Vertex>>(data);
+
+    const std::vector<Vertex> data2 = {
+        {.position = {-0.5f + 0.25f, -0.5f + 0.25f, 0.5f}, .texture_coords = {0.0f, 0.0f}},
+        {.position = {0.5f + 0.25f, -0.5f + 0.25f, 0.5f}, .texture_coords = {1.0f, 0.0f}},
+        {.position = {-0.5f + 0.25f, 0.5f + 0.25f, 0.5f}, .texture_coords = {0.0f, 1.0f}},
+        {.position = {0.5f + 0.25f, 0.5f + 0.25f, 0.5f}, .texture_coords = {1.0f, 1.0f}},
+    };
+
+    m_vertex_buffer_2 = std::make_unique<VulkanVertexBuffer<Vertex>>(data2);
 
     const std::vector<uint32_t> indices = {0, 2, 1, 1, 2, 3};
     m_index_buffer = std::make_unique<VulkanIndexBuffer>(indices);
@@ -127,9 +136,6 @@ void VulkanRenderer::update() {
         vkCmdSetViewport(command_buffer->handle(), 0, 1, &viewport);
         vkCmdSetScissor(command_buffer->handle(), 0, 1, &scissor);
 
-        m_vertex_buffer->bind(command_buffer);
-        m_index_buffer->bind(command_buffer);
-
         // Descriptor sets
         vkCmdBindDescriptorSets(command_buffer->handle(),
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -140,6 +146,12 @@ void VulkanRenderer::update() {
                                 0,
                                 nullptr);
 
+        m_vertex_buffer_2->bind(command_buffer);
+        m_index_buffer->bind(command_buffer);
+        vkCmdDrawIndexed(m_command_buffer->handle(), m_index_buffer->get_count(), 1, 0, 0, 0);
+
+        m_vertex_buffer->bind(command_buffer);
+        m_index_buffer->bind(command_buffer);
         vkCmdDrawIndexed(m_command_buffer->handle(), m_index_buffer->get_count(), 1, 0, 0, 0);
 
         m_render_pass->end(*command_buffer);

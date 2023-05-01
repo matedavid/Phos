@@ -49,6 +49,7 @@ class VulkanRenderer {
     std::shared_ptr<VulkanCommandBuffer> m_command_buffer;
 
     std::unique_ptr<VulkanVertexBuffer<Vertex>> m_vertex_buffer;
+    std::unique_ptr<VulkanVertexBuffer<Vertex>> m_vertex_buffer_2;
     std::unique_ptr<VulkanIndexBuffer> m_index_buffer;
     std::unique_ptr<VulkanTexture> m_texture;
 

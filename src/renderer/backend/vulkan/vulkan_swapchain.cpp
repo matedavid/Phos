@@ -6,6 +6,7 @@
 #include "renderer/backend/vulkan/vulkan_render_pass.h"
 #include "renderer/backend/vulkan/vulkan_framebuffer.h"
 #include "renderer/backend/vulkan/vulkan_context.h"
+#include "renderer/backend/vulkan/vulkan_image.h"
 
 namespace Phos {
 
@@ -102,6 +103,12 @@ void VulkanSwapchain::cleanup() {
 
     // Clear images
     m_images.clear();
+
+    // Destroy depth image view
+    vkDestroyImageView(VulkanContext::device->handle(), m_depth_image_view, nullptr);
+
+    // Destroy depth image
+    m_depth_image.reset();
 
     // Destroy swapchain
     vkDestroySwapchainKHR(VulkanContext::device->handle(), m_swapchain, nullptr);
@@ -207,11 +214,35 @@ void VulkanSwapchain::retrieve_swapchain_images() {
 
         VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &create_info, nullptr, &m_image_views[idx]))
     }
+
+    // Create depth image
+    m_depth_image = std::make_unique<VulkanImage>(VulkanImage::Description{
+        .width = m_swapchain_info.extent.width,
+        .height = m_swapchain_info.extent.height,
+        .image_type = VK_IMAGE_TYPE_2D,
+        .format = VK_FORMAT_D32_SFLOAT,
+        .initial_layout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+    });
+
+    VkImageViewCreateInfo image_view_create_info{};
+    image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    image_view_create_info.image = m_depth_image->handle();
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = VK_FORMAT_D32_SFLOAT;
+    image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    image_view_create_info.subresourceRange.baseMipLevel = 0;
+    image_view_create_info.subresourceRange.levelCount = 1;
+    image_view_create_info.subresourceRange.baseArrayLayer = 0;
+    image_view_create_info.subresourceRange.layerCount = 1;
+
+    VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &image_view_create_info, nullptr, &m_depth_image_view))
 }
 
 void VulkanSwapchain::create_framebuffers() {
     for (const auto& view : m_image_views) {
-        const std::vector<VkImageView> attachments = {view};
+        const std::vector<VkImageView> attachments = {view, m_depth_image_view};
         m_framebuffers.push_back(std::make_unique<VulkanFramebuffer>(
             m_render_pass, m_swapchain_info.extent.width, m_swapchain_info.extent.height, attachments));
     }

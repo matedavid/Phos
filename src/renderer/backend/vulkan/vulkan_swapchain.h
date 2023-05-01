@@ -12,6 +12,7 @@ namespace Phos {
 class VulkanDevice;
 class VulkanFramebuffer;
 class VulkanRenderPass;
+class VulkanImage;
 class Window;
 
 class VulkanSwapchain {
@@ -43,6 +44,9 @@ class VulkanSwapchain {
     std::vector<VkImage> m_images;
     std::vector<VkImageView> m_image_views;
     std::vector<std::unique_ptr<VulkanFramebuffer>> m_framebuffers;
+
+    std::unique_ptr<VulkanImage> m_depth_image;
+    VkImageView m_depth_image_view;
 
     // Current frame members
     uint32_t m_current_image_idx{};
