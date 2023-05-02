@@ -27,7 +27,8 @@ VulkanRenderer::VulkanRenderer() {
     m_command_buffer = VulkanContext::device->create_command_buffer(VulkanQueue::Type::Graphics);
 
     // Swapchain
-    m_swapchain = std::make_shared<VulkanSwapchain>(m_render_pass);
+    m_swapchain = std::make_shared<VulkanSwapchain>();
+    m_swapchain->specify_render_pass(m_render_pass);
 
     // Synchronization
     VkSemaphoreCreateInfo semaphoreCreateInfo{};
@@ -104,7 +105,7 @@ VulkanRenderer::~VulkanRenderer() {
 void VulkanRenderer::update() {
     vkWaitForFences(VulkanContext::device->handle(), 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
 
-    m_swapchain->acquire_next_image(image_available_semaphore);
+    m_swapchain->acquire_next_image(image_available_semaphore, VK_NULL_HANDLE);
     const auto& swapchain_framebuffer = m_swapchain->get_current_framebuffer();
 
     vkResetFences(VulkanContext::device->handle(), 1, &in_flight_fence);

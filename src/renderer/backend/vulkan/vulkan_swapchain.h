@@ -17,10 +17,12 @@ class Window;
 
 class VulkanSwapchain {
   public:
-    explicit VulkanSwapchain(std::shared_ptr<VulkanRenderPass> render_pass);
+    VulkanSwapchain();
     ~VulkanSwapchain();
 
-    void acquire_next_image(VkSemaphore semaphore);
+    void specify_render_pass(std::shared_ptr<VulkanRenderPass> render_pass);
+
+    void acquire_next_image(VkSemaphore semaphore, VkFence fence);
     [[nodiscard]] const std::unique_ptr<VulkanFramebuffer>& get_current_framebuffer() const {
         return m_framebuffers[m_current_image_idx];
     }
@@ -53,7 +55,7 @@ class VulkanSwapchain {
 
     // Reference members
     VkSurfaceKHR m_surface{VK_NULL_HANDLE};
-    std::shared_ptr<VulkanRenderPass> m_render_pass;
+    std::shared_ptr<VulkanRenderPass> m_render_pass{nullptr};
 
     // Private methods
     void create();

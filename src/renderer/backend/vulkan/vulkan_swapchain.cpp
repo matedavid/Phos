@@ -10,25 +10,31 @@
 
 namespace Phos {
 
-VulkanSwapchain::VulkanSwapchain(std::shared_ptr<VulkanRenderPass> render_pass)
-      : m_render_pass(std::move(render_pass)) {
+VulkanSwapchain::VulkanSwapchain() {
     m_surface = VulkanContext::instance->get_surface();
 
     // Create swapchain
     create();
     // Retrieve swapchain images
     retrieve_swapchain_images();
-    // Create presentation framebuffers
-    create_framebuffers();
 }
 
 VulkanSwapchain::~VulkanSwapchain() {
     cleanup();
 }
 
-void VulkanSwapchain::acquire_next_image(VkSemaphore semaphore) {
+void VulkanSwapchain::specify_render_pass(std::shared_ptr<VulkanRenderPass> render_pass) {
+    PS_ASSERT(m_render_pass == nullptr, "Render pass has been already specified");
+
+    m_render_pass = std::move(render_pass);
+
+    // Create presentation framebuffers
+    create_framebuffers();
+}
+
+void VulkanSwapchain::acquire_next_image(VkSemaphore semaphore, VkFence fence) {
     const auto result = vkAcquireNextImageKHR(
-        VulkanContext::device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_current_image_idx);
+        VulkanContext::device->handle(), m_swapchain, UINT64_MAX, semaphore, fence, &m_current_image_idx);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         recreate();
@@ -241,6 +247,8 @@ void VulkanSwapchain::retrieve_swapchain_images() {
 }
 
 void VulkanSwapchain::create_framebuffers() {
+    PS_ASSERT(m_framebuffers.empty(), "Cannot create new framebuffers if array is not empty")
+
     for (const auto& view : m_image_views) {
         const std::vector<VkImageView> attachments = {view, m_depth_image_view};
         m_framebuffers.push_back(std::make_unique<VulkanFramebuffer>(
