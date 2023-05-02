@@ -3,7 +3,11 @@
 #include "vk_core.h"
 
 #include <memory>
+
+#define GLM_FORCE_RADIANS
+#define GLM_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "renderer/backend/vulkan/vulkan_instance.h"
 #include "renderer/backend/vulkan/vulkan_physical_device.h"
@@ -24,10 +28,11 @@ namespace Phos {
 
 // Forward declarations
 class Window;
+class Model;
 
-struct Vertex {
-    glm::vec3 position;
-    glm::vec2 texture_coords;
+struct CameraUniformBuffer {
+    glm::mat4 projection;
+    glm::mat4 view;
 };
 
 struct ColorUniformBuffer {
@@ -48,10 +53,7 @@ class VulkanRenderer {
 
     std::shared_ptr<VulkanCommandBuffer> m_command_buffer;
 
-    std::unique_ptr<VulkanVertexBuffer<Vertex>> m_vertex_buffer;
-    std::unique_ptr<VulkanVertexBuffer<Vertex>> m_vertex_buffer_2;
-    std::unique_ptr<VulkanIndexBuffer> m_index_buffer;
-    std::unique_ptr<VulkanTexture> m_texture;
+    std::shared_ptr<Model> m_model;
 
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;
@@ -62,8 +64,11 @@ class VulkanRenderer {
 
     std::shared_ptr<VulkanDescriptorAllocator> m_allocator;
 
-    VkDescriptorSet m_uniform_buffer_set{VK_NULL_HANDLE};
+    VkDescriptorSet m_vertex_shader_set{VK_NULL_HANDLE};
+    VkDescriptorSet m_fragment_shader_set{VK_NULL_HANDLE};
+
     std::shared_ptr<VulkanUniformBuffer<ColorUniformBuffer>> m_color_ubo;
+    std::shared_ptr<VulkanUniformBuffer<CameraUniformBuffer>> m_camera_ubo;
 };
 
 } // namespace Phos

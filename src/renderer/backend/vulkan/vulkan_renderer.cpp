@@ -3,6 +3,7 @@
 #include "renderer/backend/vulkan/vulkan_context.h"
 
 #include "renderer/model.h"
+#include "core/window.h"
 
 namespace Phos {
 
@@ -46,57 +47,36 @@ VulkanRenderer::VulkanRenderer() {
         vkCreateSemaphore(VulkanContext::device->handle(), &semaphoreCreateInfo, nullptr, &render_finished_semaphore))
     VK_CHECK(vkCreateFence(VulkanContext::device->handle(), &fenceCreateInfo, nullptr, &in_flight_fence))
 
-    // Vertex and Index buffers
-    const std::vector<Vertex> data = {
-        {.position = {-0.5f, -0.5f, 0.6f}, .texture_coords = {0.0f, 0.0f}},
-        {.position = {0.5f, -0.5f, 0.6f}, .texture_coords = {1.0f, 0.0f}},
-        {.position = {-0.5f, 0.5f, 0.6f}, .texture_coords = {0.0f, 1.0f}},
-        {.position = {0.5f, 0.5f, 0.6f}, .texture_coords = {1.0f, 1.0f}},
-    };
-
-    m_vertex_buffer = std::make_unique<VulkanVertexBuffer<Vertex>>(data);
-
-    const std::vector<Vertex> data2 = {
-        {.position = {-0.5f + 0.25f, -0.5f + 0.25f, 0.5f}, .texture_coords = {0.0f, 0.0f}},
-        {.position = {0.5f + 0.25f, -0.5f + 0.25f, 0.5f}, .texture_coords = {1.0f, 0.0f}},
-        {.position = {-0.5f + 0.25f, 0.5f + 0.25f, 0.5f}, .texture_coords = {0.0f, 1.0f}},
-        {.position = {0.5f + 0.25f, 0.5f + 0.25f, 0.5f}, .texture_coords = {1.0f, 1.0f}},
-    };
-
-    m_vertex_buffer_2 = std::make_unique<VulkanVertexBuffer<Vertex>>(data2);
-
-    const std::vector<uint32_t> indices = {0, 2, 1, 1, 2, 3};
-    m_index_buffer = std::make_unique<VulkanIndexBuffer>(indices);
-
-    // Texture
-    m_texture = std::make_unique<VulkanTexture>("../assets/texture.jpg");
-
     // Uniform buffer stuff
     // =======================
 
+    m_camera_ubo = std::make_shared<VulkanUniformBuffer<CameraUniformBuffer>>();
     m_color_ubo = std::make_shared<VulkanUniformBuffer<ColorUniformBuffer>>();
+
+    VkDescriptorBufferInfo camera_info{};
+    camera_info.buffer = m_camera_ubo->handle();
+    camera_info.offset = 0;
+    camera_info.range = m_camera_ubo->size();
 
     VkDescriptorBufferInfo color_info{};
     color_info.buffer = m_color_ubo->handle();
     color_info.offset = 0;
     color_info.range = m_color_ubo->size();
 
-    VkDescriptorImageInfo image_info{};
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = m_texture->image_view();
-    image_info.sampler = m_texture->sampler();
+    const bool result1 = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
+                             .bind_buffer(0, camera_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                             .build(m_vertex_shader_set);
 
-    bool result =
+    const bool result2 =
         VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
             .bind_buffer(0, color_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .bind_image(1, image_info, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .build(m_uniform_buffer_set);
+            .build(m_fragment_shader_set);
 
-    PS_ASSERT(result, "Error creating descriptor set")
+    PS_ASSERT(result1 && result2, "Error creating descriptor set")
     // =======================
 
-    // Model test
-    [[maybe_unused]] auto model = Model("../assets/suzanne.fbx", false);
+    // Model
+    m_model = std::make_shared<Model>("../assets/suzanne.fbx", false);
 }
 
 VulkanRenderer::~VulkanRenderer() {
@@ -115,7 +95,19 @@ void VulkanRenderer::update() {
 
     vkResetFences(VulkanContext::device->handle(), 1, &in_flight_fence);
 
-    // Update uniform buffer
+    // Update uniform buffers
+    const float aspect_ratio =
+        static_cast<float>(swapchain_framebuffer->width()) / static_cast<float>(swapchain_framebuffer->height());
+
+    auto projection = glm::perspective(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
+    projection[1][1] *= -1;
+
+    m_camera_ubo->update({
+        .projection = projection,
+        // wtf vulkan
+        .view = glm::lookAt(glm::vec3(-2.0f, -3.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+    });
+
     m_color_ubo->update({
         .color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
     });
@@ -143,22 +135,26 @@ void VulkanRenderer::update() {
         vkCmdSetScissor(command_buffer->handle(), 0, 1, &scissor);
 
         // Descriptor sets
+        std::vector<VkDescriptorSet> descriptor_sets = {m_vertex_shader_set, m_fragment_shader_set};
+
         vkCmdBindDescriptorSets(command_buffer->handle(),
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 m_pipeline->layout(),
                                 0,
-                                1,
-                                &m_uniform_buffer_set,
+                                static_cast<uint32_t>(descriptor_sets.size()),
+                                descriptor_sets.data(),
                                 0,
                                 nullptr);
 
-        m_vertex_buffer_2->bind(command_buffer);
-        m_index_buffer->bind(command_buffer);
-        vkCmdDrawIndexed(m_command_buffer->handle(), m_index_buffer->get_count(), 1, 0, 0, 0);
+        for (const auto& mesh : m_model->get_meshes()) {
+            const auto& vertex_buffer = mesh->get_vertex_buffer();
+            const auto& index_buffer = mesh->get_index_buffer();
 
-        m_vertex_buffer->bind(command_buffer);
-        m_index_buffer->bind(command_buffer);
-        vkCmdDrawIndexed(m_command_buffer->handle(), m_index_buffer->get_count(), 1, 0, 0, 0);
+            vertex_buffer->bind(command_buffer);
+            index_buffer->bind(command_buffer);
+
+            vkCmdDrawIndexed(m_command_buffer->handle(), index_buffer->get_count(), 1, 0, 0, 0);
+        }
 
         m_render_pass->end(*command_buffer);
     });
