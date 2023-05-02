@@ -2,6 +2,8 @@
 
 #include "renderer/backend/vulkan/vulkan_context.h"
 
+#include "renderer/model.h"
+
 namespace Phos {
 
 VulkanRenderer::VulkanRenderer() {
@@ -92,6 +94,9 @@ VulkanRenderer::VulkanRenderer() {
 
     PS_ASSERT(result, "Error creating descriptor set")
     // =======================
+
+    // Model test
+    [[maybe_unused]] auto model = Model("../assets/suzanne.fbx", false);
 }
 
 VulkanRenderer::~VulkanRenderer() {
