@@ -1,23 +1,26 @@
-#include <iostream>
+#include "core/entry_point.h"
+#include "core/layer.h"
+#include "core/application.h"
 
-#include <memory>
+#include "renderer/backend/vulkan/vulkan_renderer.h"
 
-#include "core/window.h"
-#include "renderer/vulkan_context.h"
+class SandboxLayer : public Phos::Layer {
+  public:
+    SandboxLayer() = default;
+    ~SandboxLayer() override = default;
+
+    void on_update([[maybe_unused]] double ts) override { m_renderer.update(); }
+
+  private:
+    Phos::VulkanRenderer m_renderer{};
+};
 
 constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 960;
 
-int main() {
-    auto window = std::make_shared<Window>(WIDTH, HEIGHT);
+Phos::Application* create_application() {
+    auto* application = new Phos::Application("Phos Engine", WIDTH, HEIGHT);
+    application->push_layer<SandboxLayer>();
 
-    VulkanContext context(window);
-
-    while (!window->should_close()) {
-        context.update();
-
-        window->update();
-    }
-
-    return 0;
+    return application;
 }
