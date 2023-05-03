@@ -9,6 +9,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <core/window.h>
+#include <input/input.h>
+
 #include "renderer/backend/vulkan/vulkan_instance.h"
 #include "renderer/backend/vulkan/vulkan_physical_device.h"
 #include "renderer/backend/vulkan/vulkan_swapchain.h"
@@ -69,6 +72,17 @@ class VulkanRenderer {
 
     std::shared_ptr<VulkanUniformBuffer<ColorUniformBuffer>> m_color_ubo;
     std::shared_ptr<VulkanUniformBuffer<CameraUniformBuffer>> m_camera_ubo;
+
+
+    struct CameraInfo {
+        glm::vec3 position;
+        glm::vec2 rotation;
+        glm::vec2 mouse_pos;
+    };
+
+    CameraInfo m_camera_info{};
+
+    void on_event(Event& event);
 };
 
 } // namespace Phos

@@ -8,6 +8,8 @@
 namespace Phos {
 
 VulkanRenderer::VulkanRenderer() {
+    VulkanContext::window->add_event_callback_func([&](Event& event) { on_event(event); });
+
     // From previous VulkanContext
     m_graphics_queue = VulkanContext::device->get_graphics_queue();
     m_presentation_queue = VulkanContext::device->get_presentation_queue();
@@ -102,14 +104,17 @@ void VulkanRenderer::update() {
     auto projection = glm::perspective(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
     projection[1][1] *= -1;
 
-    m_camera_ubo->update({
-        .projection = projection,
-        // wtf vulkan
-        .view = glm::lookAt(glm::vec3(-2.0f, -3.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-    });
+    auto view = glm::mat4(1.0f);
+    view = glm::translate(view, -m_camera_info.position);
+    view = glm::rotate(view, m_camera_info.rotation.y, glm::vec3(1.0f, 0.0f, 0.0f));
+    view = glm::rotate(view, -m_camera_info.rotation.x, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    m_camera_ubo->update({.projection = projection,
+                          // wtf vulkan
+                          .view = view});
 
     m_color_ubo->update({
-        .color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
+        .color = glm::vec4(0.5f, 0.5f, 0.5f, 0.5f),
     });
 
     // Record command buffer
@@ -187,6 +192,49 @@ void VulkanRenderer::update() {
         m_swapchain->recreate();
     } else if (result != VK_SUCCESS) {
         PS_FAIL("Failed to present image")
+    }
+}
+
+void VulkanRenderer::on_event(Event& event) {
+    if (event.get_type() == EventType::MouseMoved) {
+        auto mouse_moved = dynamic_cast<MouseMovedEvent&>(event);
+
+        double x = mouse_moved.get_xpos();
+        double y = mouse_moved.get_ypos();
+
+        if (Input::is_mouse_button_pressed(MouseButton::Left)) {
+            float x_rotation = 0.0f;
+            float y_rotation = 0.0f;
+
+            if (x > m_camera_info.mouse_pos.x) {
+                x_rotation -= 0.03f;
+            } else if (x < m_camera_info.mouse_pos.x) {
+                x_rotation += 0.03f;
+            }
+
+            if (y > m_camera_info.mouse_pos.y) {
+                y_rotation += 0.03f;
+            } else if (y < m_camera_info.mouse_pos.y) {
+                y_rotation -= 0.03f;
+            }
+
+            m_camera_info.rotation += glm::vec2{x_rotation, y_rotation};
+        }
+
+        m_camera_info.mouse_pos = glm::vec2(x, y);
+
+    } else if (event.get_type() == EventType::KeyPressed) {
+        auto key_pressed = dynamic_cast<KeyPressedEvent&>(event);
+
+        if (key_pressed.get_key() == Key::W) {
+            m_camera_info.position.z += -1;
+        } else if (key_pressed.get_key() == Key::S) {
+            m_camera_info.position.z += 1;
+        } else if (key_pressed.get_key() == Key::A) {
+            m_camera_info.position.x += -1;
+        } else if (key_pressed.get_key() == Key::D) {
+            m_camera_info.position.x += 1;
+        }
     }
 }
 
