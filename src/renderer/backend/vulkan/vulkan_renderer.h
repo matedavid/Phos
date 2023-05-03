@@ -36,10 +36,17 @@ class Model;
 struct CameraUniformBuffer {
     glm::mat4 projection;
     glm::mat4 view;
+    glm::vec3 position;
 };
 
 struct ColorUniformBuffer {
     glm::vec4 color;
+};
+
+struct LightsUniformBuffer {
+    glm::vec4 positions[10];
+    glm::vec4 colors[10];
+    int count;
 };
 
 class VulkanRenderer {
@@ -72,7 +79,7 @@ class VulkanRenderer {
 
     std::shared_ptr<VulkanUniformBuffer<ColorUniformBuffer>> m_color_ubo;
     std::shared_ptr<VulkanUniformBuffer<CameraUniformBuffer>> m_camera_ubo;
-
+    std::shared_ptr<VulkanUniformBuffer<LightsUniformBuffer>> m_lights_ubo;
 
     struct CameraInfo {
         glm::vec3 position;
@@ -83,6 +90,7 @@ class VulkanRenderer {
     CameraInfo m_camera_info{};
 
     void on_event(Event& event);
+    void update_light_info();
 };
 
 } // namespace Phos

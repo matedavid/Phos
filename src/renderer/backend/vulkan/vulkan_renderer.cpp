@@ -54,6 +54,7 @@ VulkanRenderer::VulkanRenderer() {
 
     m_camera_ubo = std::make_shared<VulkanUniformBuffer<CameraUniformBuffer>>();
     m_color_ubo = std::make_shared<VulkanUniformBuffer<ColorUniformBuffer>>();
+    m_lights_ubo = std::make_shared<VulkanUniformBuffer<LightsUniformBuffer>>();
 
     VkDescriptorBufferInfo camera_info{};
     camera_info.buffer = m_camera_ubo->handle();
@@ -65,6 +66,11 @@ VulkanRenderer::VulkanRenderer() {
     color_info.offset = 0;
     color_info.range = m_color_ubo->size();
 
+    VkDescriptorBufferInfo lights_info{};
+    lights_info.buffer = m_lights_ubo->handle();
+    lights_info.offset = 0;
+    lights_info.range = m_lights_ubo->size();
+
     const bool result1 = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
                              .bind_buffer(0, camera_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                              .build(m_vertex_shader_set);
@@ -72,6 +78,7 @@ VulkanRenderer::VulkanRenderer() {
     const bool result2 =
         VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
             .bind_buffer(0, color_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .bind_buffer(1, lights_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .build(m_fragment_shader_set);
 
     PS_ASSERT(result1 && result2, "Error creating descriptor set")
@@ -109,13 +116,17 @@ void VulkanRenderer::update() {
     view = glm::rotate(view, m_camera_info.rotation.y, glm::vec3(1.0f, 0.0f, 0.0f));
     view = glm::rotate(view, -m_camera_info.rotation.x, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    m_camera_ubo->update({.projection = projection,
-                          // wtf vulkan
-                          .view = view});
+    m_camera_ubo->update({
+        .projection = projection,
+        .view = view,
+        .position = glm::vec3(glm::inverse(view)[3]),
+    });
 
     m_color_ubo->update({
-        .color = glm::vec4(0.5f, 0.5f, 0.5f, 0.5f),
+        .color = glm::vec4(1.0f),
     });
+
+    update_light_info();
 
     // Record command buffer
     const auto& command_buffer = m_command_buffer;
@@ -236,6 +247,28 @@ void VulkanRenderer::on_event(Event& event) {
             m_camera_info.position.x += 1;
         }
     }
+}
+
+void VulkanRenderer::update_light_info() {
+    LightsUniformBuffer light_info{};
+    light_info.count = 5;
+
+    light_info.positions[0] = glm::vec4(-1.0f, 0.0f, 0.0f, 0.0f);
+    light_info.colors[0] = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+
+    light_info.positions[1] = glm::vec4(0.0f, 1.0f, -1.0f, 0.0f);
+    light_info.colors[1] = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+
+    light_info.positions[2] = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+    light_info.colors[2] = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+    light_info.positions[3] = glm::vec4(-1.0f, -1.0f, -1.0f, 0.0f);
+    light_info.colors[3] = glm::vec4(0.2f, 0.5f, 0.3f, 1.0f);
+
+    light_info.positions[4] = glm::vec4(-1.0f, -2.0f, 1.0f, 0.0);
+    light_info.colors[4] = glm::vec4(0.1f, 0.2f, 0.3f, 1.0f);
+
+    m_lights_ubo->update(light_info);
 }
 
 } // namespace Phos
