@@ -49,6 +49,11 @@ struct LightsUniformBuffer {
     int count;
 };
 
+struct ModelInfoPushConstant {
+    glm::mat4 model;
+    glm::vec4 color;
+};
+
 class VulkanRenderer {
   public:
     VulkanRenderer();
@@ -58,12 +63,16 @@ class VulkanRenderer {
 
   private:
     std::shared_ptr<VulkanSwapchain> m_swapchain;
+
     std::shared_ptr<VulkanRenderPass> m_render_pass;
     std::shared_ptr<VulkanGraphicsPipeline> m_pipeline;
+
+    std::shared_ptr<VulkanGraphicsPipeline> m_flat_color_pipeline;
 
     std::shared_ptr<VulkanCommandBuffer> m_command_buffer;
 
     std::shared_ptr<Model> m_model;
+    std::shared_ptr<Model> m_cube;
 
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;
@@ -88,6 +97,8 @@ class VulkanRenderer {
     };
 
     CameraInfo m_camera_info{};
+
+    LightsUniformBuffer light_info{};
 
     void on_event(Event& event);
     void update_light_info();

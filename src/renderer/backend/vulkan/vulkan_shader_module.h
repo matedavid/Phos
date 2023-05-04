@@ -41,6 +41,9 @@ class VulkanShaderModule {
     [[nodiscard]] std::vector<VkDescriptorSetLayout> get_descriptor_sets_layout() const {
         return m_descriptor_sets_layout;
     }
+    [[nodiscard]] std::vector<VkPushConstantRange> get_push_constant_ranges() const {
+        return m_push_constant_ranges;
+    }
 
   private:
     VkShaderModule m_shader{};
@@ -49,6 +52,7 @@ class VulkanShaderModule {
     std::optional<VkVertexInputBindingDescription> m_binding_description;
     std::vector<VkVertexInputAttributeDescription> m_attribute_descriptions;
     std::vector<VkDescriptorSetLayout> m_descriptor_sets_layout;
+    std::vector<VkPushConstantRange> m_push_constant_ranges;
 
     VkDescriptorPool m_descriptor_pool{};
     std::vector<VkDescriptorSet> m_descriptor_sets;
@@ -58,6 +62,7 @@ class VulkanShaderModule {
 
     void retrieve_vertex_input_info(const SpvReflectShaderModule& module);
     void retrieve_descriptor_sets_info(const SpvReflectShaderModule& module);
+    void retrieve_push_constants(const SpvReflectShaderModule& module);
 };
 
 } // namespace Phos

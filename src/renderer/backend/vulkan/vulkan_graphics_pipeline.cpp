@@ -113,11 +113,19 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
         }
     }
 
+    std::vector<VkPushConstantRange> push_constant_ranges;
+    for (const auto& shader : description.shader_modules) {
+        for (const auto& push_constant_range : shader->get_push_constant_ranges()) {
+            push_constant_ranges.push_back(push_constant_range);
+        }
+    }
+
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_create_info.setLayoutCount = (uint32_t)descriptor_sets_layout.size();
     pipeline_layout_create_info.pSetLayouts = descriptor_sets_layout.data();
-    pipeline_layout_create_info.pushConstantRangeCount = 0;
+    pipeline_layout_create_info.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
+    pipeline_layout_create_info.pPushConstantRanges = push_constant_ranges.data();
 
     VK_CHECK(vkCreatePipelineLayout(
         VulkanContext::device->handle(), &pipeline_layout_create_info, nullptr, &m_pipeline_layout))

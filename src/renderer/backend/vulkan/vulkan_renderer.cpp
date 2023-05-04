@@ -29,6 +29,18 @@ VulkanRenderer::VulkanRenderer() {
     };
     m_pipeline = std::make_shared<VulkanGraphicsPipeline>(pipeline_description);
 
+    const auto flat_color_vertex = std::make_shared<VulkanShaderModule>("../assets/shaders/flat_color_vertex.spv",
+                                                                        VulkanShaderModule::Stage::Vertex);
+
+    const auto flat_color_fragment = std::make_shared<VulkanShaderModule>("../assets/shaders/flat_color_fragment.spv",
+                                                                          VulkanShaderModule::Stage::Fragment);
+
+    const auto flat_color_pipeline_description = VulkanGraphicsPipeline::Description{
+        .shader_modules = {flat_color_vertex, flat_color_fragment},
+        .render_pass = m_render_pass,
+    };
+    m_flat_color_pipeline = std::make_shared<VulkanGraphicsPipeline>(flat_color_pipeline_description);
+
     m_command_buffer = VulkanContext::device->create_command_buffer(VulkanQueue::Type::Graphics);
 
     // Swapchain
@@ -86,6 +98,7 @@ VulkanRenderer::VulkanRenderer() {
 
     // Model
     m_model = std::make_shared<Model>("../assets/suzanne.fbx", false);
+    m_cube = std::make_shared<Model>("../assets/cube.fbx", false);
 }
 
 VulkanRenderer::~VulkanRenderer() {
@@ -172,6 +185,53 @@ void VulkanRenderer::update() {
             vkCmdDrawIndexed(m_command_buffer->handle(), index_buffer->get_count(), 1, 0, 0, 0);
         }
 
+        // Draw lights
+        // ==========================
+        m_flat_color_pipeline->bind(command_buffer);
+        vkCmdSetViewport(command_buffer->handle(), 0, 1, &viewport);
+        vkCmdSetScissor(command_buffer->handle(), 0, 1, &scissor);
+
+        vkCmdBindDescriptorSets(command_buffer->handle(),
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                m_flat_color_pipeline->layout(),
+                                0,
+                                1,
+                                &m_vertex_shader_set,
+                                0,
+                                nullptr);
+
+        for (int i = 0; i < light_info.count; ++i) {
+            const glm::vec3 position = glm::vec3(light_info.positions[i]);
+            const glm::vec4 color = light_info.colors[i];
+
+            glm::mat4 model{1.0f};
+            model = glm::translate(model, position);
+            model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
+
+            ModelInfoPushConstant constants = {
+                .model = model,
+                .color = color,
+            };
+
+            vkCmdPushConstants(command_buffer->handle(),
+                               m_flat_color_pipeline->layout(),
+                               VK_SHADER_STAGE_VERTEX_BIT,
+                               0,
+                               sizeof(ModelInfoPushConstant),
+                               &constants);
+
+            const auto& mesh = m_cube->get_meshes()[0];
+
+            const auto& vertex_buffer = mesh->get_vertex_buffer();
+            const auto& index_buffer = mesh->get_index_buffer();
+
+            vertex_buffer->bind(command_buffer);
+            index_buffer->bind(command_buffer);
+
+            vkCmdDrawIndexed(m_command_buffer->handle(), index_buffer->get_count(), 1, 0, 0, 0);
+        }
+        // ==========================
+
         m_render_pass->end(*command_buffer);
     });
 
@@ -250,10 +310,9 @@ void VulkanRenderer::on_event(Event& event) {
 }
 
 void VulkanRenderer::update_light_info() {
-    LightsUniformBuffer light_info{};
     light_info.count = 5;
 
-    light_info.positions[0] = glm::vec4(-1.0f, 0.0f, 0.0f, 0.0f);
+    light_info.positions[0] = glm::vec4(-2.0f, 0.0f, 0.0f, 0.0f);
     light_info.colors[0] = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
     light_info.positions[1] = glm::vec4(0.0f, 1.0f, -1.0f, 0.0f);

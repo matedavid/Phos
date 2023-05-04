@@ -42,6 +42,8 @@ VulkanShaderModule::VulkanShaderModule(const std::string& path, Stage stage) : m
 
     retrieve_descriptor_sets_info(module);
 
+    retrieve_push_constants(module);
+
     // Cleanup
     spvReflectDestroyShaderModule(&module);
 }
@@ -166,6 +168,24 @@ void VulkanShaderModule::retrieve_descriptor_sets_info(const SpvReflectShaderMod
         PS_ASSERT(layout != VK_NULL_HANDLE, "Layout has null")
 
         m_descriptor_sets_layout.push_back(layout);
+    }
+}
+
+void VulkanShaderModule::retrieve_push_constants(const SpvReflectShaderModule& module) {
+    uint32_t push_constant_count;
+    SPIRV_REFLECT_CHECK(spvReflectEnumeratePushConstantBlocks(&module, &push_constant_count, nullptr))
+
+    std::vector<SpvReflectBlockVariable*> push_constant_blocks(push_constant_count);
+    SPIRV_REFLECT_CHECK(
+        spvReflectEnumeratePushConstantBlocks(&module, &push_constant_count, push_constant_blocks.data()))
+
+    for (const auto& push_constant_block : push_constant_blocks) {
+        VkPushConstantRange range{};
+        range.offset = push_constant_block->offset;
+        range.size = push_constant_block->size;
+        range.stageFlags = get_vulkan_stage(m_stage);
+
+        m_push_constant_ranges.push_back(range);
     }
 }
 
