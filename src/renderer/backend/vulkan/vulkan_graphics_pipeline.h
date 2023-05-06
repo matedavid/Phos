@@ -15,7 +15,9 @@ class VulkanCommandBuffer;
 class VulkanGraphicsPipeline {
   public:
     struct Description {
-        std::vector<std::shared_ptr<VulkanShaderModule>> shader_modules;
+        std::shared_ptr<VulkanShaderModule> vertex_shader;
+        std::shared_ptr<VulkanShaderModule> fragment_shader;
+
         std::shared_ptr<VulkanRenderPass> render_pass;
     };
 

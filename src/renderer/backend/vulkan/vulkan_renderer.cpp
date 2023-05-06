@@ -24,7 +24,8 @@ VulkanRenderer::VulkanRenderer() {
     m_render_pass = std::make_shared<VulkanRenderPass>();
 
     const auto pipeline_description = VulkanGraphicsPipeline::Description{
-        .shader_modules = {vertex, fragment},
+        .vertex_shader = vertex,
+        .fragment_shader = fragment,
         .render_pass = m_render_pass,
     };
     m_pipeline = std::make_shared<VulkanGraphicsPipeline>(pipeline_description);
@@ -36,7 +37,8 @@ VulkanRenderer::VulkanRenderer() {
                                                                           VulkanShaderModule::Stage::Fragment);
 
     const auto flat_color_pipeline_description = VulkanGraphicsPipeline::Description{
-        .shader_modules = {flat_color_vertex, flat_color_fragment},
+        .vertex_shader = flat_color_vertex,
+        .fragment_shader = flat_color_fragment,
         .render_pass = m_render_pass,
     };
     m_flat_color_pipeline = std::make_shared<VulkanGraphicsPipeline>(flat_color_pipeline_description);

@@ -12,20 +12,19 @@ namespace Phos {
 
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     // Shaders
-    std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
-    for (const auto& shader : description.shader_modules) {
-        shader_stages.push_back(shader->get_shader_stage_create_info());
-    }
+    const std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
+        description.vertex_shader->get_shader_stage_create_info(),
+        description.fragment_shader->get_shader_stage_create_info(),
+    };
+
+    PS_ASSERT(description.vertex_shader->get_stage() == VulkanShaderModule::Stage::Vertex,
+              "Vertex shader must be vertex shader");
+    PS_ASSERT(description.fragment_shader->get_stage() == VulkanShaderModule::Stage::Fragment,
+              "Fragment shader must be fragment shader");
 
     // Vertex input
-    const auto& iterator = std::ranges::find_if(
-        description.shader_modules, [](const auto& s) { return s->get_stage() == VulkanShaderModule::Stage::Vertex; });
-
-    PS_ASSERT(iterator != description.shader_modules.end(), "Pipeline must contain vertex shader");
-    const auto& vertex_shader = iterator->get();
-
-    const auto binding_description = vertex_shader->get_binding_description();
-    const auto attribute_descriptions = vertex_shader->get_attribute_descriptions();
+    const auto binding_description = description.vertex_shader->get_binding_description();
+    const auto attribute_descriptions = description.vertex_shader->get_attribute_descriptions();
 
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info{};
     vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -107,17 +106,19 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     // this at the moment but probably not the most efficient way to organize descriptor sets
 
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
-    for (const auto& shader : description.shader_modules) {
-        for (const auto& set_layout : shader->get_descriptor_sets_layout()) {
-            descriptor_sets_layout.push_back(set_layout);
-        }
+    for (const auto& set_layout : description.vertex_shader->get_descriptor_sets_layout()) {
+        descriptor_sets_layout.push_back(set_layout);
+    }
+    for (const auto& set_layout : description.fragment_shader->get_descriptor_sets_layout()) {
+        descriptor_sets_layout.push_back(set_layout);
     }
 
     std::vector<VkPushConstantRange> push_constant_ranges;
-    for (const auto& shader : description.shader_modules) {
-        for (const auto& push_constant_range : shader->get_push_constant_ranges()) {
-            push_constant_ranges.push_back(push_constant_range);
-        }
+    for (const auto& push_constant_range : description.vertex_shader->get_push_constant_ranges()) {
+        push_constant_ranges.push_back(push_constant_range);
+    }
+    for (const auto& push_constant_range : description.fragment_shader->get_push_constant_ranges()) {
+        push_constant_ranges.push_back(push_constant_range);
     }
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
