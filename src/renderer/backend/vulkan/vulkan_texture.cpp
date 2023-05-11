@@ -19,7 +19,7 @@ VulkanTexture::VulkanTexture(const std::string& path) {
         return;
     }
 
-    const VkDeviceSize image_size = width * height * 4;
+    const auto image_size = static_cast<uint32_t>(width * height * 4);
 
     const auto staging_buffer = VulkanBuffer{
         image_size,
@@ -35,12 +35,11 @@ VulkanTexture::VulkanTexture(const std::string& path) {
     const auto description = VulkanImage::Description{
         .width = static_cast<uint32_t>(width),
         .height = static_cast<uint32_t>(height),
-        .image_type = VK_IMAGE_TYPE_2D,
-        .format = VK_FORMAT_R8G8B8A8_SRGB,
-        .initial_layout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .type = VulkanImage::Type::Image2D,
+        .format = VulkanImage::Format::B8G8R8_SRGB,
+        .transfer = true,
     };
-    m_image = std::make_unique<VulkanImage>(description);
+    m_image = std::make_shared<VulkanImage>(description);
 
     // Transition image layout for copying
     m_image->transition_layout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -50,20 +49,6 @@ VulkanTexture::VulkanTexture(const std::string& path) {
 
     // Transition image layout for shader access
     m_image->transition_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-    // Create Image View
-    VkImageViewCreateInfo view_info{};
-    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    view_info.image = m_image->handle();
-    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view_info.format = VK_FORMAT_R8G8B8A8_SRGB;
-    view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    view_info.subresourceRange.baseMipLevel = 0;
-    view_info.subresourceRange.levelCount = 1;
-    view_info.subresourceRange.baseArrayLayer = 0;
-    view_info.subresourceRange.layerCount = 1;
-
-    VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &view_info, nullptr, &m_image_view))
 
     // Create sampler
     VkSamplerCreateInfo sampler_info{};
@@ -89,7 +74,6 @@ VulkanTexture::VulkanTexture(const std::string& path) {
 
 VulkanTexture::~VulkanTexture() {
     vkDestroySampler(VulkanContext::device->handle(), m_sampler, nullptr);
-    vkDestroyImageView(VulkanContext::device->handle(), m_image_view, nullptr);
 }
 
 } // namespace Phos

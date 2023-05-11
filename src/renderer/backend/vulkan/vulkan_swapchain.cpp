@@ -225,10 +225,8 @@ void VulkanSwapchain::retrieve_swapchain_images() {
     m_depth_image = std::make_unique<VulkanImage>(VulkanImage::Description{
         .width = m_swapchain_info.extent.width,
         .height = m_swapchain_info.extent.height,
-        .image_type = VK_IMAGE_TYPE_2D,
-        .format = VK_FORMAT_D32_SFLOAT,
-        .initial_layout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        .type = VulkanImage::Type::Image2D,
+        .format = VulkanImage::Format::D32_SFLOAT,
     });
 
     VkImageViewCreateInfo image_view_create_info{};

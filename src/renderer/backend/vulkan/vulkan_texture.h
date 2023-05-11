@@ -5,24 +5,24 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 
+#include "renderer/backend/vulkan/vulkan_image.h"
+
 namespace Phos {
 
 // Forward declarations
 class VulkanDevice;
-class VulkanImage;
 
 class VulkanTexture {
   public:
     explicit VulkanTexture(const std::string& path);
     ~VulkanTexture();
 
-    [[nodiscard]] VkImageView image_view() const { return m_image_view; }
+    [[nodiscard]] VkImageView image_view() const { return m_image->view(); }
     [[nodiscard]] VkSampler sampler() const { return m_sampler; }
 
   private:
-    std::unique_ptr<VulkanImage> m_image;
+    std::shared_ptr<VulkanImage> m_image;
 
-    VkImageView m_image_view{};
     VkSampler m_sampler{};
 };
 

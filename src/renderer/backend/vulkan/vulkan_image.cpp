@@ -6,27 +6,35 @@
 
 namespace Phos {
 
-VulkanImage::VulkanImage(const Description& description) {
-    VkImageCreateInfo create_info{};
-    create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    create_info.imageType = description.image_type;
-    create_info.extent.width = description.width;
-    create_info.extent.height = description.height;
-    create_info.extent.depth = 1;
-    create_info.mipLevels = 1;
-    create_info.arrayLayers = 1;
-    create_info.format = description.format;
-    create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    create_info.initialLayout = description.initial_layout;
-    create_info.usage = description.usage;
-    create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+VulkanImage::VulkanImage(const Description& description) : m_width(description.width), m_height(description.height) {
+    // Create image
+    VkImageCreateInfo image_create_info{};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.imageType = get_image_type(description.type);
+    image_create_info.format = get_image_format(description.format);
 
-    VK_CHECK(vkCreateImage(VulkanContext::device->handle(), &create_info, nullptr, &m_image))
+    image_create_info.extent.width = description.width;
+    image_create_info.extent.height = description.height;
+    image_create_info.extent.depth = 1;
 
-    m_width = description.width;
-    m_height = description.height;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT; // TODO: Maybe bad as default?
+
+    if (is_depth_format(description.format))
+        image_create_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    if (description.transfer)
+        image_create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    VK_CHECK(vkCreateImage(VulkanContext::device->handle(), &image_create_info, nullptr, &m_image))
+
+    // Allocate image
     VkMemoryRequirements memory_requirements;
     vkGetImageMemoryRequirements(VulkanContext::device->handle(), m_image, &memory_requirements);
 
@@ -43,11 +51,31 @@ VulkanImage::VulkanImage(const Description& description) {
 
     // Bind memory to image
     VK_CHECK(vkBindImageMemory(VulkanContext::device->handle(), m_image, m_memory, 0))
+
+    // Create image view
+    VkImageViewCreateInfo view_create_info{};
+    view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_create_info.image = m_image;
+    view_create_info.viewType = get_image_view_type(description.type);
+    view_create_info.format = get_image_format(description.format);
+
+    if (is_depth_format(description.format))
+        view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    else
+        view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    view_create_info.subresourceRange.baseMipLevel = 0;
+    view_create_info.subresourceRange.levelCount = 1;
+    view_create_info.subresourceRange.baseArrayLayer = 0;
+    view_create_info.subresourceRange.layerCount = 1;
+
+    VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &view_create_info, nullptr, &m_image_view))
 }
 
 VulkanImage::~VulkanImage() {
     vkDestroyImage(VulkanContext::device->handle(), m_image, nullptr);
     vkFreeMemory(VulkanContext::device->handle(), m_memory, nullptr);
+    vkDestroyImageView(VulkanContext::device->handle(), m_image_view, nullptr);
 }
 
 void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_layout) const {
@@ -89,6 +117,40 @@ void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_
             vkCmdPipelineBarrier(
                 command_buffer.handle(), source_stage, destination_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         });
+}
+
+VkImageType VulkanImage::get_image_type(Type type) const {
+    switch (type) {
+    default:
+    case Type::Image2D:
+        return VK_IMAGE_TYPE_2D;
+    case Type::Image3D:
+        return VK_IMAGE_TYPE_3D;
+    }
+}
+
+VkFormat VulkanImage::get_image_format(Format format) const {
+    switch (format) {
+    default:
+    case Format::B8G8R8_SRGB:
+        return VK_FORMAT_R8G8B8A8_SRGB;
+    case Format::D32_SFLOAT:
+        return VK_FORMAT_D32_SFLOAT;
+    }
+}
+
+VkImageViewType VulkanImage::get_image_view_type(Type type) const {
+    switch (type) {
+    default:
+    case Type::Image2D:
+        return VK_IMAGE_VIEW_TYPE_2D;
+    case Type::Image3D:
+        return VK_IMAGE_VIEW_TYPE_3D;
+    }
+}
+
+bool VulkanImage::is_depth_format(Format format) const {
+    return format == Format::D32_SFLOAT;
 }
 
 } // namespace Phos
