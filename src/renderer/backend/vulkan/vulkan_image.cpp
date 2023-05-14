@@ -6,7 +6,8 @@
 
 namespace Phos {
 
-VulkanImage::VulkanImage(const Description& description) : m_width(description.width), m_height(description.height) {
+VulkanImage::VulkanImage(const Description& description)
+      : m_width(description.width), m_height(description.height), m_format(description.format) {
     // Create image
     VkImageCreateInfo image_create_info{};
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -119,7 +120,7 @@ void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_
         });
 }
 
-VkImageType VulkanImage::get_image_type(Type type) const {
+VkImageType VulkanImage::get_image_type(Type type) {
     switch (type) {
     default:
     case Type::Image2D:
@@ -129,7 +130,7 @@ VkImageType VulkanImage::get_image_type(Type type) const {
     }
 }
 
-VkFormat VulkanImage::get_image_format(Format format) const {
+VkFormat VulkanImage::get_image_format(Format format) {
     switch (format) {
     default:
     case Format::B8G8R8_SRGB:
@@ -139,7 +140,7 @@ VkFormat VulkanImage::get_image_format(Format format) const {
     }
 }
 
-VkImageViewType VulkanImage::get_image_view_type(Type type) const {
+VkImageViewType VulkanImage::get_image_view_type(Type type) {
     switch (type) {
     default:
     case Type::Image2D:
@@ -149,7 +150,7 @@ VkImageViewType VulkanImage::get_image_view_type(Type type) const {
     }
 }
 
-bool VulkanImage::is_depth_format(Format format) const {
+bool VulkanImage::is_depth_format(Format format) {
     return format == Format::D32_SFLOAT;
 }
 

@@ -18,7 +18,7 @@ class VulkanGraphicsPipeline {
         std::shared_ptr<VulkanShaderModule> vertex_shader;
         std::shared_ptr<VulkanShaderModule> fragment_shader;
 
-        std::shared_ptr<VulkanRenderPass> render_pass;
+        VkRenderPass render_pass;
     };
 
     explicit VulkanGraphicsPipeline(const Description& description);

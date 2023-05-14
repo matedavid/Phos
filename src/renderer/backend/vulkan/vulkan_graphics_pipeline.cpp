@@ -148,7 +148,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     create_info.pColorBlendState = &color_blend_create_info;
     create_info.pDynamicState = &dynamic_state_create_info;
     create_info.layout = m_pipeline_layout;
-    create_info.renderPass = description.render_pass->handle();
+    create_info.renderPass = description.render_pass;
     create_info.subpass = 0;
 
     VK_CHECK(vkCreateGraphicsPipelines(VulkanContext::device->handle(), nullptr, 1, &create_info, nullptr, &m_pipeline))

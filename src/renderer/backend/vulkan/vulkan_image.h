@@ -35,9 +35,17 @@ class VulkanImage {
 
     [[nodiscard]] uint32_t width() const { return m_width; }
     [[nodiscard]] uint32_t height() const { return m_height; }
+    [[nodiscard]] Format format() const { return m_format; }
 
     [[nodiscard]] VkImage handle() const { return m_image; }
     [[nodiscard]] VkImageView view() const { return m_image_view; }
+
+    // Helper methods, maybe move to another place
+    [[nodiscard]] static VkImageType get_image_type(Type type);
+    [[nodiscard]] static VkFormat get_image_format(Format format);
+    [[nodiscard]] static VkImageViewType get_image_view_type(Type type);
+
+    [[nodiscard]] static bool is_depth_format(Format format);
 
   private:
     VkImage m_image{VK_NULL_HANDLE};
@@ -46,12 +54,9 @@ class VulkanImage {
     VkImageView m_image_view{VK_NULL_HANDLE};
 
     uint32_t m_width, m_height;
+    Format m_format;
 
-    [[nodiscard]] VkImageType get_image_type(Type type) const;
-    [[nodiscard]] VkFormat get_image_format(Format format) const;
-    [[nodiscard]] VkImageViewType get_image_view_type(Type type) const;
-
-    [[nodiscard]] bool is_depth_format(Format format) const;
+    void create_image_view(const Description& description);
 };
 
 } // namespace Phos

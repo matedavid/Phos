@@ -2,6 +2,7 @@
 
 #include "vk_core.h"
 
+#include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 #include <memory>
 
@@ -10,13 +11,46 @@ namespace Phos {
 // Forward declarations
 class VulkanDevice;
 class VulkanRenderPass;
+class VulkanImage;
+
+enum class LoadOperation {
+    Load,
+    Clear,
+    DontCare
+};
+
+enum class StoreOperation {
+    Store,
+    DontCare
+};
 
 class VulkanFramebuffer {
   public:
-    VulkanFramebuffer(const std::shared_ptr<VulkanRenderPass>& render_pass,
-                      uint32_t width,
-                      uint32_t height,
-                      const std::vector<VkImageView>& attachments);
+    struct Attachment {
+        std::shared_ptr<VulkanImage> image;
+
+        LoadOperation load_operation;
+        StoreOperation store_operation;
+
+        glm::vec3 clear_value;
+
+        bool is_presentation = false; // If attachment image will be used for presentation
+    };
+
+    struct Description {
+        std::vector<Attachment> attachments;
+    };
+
+    explicit VulkanFramebuffer(const Description& description);
+    explicit VulkanFramebuffer(const std::vector<VkImageView>& attachments,
+                               uint32_t width,
+                               uint32_t height,
+                               VkRenderPass render_pass);
+
+    //    VulkanFramebuffer(const std::shared_ptr<VulkanRenderPass>& render_pass,
+    //                      uint32_t width,
+    //                      uint32_t height,
+    //                      const std::vector<VkImageView>& attachments);
     ~VulkanFramebuffer();
 
     [[nodiscard]] uint32_t width() const { return m_width; }
@@ -25,12 +59,16 @@ class VulkanFramebuffer {
     [[nodiscard]] VkFramebuffer handle() const { return m_framebuffer; }
 
   private:
+    bool m_created_swapchain = true;
+    VkRenderPass m_render_pass{VK_NULL_HANDLE};
     VkFramebuffer m_framebuffer{VK_NULL_HANDLE};
 
-    uint32_t m_width;
-    uint32_t m_height;
-
     std::shared_ptr<VulkanDevice> m_device;
+
+    uint32_t m_width, m_height;
+
+    [[nodiscard]] static VkAttachmentLoadOp get_load_op(LoadOperation operation);
+    [[nodiscard]] static VkAttachmentStoreOp get_store_op(StoreOperation operation);
 };
 
 } // namespace Phos

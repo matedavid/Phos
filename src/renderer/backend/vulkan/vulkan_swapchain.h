@@ -20,7 +20,7 @@ class VulkanSwapchain {
     VulkanSwapchain();
     ~VulkanSwapchain();
 
-    void specify_render_pass(std::shared_ptr<VulkanRenderPass> render_pass);
+    // void specify_render_pass(std::shared_ptr<VulkanRenderPass> render_pass);
 
     void acquire_next_image(VkSemaphore semaphore, VkFence fence);
     [[nodiscard]] const std::unique_ptr<VulkanFramebuffer>& get_current_framebuffer() const {
@@ -30,6 +30,7 @@ class VulkanSwapchain {
 
     void recreate();
 
+    [[nodiscard]] VkRenderPass get_render_pass() { return m_render_pass; };
     [[nodiscard]] VkSwapchainKHR handle() { return m_swapchain; }
 
   private:
@@ -47,6 +48,8 @@ class VulkanSwapchain {
     std::vector<VkImageView> m_image_views;
     std::vector<std::unique_ptr<VulkanFramebuffer>> m_framebuffers;
 
+    VkRenderPass m_render_pass{VK_NULL_HANDLE};
+
     std::unique_ptr<VulkanImage> m_depth_image;
     VkImageView m_depth_image_view;
 
@@ -55,7 +58,6 @@ class VulkanSwapchain {
 
     // Reference members
     VkSurfaceKHR m_surface{VK_NULL_HANDLE};
-    std::shared_ptr<VulkanRenderPass> m_render_pass{nullptr};
 
     // Private methods
     void create();
@@ -64,6 +66,8 @@ class VulkanSwapchain {
     [[nodiscard]] SwapchainInformation get_swapchain_information() const;
     void retrieve_swapchain_images();
     void create_framebuffers();
+
+    void create_render_pass();
 };
 
 } // namespace Phos
