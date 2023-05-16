@@ -42,10 +42,7 @@ class VulkanFramebuffer {
     };
 
     explicit VulkanFramebuffer(const Description& description);
-    explicit VulkanFramebuffer(const std::vector<VkImageView>& attachments,
-                               uint32_t width,
-                               uint32_t height,
-                               VkRenderPass render_pass);
+    explicit VulkanFramebuffer(const Description& description, VkRenderPass render_pass);
 
     //    VulkanFramebuffer(const std::shared_ptr<VulkanRenderPass>& render_pass,
     //                      uint32_t width,
@@ -56,16 +53,23 @@ class VulkanFramebuffer {
     [[nodiscard]] uint32_t width() const { return m_width; }
     [[nodiscard]] uint32_t height() const { return m_height; }
 
+    [[nodiscard]] const std::vector<Attachment>& get_attachments() const { return m_description.attachments; }
+
     [[nodiscard]] VkFramebuffer handle() const { return m_framebuffer; }
+    [[nodiscard]] VkRenderPass get_render_pass() const { return m_render_pass; }
 
   private:
-    bool m_created_swapchain = true;
+    // If the framebuffer created the render pass
+    bool m_created_render_pass = true;
+
     VkRenderPass m_render_pass{VK_NULL_HANDLE};
     VkFramebuffer m_framebuffer{VK_NULL_HANDLE};
 
     std::shared_ptr<VulkanDevice> m_device;
 
     uint32_t m_width, m_height;
+
+    Description m_description;
 
     [[nodiscard]] static VkAttachmentLoadOp get_load_op(LoadOperation operation);
     [[nodiscard]] static VkAttachmentStoreOp get_store_op(StoreOperation operation);

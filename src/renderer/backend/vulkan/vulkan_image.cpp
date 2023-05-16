@@ -54,28 +54,20 @@ VulkanImage::VulkanImage(const Description& description)
     VK_CHECK(vkBindImageMemory(VulkanContext::device->handle(), m_image, m_memory, 0))
 
     // Create image view
-    VkImageViewCreateInfo view_create_info{};
-    view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    view_create_info.image = m_image;
-    view_create_info.viewType = get_image_view_type(description.type);
-    view_create_info.format = get_image_format(description.format);
+    create_image_view(description);
+}
 
-    if (is_depth_format(description.format))
-        view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    else
-        view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-    view_create_info.subresourceRange.baseMipLevel = 0;
-    view_create_info.subresourceRange.levelCount = 1;
-    view_create_info.subresourceRange.baseArrayLayer = 0;
-    view_create_info.subresourceRange.layerCount = 1;
-
-    VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &view_create_info, nullptr, &m_image_view))
+VulkanImage::VulkanImage(const Phos::VulkanImage::Description& description, VkImage image)
+      : m_image(image), m_width(description.width), m_height(description.height), m_format(description.format) {
+    create_image_view(description);
+    m_created_resources = false;
 }
 
 VulkanImage::~VulkanImage() {
-    vkDestroyImage(VulkanContext::device->handle(), m_image, nullptr);
-    vkFreeMemory(VulkanContext::device->handle(), m_memory, nullptr);
+    if (m_created_resources) {
+        vkDestroyImage(VulkanContext::device->handle(), m_image, nullptr);
+        vkFreeMemory(VulkanContext::device->handle(), m_memory, nullptr);
+    }
     vkDestroyImageView(VulkanContext::device->handle(), m_image_view, nullptr);
 }
 
@@ -134,7 +126,7 @@ VkFormat VulkanImage::get_image_format(Format format) {
     switch (format) {
     default:
     case Format::B8G8R8_SRGB:
-        return VK_FORMAT_R8G8B8A8_SRGB;
+        return VK_FORMAT_B8G8R8A8_SRGB;
     case Format::D32_SFLOAT:
         return VK_FORMAT_D32_SFLOAT;
     }
@@ -152,6 +144,27 @@ VkImageViewType VulkanImage::get_image_view_type(Type type) {
 
 bool VulkanImage::is_depth_format(Format format) {
     return format == Format::D32_SFLOAT;
+}
+
+void VulkanImage::create_image_view(const Description& description) {
+    // Create image view
+    VkImageViewCreateInfo view_create_info{};
+    view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_create_info.image = m_image;
+    view_create_info.viewType = get_image_view_type(description.type);
+    view_create_info.format = get_image_format(description.format);
+
+    if (is_depth_format(description.format))
+        view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    else
+        view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    view_create_info.subresourceRange.baseMipLevel = 0;
+    view_create_info.subresourceRange.levelCount = 1;
+    view_create_info.subresourceRange.baseArrayLayer = 0;
+    view_create_info.subresourceRange.layerCount = 1;
+
+    VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &view_create_info, nullptr, &m_image_view))
 }
 
 } // namespace Phos

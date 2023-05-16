@@ -29,6 +29,7 @@ class VulkanImage {
     };
 
     explicit VulkanImage(const Description& description);
+    explicit VulkanImage(const Description& description, VkImage image);
     ~VulkanImage();
 
     void transition_layout(VkImageLayout old_layout, VkImageLayout new_layout) const;
@@ -55,6 +56,8 @@ class VulkanImage {
 
     uint32_t m_width, m_height;
     Format m_format;
+
+    bool m_created_resources = true;
 
     void create_image_view(const Description& description);
 };

@@ -10,7 +10,7 @@
 
 namespace Phos {
 
-VulkanFramebuffer::VulkanFramebuffer(const Phos::VulkanFramebuffer::Description& description) {
+VulkanFramebuffer::VulkanFramebuffer(const Description& description) : m_description(description) {
     // Create Framebuffer render pass
     std::vector<VkAttachmentDescription> attachments;
     std::vector<VkAttachmentReference> attachment_references;
@@ -25,10 +25,10 @@ VulkanFramebuffer::VulkanFramebuffer(const Phos::VulkanFramebuffer::Description&
         attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachment_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-        if (attachment.is_presentation) {
-            attachment_description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        } else if (VulkanImage::is_depth_format(attachment.image->format())) {
+        if (VulkanImage::is_depth_format(attachment.image->format())) {
             attachment_description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        } else if (attachment.is_presentation) {
+            attachment_description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         } else {
             attachment_description.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         }
@@ -108,7 +108,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Phos::VulkanFramebuffer::Description&
 
     // Create framebuffer
     m_width = description.attachments[0].image->width();
-    m_width = description.attachments[0].image->height();
+    m_height = description.attachments[0].image->height();
 
     std::vector<VkImageView> framebuffer_attachments;
     for (const auto& attachment : description.attachments) {
@@ -130,23 +130,32 @@ VulkanFramebuffer::VulkanFramebuffer(const Phos::VulkanFramebuffer::Description&
     VK_CHECK(vkCreateFramebuffer(VulkanContext::device->handle(), &framebuffer_create_info, nullptr, &m_framebuffer))
 }
 
-VulkanFramebuffer::VulkanFramebuffer(const std::vector<VkImageView>& attachments,
-                                     uint32_t width,
-                                     uint32_t height,
-                                     VkRenderPass render_pass)
-      : m_render_pass(render_pass), m_width(width), m_height(height) {
+VulkanFramebuffer::VulkanFramebuffer(const Description& description, VkRenderPass render_pass)
+      : m_render_pass(render_pass), m_description(description) {
+    // Create framebuffer
+    m_width = m_description.attachments[0].image->width();
+    m_height = m_description.attachments[0].image->height();
+
+    std::vector<VkImageView> framebuffer_attachments;
+    for (const auto& attachment : m_description.attachments) {
+        framebuffer_attachments.push_back(attachment.image->view());
+
+        PS_ASSERT(m_width == attachment.image->width() && m_height == attachment.image->height(),
+                  "All attachments to framebuffer must have the same width and height")
+    }
+
     VkFramebufferCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     create_info.renderPass = m_render_pass;
-    create_info.attachmentCount = static_cast<uint32_t>(attachments.size());
-    create_info.pAttachments = attachments.data();
+    create_info.attachmentCount = static_cast<uint32_t>(framebuffer_attachments.size());
+    create_info.pAttachments = framebuffer_attachments.data();
     create_info.width = m_width;
     create_info.height = m_height;
     create_info.layers = 1;
 
     VK_CHECK(vkCreateFramebuffer(VulkanContext::device->handle(), &create_info, nullptr, &m_framebuffer))
 
-    m_created_swapchain = false;
+    m_created_render_pass = false;
 }
 
 /*
@@ -171,7 +180,7 @@ VulkanFramebuffer::VulkanFramebuffer(const std::shared_ptr<VulkanRenderPass>& re
 VulkanFramebuffer::~VulkanFramebuffer() {
     vkDestroyFramebuffer(VulkanContext::device->handle(), m_framebuffer, nullptr);
 
-    if (m_created_swapchain)
+    if (m_created_render_pass)
         vkDestroyRenderPass(VulkanContext::device->handle(), m_render_pass, nullptr);
 }
 

@@ -11,6 +11,7 @@ class VulkanDevice;
 class VulkanShaderModule;
 class VulkanRenderPass;
 class VulkanCommandBuffer;
+class VulkanFramebuffer;
 
 class VulkanGraphicsPipeline {
   public:
@@ -18,7 +19,7 @@ class VulkanGraphicsPipeline {
         std::shared_ptr<VulkanShaderModule> vertex_shader;
         std::shared_ptr<VulkanShaderModule> fragment_shader;
 
-        VkRenderPass render_pass;
+        std::shared_ptr<VulkanFramebuffer> target_framebuffer;
     };
 
     explicit VulkanGraphicsPipeline(const Description& description);

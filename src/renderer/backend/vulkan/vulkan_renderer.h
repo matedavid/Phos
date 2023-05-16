@@ -64,7 +64,7 @@ class VulkanRenderer {
   private:
     std::shared_ptr<VulkanSwapchain> m_swapchain;
 
-    // std::shared_ptr<VulkanRenderPass> m_render_pass;
+    std::shared_ptr<VulkanRenderPass> m_render_pass;
     std::shared_ptr<VulkanGraphicsPipeline> m_pipeline;
 
     std::shared_ptr<VulkanGraphicsPipeline> m_flat_color_pipeline;

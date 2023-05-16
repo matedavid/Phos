@@ -23,7 +23,7 @@ class VulkanSwapchain {
     // void specify_render_pass(std::shared_ptr<VulkanRenderPass> render_pass);
 
     void acquire_next_image(VkSemaphore semaphore, VkFence fence);
-    [[nodiscard]] const std::unique_ptr<VulkanFramebuffer>& get_current_framebuffer() const {
+    [[nodiscard]] const std::shared_ptr<VulkanFramebuffer>& get_current_framebuffer() const {
         return m_framebuffers[m_current_image_idx];
     }
     [[nodiscard]] uint32_t get_current_image_idx() const { return m_current_image_idx; }
@@ -31,6 +31,8 @@ class VulkanSwapchain {
     void recreate();
 
     [[nodiscard]] VkRenderPass get_render_pass() { return m_render_pass; };
+    [[nodiscard]] std::shared_ptr<VulkanFramebuffer> get_target_framebuffer() const { return m_framebuffers[0]; }
+
     [[nodiscard]] VkSwapchainKHR handle() { return m_swapchain; }
 
   private:
@@ -44,14 +46,12 @@ class VulkanSwapchain {
 
     // Swapchain specific members
     VkSwapchainKHR m_swapchain{};
-    std::vector<VkImage> m_images;
-    std::vector<VkImageView> m_image_views;
-    std::vector<std::unique_ptr<VulkanFramebuffer>> m_framebuffers;
+    std::vector<std::shared_ptr<VulkanImage>> m_images;
+    std::vector<std::shared_ptr<VulkanFramebuffer>> m_framebuffers;
 
     VkRenderPass m_render_pass{VK_NULL_HANDLE};
 
-    std::unique_ptr<VulkanImage> m_depth_image;
-    VkImageView m_depth_image_view;
+    std::shared_ptr<VulkanImage> m_depth_image;
 
     // Current frame members
     uint32_t m_current_image_idx{};

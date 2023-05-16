@@ -30,15 +30,6 @@ VulkanSwapchain::~VulkanSwapchain() {
     vkDestroyRenderPass(VulkanContext::device->handle(), m_render_pass, nullptr);
 }
 
-// void VulkanSwapchain::specify_render_pass(std::shared_ptr<VulkanRenderPass> render_pass) {
-//     PS_ASSERT(m_render_pass == nullptr, "Render pass has been already specified");
-//
-//     m_render_pass = std::move(render_pass);
-//
-//     // Create presentation framebuffers
-//     create_framebuffers();
-// }
-
 void VulkanSwapchain::acquire_next_image(VkSemaphore semaphore, VkFence fence) {
     const auto result = vkAcquireNextImageKHR(
         VulkanContext::device->handle(), m_swapchain, UINT64_MAX, semaphore, fence, &m_current_image_idx);
@@ -109,16 +100,8 @@ void VulkanSwapchain::cleanup() {
     // Destroy framebuffers
     m_framebuffers.clear();
 
-    // Destroy image views
-    for (const auto& image_view : m_image_views) {
-        vkDestroyImageView(VulkanContext::device->handle(), image_view, nullptr);
-    }
-
     // Clear images
     m_images.clear();
-
-    // Destroy depth image view
-    vkDestroyImageView(VulkanContext::device->handle(), m_depth_image_view, nullptr);
 
     // Destroy depth image
     m_depth_image.reset();
@@ -202,62 +185,54 @@ void VulkanSwapchain::retrieve_swapchain_images() {
     uint32_t image_count;
     vkGetSwapchainImagesKHR(VulkanContext::device->handle(), m_swapchain, &image_count, nullptr);
 
-    m_images.resize(image_count);
-    vkGetSwapchainImagesKHR(VulkanContext::device->handle(), m_swapchain, &image_count, m_images.data());
+    std::vector<VkImage> images(image_count);
+    vkGetSwapchainImagesKHR(VulkanContext::device->handle(), m_swapchain, &image_count, images.data());
 
     // Create image views
-    m_image_views.resize(image_count);
-    for (uint32_t idx = 0; idx < m_images.size(); ++idx) {
-        const auto& image = m_images[idx];
-
-        VkImageViewCreateInfo create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        create_info.image = image;
-        create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        create_info.format = m_swapchain_info.surface_format.format;
-        create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-        create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        create_info.subresourceRange.baseMipLevel = 0;
-        create_info.subresourceRange.levelCount = 1;
-        create_info.subresourceRange.baseArrayLayer = 0;
-        create_info.subresourceRange.layerCount = 1;
-
-        VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &create_info, nullptr, &m_image_views[idx]))
+    m_images.clear();
+    for (const auto& image : images) {
+        const auto description = VulkanImage::Description{
+            .width = m_swapchain_info.extent.width,
+            .height = m_swapchain_info.extent.height,
+            .type = VulkanImage::Type::Image2D,
+            // TODO: Hardcoded at the moment, but should be: m_swapchain_info.surface_format.format
+            .format = VulkanImage::Format::B8G8R8_SRGB,
+        };
+        m_images.push_back(std::make_shared<VulkanImage>(description, image));
     }
 
     // Create depth image
-    m_depth_image = std::make_unique<VulkanImage>(VulkanImage::Description{
+    m_depth_image = std::make_shared<VulkanImage>(VulkanImage::Description{
         .width = m_swapchain_info.extent.width,
         .height = m_swapchain_info.extent.height,
         .type = VulkanImage::Type::Image2D,
         .format = VulkanImage::Format::D32_SFLOAT,
     });
-
-    VkImageViewCreateInfo image_view_create_info{};
-    image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    image_view_create_info.image = m_depth_image->handle();
-    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    image_view_create_info.format = VK_FORMAT_D32_SFLOAT;
-    image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    image_view_create_info.subresourceRange.baseMipLevel = 0;
-    image_view_create_info.subresourceRange.levelCount = 1;
-    image_view_create_info.subresourceRange.baseArrayLayer = 0;
-    image_view_create_info.subresourceRange.layerCount = 1;
-
-    VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &image_view_create_info, nullptr, &m_depth_image_view))
 }
 
 void VulkanSwapchain::create_framebuffers() {
     PS_ASSERT(m_framebuffers.empty(), "Cannot create new framebuffers if array is not empty")
 
-    for (const auto& view : m_image_views) {
-        const std::vector<VkImageView> attachments = {view, m_depth_image_view};
-        m_framebuffers.push_back(std::make_unique<VulkanFramebuffer>(
-            attachments, m_swapchain_info.extent.width, m_swapchain_info.extent.height, m_render_pass));
+    for (const auto& image : m_images) {
+        const auto color_attachment = VulkanFramebuffer::Attachment{
+            .image = image,
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(0.2f, 0.2f, 0.3f),
+            .is_presentation = true,
+        };
+
+        const auto depth_attachment = VulkanFramebuffer::Attachment{
+            .image = m_depth_image,
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::DontCare,
+            .clear_value = glm::vec3(1.0f),
+        };
+
+        const auto description = VulkanFramebuffer::Description{
+            .attachments = {color_attachment, depth_attachment},
+        };
+        m_framebuffers.push_back(std::make_shared<VulkanFramebuffer>(description, m_render_pass));
     }
 }
 

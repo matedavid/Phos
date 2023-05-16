@@ -25,12 +25,10 @@ VulkanRenderer::VulkanRenderer() {
     const auto fragment =
         std::make_shared<VulkanShaderModule>("../assets/shaders/fragment.spv", VulkanShaderModule::Stage::Fragment);
 
-    // m_render_pass = std::make_shared<VulkanRenderPass>();
-
     const auto pipeline_description = VulkanGraphicsPipeline::Description{
         .vertex_shader = vertex,
         .fragment_shader = fragment,
-        .render_pass = m_swapchain->get_render_pass(),
+        .target_framebuffer = m_swapchain->get_target_framebuffer(),
     };
     m_pipeline = std::make_shared<VulkanGraphicsPipeline>(pipeline_description);
 
@@ -43,9 +41,15 @@ VulkanRenderer::VulkanRenderer() {
     const auto flat_color_pipeline_description = VulkanGraphicsPipeline::Description{
         .vertex_shader = flat_color_vertex,
         .fragment_shader = flat_color_fragment,
-        .render_pass = m_swapchain->get_render_pass(),
+        .target_framebuffer = m_swapchain->get_target_framebuffer(),
     };
     m_flat_color_pipeline = std::make_shared<VulkanGraphicsPipeline>(flat_color_pipeline_description);
+
+    m_render_pass = std::make_shared<VulkanRenderPass>(VulkanRenderPass::Description{
+        .debug_name = "Presentation",
+        .presentation_target = true,
+        .target_framebuffer = m_swapchain->get_target_framebuffer(),
+    });
 
     m_command_buffer = VulkanContext::device->create_command_buffer(VulkanQueue::Type::Graphics);
 
@@ -149,26 +153,7 @@ void VulkanRenderer::update() {
     command_buffer->record([&]() {
         // Draw model
         // ==========================
-        VkClearValue clear{};
-        clear.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
-
-        VkClearValue depth_clear{};
-        depth_clear.depthStencil.depth = 1.0f;
-
-        std::vector<VkClearValue> clear_colors = {clear, depth_clear};
-
-        VkRenderPassBeginInfo info{};
-        info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        info.renderPass = m_swapchain->get_render_pass();
-        info.framebuffer = swapchain_framebuffer->handle();
-        info.renderArea.offset = {0, 0};
-        info.renderArea.extent = {swapchain_framebuffer->width(), swapchain_framebuffer->height()};
-        info.clearValueCount = static_cast<uint32_t>(clear_colors.size());
-        info.pClearValues = clear_colors.data();
-
-        vkCmdBeginRenderPass(command_buffer->handle(), &info, VK_SUBPASS_CONTENTS_INLINE);
-
-        // m_render_pass->begin(*command_buffer, *swapchain_framebuffer);
+        m_render_pass->begin(*command_buffer, swapchain_framebuffer);
 
         VkViewport viewport{};
         viewport.x = 0.0f;
@@ -211,8 +196,6 @@ void VulkanRenderer::update() {
         // Draw lights
         // ==========================
         m_flat_color_pipeline->bind(command_buffer);
-        vkCmdSetViewport(command_buffer->handle(), 0, 1, &viewport);
-        vkCmdSetScissor(command_buffer->handle(), 0, 1, &scissor);
 
         vkCmdBindDescriptorSets(command_buffer->handle(),
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -255,8 +238,7 @@ void VulkanRenderer::update() {
         }
         // ==========================
 
-        // m_render_pass->end(*command_buffer);
-        vkCmdEndRenderPass(command_buffer->handle());
+        m_render_pass->end(*command_buffer);
     });
 
     // Submit command buffer

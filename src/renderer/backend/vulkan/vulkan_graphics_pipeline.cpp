@@ -7,6 +7,7 @@
 #include "renderer/backend/vulkan/vulkan_render_pass.h"
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_context.h"
+#include "renderer/backend/vulkan/vulkan_framebuffer.h"
 
 namespace Phos {
 
@@ -148,7 +149,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     create_info.pColorBlendState = &color_blend_create_info;
     create_info.pDynamicState = &dynamic_state_create_info;
     create_info.layout = m_pipeline_layout;
-    create_info.renderPass = description.render_pass;
+    create_info.renderPass = description.target_framebuffer->get_render_pass();
     create_info.subpass = 0;
 
     VK_CHECK(vkCreateGraphicsPipelines(VulkanContext::device->handle(), nullptr, 1, &create_info, nullptr, &m_pipeline))
