@@ -27,11 +27,13 @@ VulkanImage::VulkanImage(const Description& description)
 
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT; // TODO: Maybe bad as default?
 
-    if (is_depth_format(description.format))
-        image_create_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-
     if (description.transfer)
         image_create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    if (description.attachment && is_depth_format(description.format))
+        image_create_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    else if (description.attachment)
+        image_create_info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     VK_CHECK(vkCreateImage(VulkanContext::device->handle(), &image_create_info, nullptr, &m_image))
 
@@ -103,6 +105,13 @@ void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_
 
                 source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
                 destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            } else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
+                       new_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+                barrier.srcAccessMask = 0;
+                barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+
+                source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                destination_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             } else {
                 PS_FAIL("Unsupported layout transition")
             }

@@ -207,6 +207,7 @@ void VulkanSwapchain::retrieve_swapchain_images() {
         .height = m_swapchain_info.extent.height,
         .type = VulkanImage::Type::Image2D,
         .format = VulkanImage::Format::D32_SFLOAT,
+        .attachment = true,
     });
 }
 

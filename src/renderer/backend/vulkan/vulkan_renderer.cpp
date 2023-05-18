@@ -18,7 +18,6 @@ VulkanRenderer::VulkanRenderer() {
 
     // Swapchain
     m_swapchain = std::make_shared<VulkanSwapchain>();
-    // m_swapchain->specify_render_pass(m_render_pass);
 
     const auto vertex =
         std::make_shared<VulkanShaderModule>("../assets/shaders/vertex.spv", VulkanShaderModule::Stage::Vertex);
@@ -52,6 +51,31 @@ VulkanRenderer::VulkanRenderer() {
     });
 
     m_command_buffer = VulkanContext::device->create_command_buffer(VulkanQueue::Type::Graphics);
+
+    // Geometry pass
+    const auto position_texture =
+        std::make_shared<VulkanTexture>(VulkanContext::window->get_width(), VulkanContext::window->get_height());
+    const auto diffuse_texture =
+        std::make_shared<VulkanTexture>(VulkanContext::window->get_width(), VulkanContext::window->get_height());
+
+    const auto geometry_framebuffer_description = VulkanFramebuffer::Description{
+        .attachments =
+            {
+                VulkanFramebuffer::Attachment{
+                    .image = position_texture->get_image(),
+                    .load_operation = LoadOperation::Clear,
+                    .store_operation = StoreOperation::Store,
+                    .clear_value = glm::vec3(0.0f),
+                },
+                VulkanFramebuffer::Attachment{
+                    .image = diffuse_texture->get_image(),
+                    .load_operation = LoadOperation::Clear,
+                    .store_operation = StoreOperation::Store,
+                    .clear_value = glm::vec3(0.0f),
+                },
+            },
+    };
+    const auto geometry_framebuffer = std::make_shared<VulkanFramebuffer>(geometry_framebuffer_description);
 
     // Synchronization
     VkSemaphoreCreateInfo semaphoreCreateInfo{};

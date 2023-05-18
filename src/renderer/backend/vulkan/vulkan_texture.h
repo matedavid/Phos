@@ -15,15 +15,18 @@ class VulkanDevice;
 class VulkanTexture {
   public:
     explicit VulkanTexture(const std::string& path);
+    explicit VulkanTexture(uint32_t width, uint32_t height);
     ~VulkanTexture();
 
-    [[nodiscard]] VkImageView image_view() const { return m_image->view(); }
+    [[nodiscard]] std::shared_ptr<VulkanImage> get_image() { return m_image; }
     [[nodiscard]] VkSampler sampler() const { return m_sampler; }
 
   private:
     std::shared_ptr<VulkanImage> m_image;
 
     VkSampler m_sampler{};
+
+    void create_image(const unsigned char* data, uint32_t width, uint32_t height);
 };
 
 } // namespace Phos

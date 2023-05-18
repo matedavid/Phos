@@ -26,6 +26,7 @@ class VulkanImage {
         Format format = Format::B8G8R8_SRGB;
 
         bool transfer = false; // Will the image be used for transfer operations
+        bool attachment = false; // Will the image be used as an attachment of a Framebuffer
     };
 
     explicit VulkanImage(const Description& description);
