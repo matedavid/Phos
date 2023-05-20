@@ -25,8 +25,6 @@ class VulkanTexture {
     std::shared_ptr<VulkanImage> m_image;
 
     VkSampler m_sampler{};
-
-    void create_image(const unsigned char* data, uint32_t width, uint32_t height);
 };
 
 } // namespace Phos

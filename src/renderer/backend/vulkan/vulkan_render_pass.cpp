@@ -9,8 +9,10 @@
 
 namespace Phos {
 
-VulkanRenderPass::VulkanRenderPass(Description description) : m_description(std::move(description)), m_begin_info({}) {
-    for (const auto& attachment : m_description.target_framebuffer->get_attachments()) {
+static std::vector<VkClearValue> get_clear_values(const std::shared_ptr<VulkanFramebuffer>& framebuffer) {
+    std::vector<VkClearValue> clear_values;
+
+    for (const auto& attachment : framebuffer->get_attachments()) {
         VkClearValue clear_value;
 
         if (VulkanImage::is_depth_format(attachment.image->format())) {
@@ -20,7 +22,18 @@ VulkanRenderPass::VulkanRenderPass(Description description) : m_description(std:
             clear_value.color = {{color.r, color.g, color.b, 1.0f}};
         }
 
-        m_clear_values.push_back(clear_value);
+        clear_values.push_back(clear_value);
+    }
+
+    return clear_values;
+}
+
+VulkanRenderPass::VulkanRenderPass(Description description) : m_description(std::move(description)), m_begin_info({}) {
+    PS_ASSERT(m_description.presentation_target || m_description.target_framebuffer != nullptr,
+              "You must provide a target framebuffer");
+
+    if (m_description.target_framebuffer != nullptr) {
+        m_clear_values = get_clear_values(m_description.target_framebuffer);
     }
 
     m_begin_info = VkRenderPassBeginInfo{};
@@ -29,11 +42,14 @@ VulkanRenderPass::VulkanRenderPass(Description description) : m_description(std:
     if (!m_description.presentation_target) {
         m_begin_info.renderPass = m_description.target_framebuffer->get_render_pass();
         m_begin_info.framebuffer = m_description.target_framebuffer->handle();
+
+        m_begin_info.renderArea.offset = {0, 0};
+        m_begin_info.renderArea.extent = {
+            m_description.target_framebuffer->width(),
+            m_description.target_framebuffer->height(),
+        };
     }
 
-    m_begin_info.renderArea.offset = {0, 0};
-    m_begin_info.renderArea.extent = {m_description.target_framebuffer->width(),
-                                      m_description.target_framebuffer->height()};
     m_begin_info.clearValueCount = static_cast<uint32_t>(m_clear_values.size());
     m_begin_info.pClearValues = m_clear_values.data();
 }
@@ -47,6 +63,16 @@ void VulkanRenderPass::begin(const Phos::VulkanCommandBuffer& command_buffer,
                              const std::shared_ptr<VulkanFramebuffer>& framebuffer) {
     m_begin_info.renderPass = framebuffer->get_render_pass();
     m_begin_info.framebuffer = framebuffer->handle();
+
+    const auto clear_values = get_clear_values(framebuffer);
+    m_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
+    m_begin_info.pClearValues = clear_values.data();
+
+    m_begin_info.renderArea.offset = {0, 0};
+    m_begin_info.renderArea.extent = {
+        framebuffer->width(),
+        framebuffer->height(),
+    };
 
     vkCmdBeginRenderPass(command_buffer.handle(), &m_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 }

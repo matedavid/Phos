@@ -43,6 +43,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_descriptors.cpp
         src/renderer/backend/vulkan/vulkan_utils.cpp
         src/renderer/backend/vulkan/vulkan_renderer.cpp
+        src/renderer/backend/vulkan/deferred_renderer.cpp
 
         src/main.cpp
         )

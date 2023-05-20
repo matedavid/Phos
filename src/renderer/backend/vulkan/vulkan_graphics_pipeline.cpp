@@ -8,6 +8,7 @@
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_context.h"
 #include "renderer/backend/vulkan/vulkan_framebuffer.h"
+#include "renderer/backend/vulkan/vulkan_image.h"
 
 namespace Phos {
 
@@ -82,16 +83,30 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     depth_stencil_create_info.maxDepthBounds = 1.0f;
 
     // Color Blend State
-    VkPipelineColorBlendAttachmentState color_blend_attachment{};
-    color_blend_attachment.blendEnable = VK_FALSE;
-    color_blend_attachment.colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments;
+
+    for (const auto& attachment : description.target_framebuffer->get_attachments()) {
+        if (VulkanImage::is_depth_format(attachment.image->format()))
+            continue;
+
+        VkPipelineColorBlendAttachmentState state{};
+        state.blendEnable = VK_FALSE;
+        state.colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+        color_blend_attachments.push_back(state);
+    }
+
+    //    VkPipelineColorBlendAttachmentState color_blend_attachment{};
+    //    color_blend_attachment.blendEnable = VK_FALSE;
+    //    color_blend_attachment.colorWriteMask =
+    //        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
     VkPipelineColorBlendStateCreateInfo color_blend_create_info{};
     color_blend_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     color_blend_create_info.logicOpEnable = VK_FALSE;
-    color_blend_create_info.attachmentCount = 1;
-    color_blend_create_info.pAttachments = &color_blend_attachment;
+    color_blend_create_info.attachmentCount = static_cast<uint32_t>(color_blend_attachments.size());
+    color_blend_create_info.pAttachments = color_blend_attachments.data();
 
     // Dynamic State
     constexpr std::array<VkDynamicState, 2> dynamic_state = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};

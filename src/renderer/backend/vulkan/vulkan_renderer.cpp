@@ -1,3 +1,4 @@
+/*
 #include "vulkan_renderer.h"
 
 #include "renderer/backend/vulkan/vulkan_context.h"
@@ -361,3 +362,5 @@ void VulkanRenderer::update_light_info() {
 }
 
 } // namespace Phos
+
+ */

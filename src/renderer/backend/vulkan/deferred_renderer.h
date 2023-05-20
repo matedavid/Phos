@@ -27,51 +27,68 @@
 #include "renderer/backend/vulkan/vulkan_texture.h"
 #include "renderer/backend/vulkan/vulkan_shader_module.h"
 
-/*
 namespace Phos {
 
 // Forward declarations
 class Window;
 class Model;
 
-//struct CameraUniformBuffer {
-//    glm::mat4 projection;
-//    glm::mat4 view;
-//    glm::vec3 position;
-//};
-//
-//struct ColorUniformBuffer {
-//    glm::vec4 color;
-//};
-//
-//struct LightsUniformBuffer {
-//    glm::vec4 positions[10];
-//    glm::vec4 colors[10];
-//    int count;
-//};
-//
-//struct ModelInfoPushConstant {
-//    glm::mat4 model;
-//    glm::vec4 color;
-//};
+struct CameraUniformBuffer {
+    glm::mat4 projection;
+    glm::mat4 view;
+    glm::vec3 position;
+};
 
-class VulkanRenderer {
+struct LightsUniformBuffer {
+    glm::vec4 positions[10];
+    glm::vec4 colors[10];
+    int count;
+};
+
+struct ModelInfoPushConstant {
+    glm::mat4 model;
+    glm::vec4 color;
+};
+
+struct DeferredVertex {
+    glm::vec3 position;
+    glm::vec2 texture_coord;
+};
+
+class DeferredRenderer {
   public:
-    VulkanRenderer();
-    ~VulkanRenderer();
+    DeferredRenderer();
+    ~DeferredRenderer();
 
     void update();
 
   private:
     std::shared_ptr<VulkanSwapchain> m_swapchain;
-
-    std::shared_ptr<VulkanRenderPass> m_render_pass;
-    std::shared_ptr<VulkanGraphicsPipeline> m_pipeline;
-
-    std::shared_ptr<VulkanGraphicsPipeline> m_flat_color_pipeline;
-
     std::shared_ptr<VulkanCommandBuffer> m_command_buffer;
 
+    // Geometry pass
+    std::shared_ptr<VulkanTexture> m_position_texture;
+    std::shared_ptr<VulkanTexture> m_normal_texture;
+    std::shared_ptr<VulkanTexture> m_color_specular_texture;
+
+    std::shared_ptr<VulkanGraphicsPipeline> m_geometry_pipeline;
+    std::shared_ptr<VulkanRenderPass> m_geometry_pass;
+
+    std::shared_ptr<VulkanVertexBuffer<DeferredVertex>> m_quad_vertex;
+    std::shared_ptr<VulkanIndexBuffer> m_quad_index;
+
+    // Lighting pass
+    std::shared_ptr<VulkanGraphicsPipeline> m_lighting_pipeline;
+    std::shared_ptr<VulkanRenderPass> m_lighting_pass;
+
+    // Uniform buffers
+    std::shared_ptr<VulkanUniformBuffer<CameraUniformBuffer>> m_camera_ubo;
+    std::shared_ptr<VulkanUniformBuffer<LightsUniformBuffer>> m_lights_ubo;
+
+    VkDescriptorSet m_camera_set;
+    VkDescriptorSet m_lighting_fragment_set;
+
+    // Models
     std::shared_ptr<Model> m_model;
     std::shared_ptr<Model> m_cube;
 
@@ -83,13 +100,6 @@ class VulkanRenderer {
     std::shared_ptr<VulkanQueue> m_presentation_queue;
 
     std::shared_ptr<VulkanDescriptorAllocator> m_allocator;
-
-    VkDescriptorSet m_vertex_shader_set{VK_NULL_HANDLE};
-    VkDescriptorSet m_fragment_shader_set{VK_NULL_HANDLE};
-
-    std::shared_ptr<VulkanUniformBuffer<ColorUniformBuffer>> m_color_ubo;
-    std::shared_ptr<VulkanUniformBuffer<CameraUniformBuffer>> m_camera_ubo;
-    std::shared_ptr<VulkanUniformBuffer<LightsUniformBuffer>> m_lights_ubo;
 
     struct CameraInfo {
         glm::vec3 position;
@@ -107,4 +117,3 @@ class VulkanRenderer {
 
 } // namespace Phos
 
- */

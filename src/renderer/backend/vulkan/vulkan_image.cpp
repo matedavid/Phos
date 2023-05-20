@@ -105,13 +105,13 @@ void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_
 
                 source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
                 destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            } else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
-                       new_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-                barrier.srcAccessMask = 0;
-                barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+            } else if (old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL &&
+                       new_layout == VK_IMAGE_LAYOUT_GENERAL) {
+                barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-                source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                destination_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                source_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
             } else {
                 PS_FAIL("Unsupported layout transition")
             }

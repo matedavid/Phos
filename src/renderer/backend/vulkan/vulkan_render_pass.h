@@ -21,7 +21,7 @@ class VulkanRenderPass {
         std::shared_ptr<VulkanFramebuffer> target_framebuffer = nullptr;
     };
 
-    VulkanRenderPass(Description description);
+    explicit VulkanRenderPass(Description description);
     ~VulkanRenderPass() = default;
 
     void begin(const VulkanCommandBuffer& command_buffer);

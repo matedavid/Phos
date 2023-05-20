@@ -30,7 +30,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description) : m_descrip
         } else if (attachment.is_presentation) {
             attachment_description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         } else {
-            attachment_description.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            attachment_description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         }
 
         attachments.push_back(attachment_description);
@@ -39,9 +39,10 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description) : m_descrip
         VkAttachmentReference attachment_reference{};
         attachment_reference.attachment = (uint32_t)attachments.size() - 1;
 
-        attachment_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        if (attachment_description.finalLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        if (VulkanImage::is_depth_format(attachment.image->format())) {
             attachment_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        } else {
+            attachment_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         }
 
         attachment_references.push_back(attachment_reference);
