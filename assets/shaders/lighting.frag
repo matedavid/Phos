@@ -26,17 +26,17 @@ vec3 CalcPointLight(int idx, vec3 normal, vec3 fragPos, vec3 viewDir, vec4 Color
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0f);
 
     // attenuation
-    float distance = length(positions[idx].xyz - fragPos);
-    float attenuation = 1.0 / (1.0f + 0.09 * distance + 0.032f * (distance * distance));
+//    float distance = length(positions[idx].xyz - fragPos);
+//    float attenuation = 1.0 / (1.0f + 0.09 * distance + 0.032f * (distance * distance));
 
     // combine results
     vec3 ambient = vec3(0.01f) * Color.xyz;
-    vec3 diffuse = colors[idx].zyx * diff * Color.xyz; // .zyx because framebuffer format is BGR
+    vec3 diffuse = colors[idx].xyz * diff * Color.xyz;
     vec3 specular = vec3(1.0f) * spec * vec3(Color.w);
 
-    ambient *= attenuation;
-    diffuse *= attenuation;
-    specular *= attenuation;
+//    ambient *= attenuation;
+//    diffuse *= attenuation;
+//    specular *= attenuation;
 
     return (ambient + diffuse + specular);
 }
@@ -53,7 +53,7 @@ void main() {
 
     vec3 result = vec3(0.0f);
     for (int i = 0; i < count; i++) {
-        result += CalcPointLight(i, norm, vec3(vTexCoordinates, 1.0f), viewDir, color);
+        result += CalcPointLight(i, norm, position.xyz, viewDir, color);
     }
 
     ResultColor = vec4(result, 1.0f);

@@ -278,13 +278,6 @@ void DeferredRenderer::update() {
         // Lighting pass
         // ==========================
         {
-            //            m_position_texture->get_image()->transition_layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            //                                                               VK_IMAGE_LAYOUT_GENERAL);
-            //            m_normal_texture->get_image()->transition_layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            //                                                             VK_IMAGE_LAYOUT_GENERAL);
-            //            m_color_specular_texture->get_image()->transition_layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            //                                                                     VK_IMAGE_LAYOUT_GENERAL);
-
             m_lighting_pass->begin(*command_buffer, swapchain_framebuffer);
 
             m_lighting_pipeline->bind(command_buffer);
@@ -422,14 +415,14 @@ void DeferredRenderer::on_event(Event& event) {
 void DeferredRenderer::update_light_info() {
     light_info.count = 5;
 
-    light_info.positions[0] = glm::vec4(-2.0f, 0.0f, 0.0f, 0.0f);
-    light_info.colors[0] = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+    light_info.positions[0] = glm::vec4(0.0f, 0.0f, 2.0f, 0.0f);
+    light_info.colors[0] = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
-    light_info.positions[1] = glm::vec4(0.0f, 1.0f, -1.0f, 0.0f);
-    light_info.colors[1] = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+    light_info.positions[1] = glm::vec4(2.0f, 0.0f, 0.0f, 0.0f);
+    light_info.colors[1] = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
-    light_info.positions[2] = glm::vec4(1.0f, 1.0f, 5.0f, 0.0f);
-    light_info.colors[2] = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    light_info.positions[2] = glm::vec4(-2.0f, 1.0f, 0.0f, 0.0f);
+    light_info.colors[2] = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 
     light_info.positions[3] = glm::vec4(-1.0f, -1.0f, -1.0f, 0.0f);
     light_info.colors[3] = glm::vec4(0.2f, 0.5f, 0.3f, 1.0f);
