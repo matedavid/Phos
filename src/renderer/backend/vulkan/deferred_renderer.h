@@ -71,15 +71,20 @@ class DeferredRenderer {
     std::shared_ptr<VulkanTexture> m_normal_texture;
     std::shared_ptr<VulkanTexture> m_color_specular_texture;
 
+    std::shared_ptr<VulkanFramebuffer> m_geometry_framebuffer;
+
     std::shared_ptr<VulkanGraphicsPipeline> m_geometry_pipeline;
     std::shared_ptr<VulkanRenderPass> m_geometry_pass;
 
+    // Lighting pass
     std::shared_ptr<VulkanVertexBuffer<DeferredVertex>> m_quad_vertex;
     std::shared_ptr<VulkanIndexBuffer> m_quad_index;
 
-    // Lighting pass
     std::shared_ptr<VulkanGraphicsPipeline> m_lighting_pipeline;
     std::shared_ptr<VulkanRenderPass> m_lighting_pass;
+
+    // Flat color pipeline
+    std::shared_ptr<VulkanGraphicsPipeline> m_flat_color_pipeline;
 
     // Uniform buffers
     std::shared_ptr<VulkanUniformBuffer<CameraUniformBuffer>> m_camera_ubo;

@@ -16,9 +16,14 @@ layout (push_constant) uniform ModelInfoPushConstants {
     vec4 color;
 };
 
-layout (location = 0) out vec4 vColor;
+layout (location = 0) out vec4 vPosition;
+layout (location = 1) out vec3 vNormal;
+layout (location = 2) out vec4 vColor;
 
 void main() {
     gl_Position = projection * view * model * vec4(aPosition, 1.0f);
+
+    vPosition = gl_Position;
+    vNormal = aNormal;
     vColor = color;
 }

@@ -65,7 +65,7 @@ DeferredRenderer::DeferredRenderer() {
             .clear_value = glm::vec3(1.0f),
         };
 
-        const auto geometry_framebuffer = std::make_shared<VulkanFramebuffer>(VulkanFramebuffer::Description{
+        m_geometry_framebuffer = std::make_shared<VulkanFramebuffer>(VulkanFramebuffer::Description{
             .attachments = {position_attachment, normal_attachment, color_specular_attachment, depth_attachment},
         });
 
@@ -74,12 +74,12 @@ DeferredRenderer::DeferredRenderer() {
                                                                   VulkanShaderModule::Stage::Vertex),
             .fragment_shader = std::make_shared<VulkanShaderModule>("../assets/shaders/geometry_fragment.spv",
                                                                     VulkanShaderModule::Stage::Fragment),
-            .target_framebuffer = geometry_framebuffer,
+            .target_framebuffer = m_geometry_framebuffer,
         });
 
         m_geometry_pass = std::make_shared<VulkanRenderPass>(VulkanRenderPass::Description{
             .debug_name = "Deferred-Geometry",
-            .target_framebuffer = geometry_framebuffer,
+            .target_framebuffer = m_geometry_framebuffer,
         });
     }
 
@@ -96,6 +96,17 @@ DeferredRenderer::DeferredRenderer() {
         m_lighting_pass = std::make_shared<VulkanRenderPass>(VulkanRenderPass::Description{
             .debug_name = "Deferred-Lighting",
             .presentation_target = true,
+        });
+    }
+
+    // Flat color pass
+    {
+        m_flat_color_pipeline = std::make_shared<VulkanGraphicsPipeline>(VulkanGraphicsPipeline::Description{
+            .vertex_shader = std::make_shared<VulkanShaderModule>("../assets/shaders/flat_color_vertex.spv",
+                                                                  VulkanShaderModule::Stage::Vertex),
+            .fragment_shader = std::make_shared<VulkanShaderModule>("../assets/shaders/flat_color_fragment.spv",
+                                                                    VulkanShaderModule::Stage::Fragment),
+            .target_framebuffer = m_geometry_framebuffer,
         });
     }
 
@@ -234,11 +245,11 @@ void DeferredRenderer::update() {
         {
             m_geometry_pass->begin(*command_buffer);
 
+            // Draw models
             m_geometry_pipeline->bind(command_buffer);
             vkCmdSetViewport(command_buffer->handle(), 0, 1, &viewport);
             vkCmdSetScissor(command_buffer->handle(), 0, 1, &scissor);
 
-            // Descriptor sets
             std::vector<VkDescriptorSet> descriptor_sets = {m_camera_set};
 
             vkCmdBindDescriptorSets(command_buffer->handle(),
@@ -272,36 +283,20 @@ void DeferredRenderer::update() {
                 vkCmdDrawIndexed(m_command_buffer->handle(), index_buffer->get_count(), 1, 0, 0, 0);
             }
 
-            m_geometry_pass->end(*command_buffer);
-        }
-
-        // Lighting pass
-        // ==========================
-        {
-            m_lighting_pass->begin(*command_buffer, swapchain_framebuffer);
-
-            m_lighting_pipeline->bind(command_buffer);
+            // Draw lights
+            m_flat_color_pipeline->bind(command_buffer);
             vkCmdSetViewport(command_buffer->handle(), 0, 1, &viewport);
             vkCmdSetScissor(command_buffer->handle(), 0, 1, &scissor);
 
-            // Descriptor sets
-            std::vector<VkDescriptorSet> descriptor_sets = {m_camera_set, m_lighting_fragment_set};
-
             vkCmdBindDescriptorSets(command_buffer->handle(),
                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    m_lighting_pipeline->layout(),
+                                    m_flat_color_pipeline->layout(),
                                     0,
-                                    static_cast<uint32_t>(descriptor_sets.size()),
-                                    descriptor_sets.data(),
+                                    1,
+                                    &m_camera_set,
                                     0,
                                     nullptr);
 
-            m_quad_vertex->bind(command_buffer);
-            m_quad_index->bind(command_buffer);
-
-            vkCmdDrawIndexed(m_command_buffer->handle(), m_quad_index->get_count(), 1, 0, 0, 0);
-
-            /*
             for (int i = 0; i < light_info.count; ++i) {
                 const glm::vec3 position = glm::vec3(light_info.positions[i]);
                 const glm::vec4 color = light_info.colors[i];
@@ -324,15 +319,40 @@ void DeferredRenderer::update() {
 
                 const auto& mesh = m_cube->get_meshes()[0];
 
-                const auto& vertex_buffer = mesh->get_vertex_buffer();
-                const auto& index_buffer = mesh->get_index_buffer();
+                mesh->get_vertex_buffer()->bind(command_buffer);
+                mesh->get_index_buffer()->bind(command_buffer);
 
-                vertex_buffer->bind(command_buffer);
-                index_buffer->bind(command_buffer);
-
-                vkCmdDrawIndexed(m_command_buffer->handle(), index_buffer->get_count(), 1, 0, 0, 0);
+                vkCmdDrawIndexed(m_command_buffer->handle(), mesh->get_index_buffer()->get_count(), 1, 0, 0, 0);
             }
-            */
+
+            m_geometry_pass->end(*command_buffer);
+        }
+
+        // Lighting pass
+        // ==========================
+        {
+            m_lighting_pass->begin(*command_buffer, swapchain_framebuffer);
+
+            // Draw quad
+            m_lighting_pipeline->bind(command_buffer);
+            vkCmdSetViewport(command_buffer->handle(), 0, 1, &viewport);
+            vkCmdSetScissor(command_buffer->handle(), 0, 1, &scissor);
+
+            std::vector<VkDescriptorSet> descriptor_sets = {m_camera_set, m_lighting_fragment_set};
+
+            vkCmdBindDescriptorSets(command_buffer->handle(),
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    m_lighting_pipeline->layout(),
+                                    0,
+                                    static_cast<uint32_t>(descriptor_sets.size()),
+                                    descriptor_sets.data(),
+                                    0,
+                                    nullptr);
+
+            m_quad_vertex->bind(command_buffer);
+            m_quad_index->bind(command_buffer);
+
+            vkCmdDrawIndexed(m_command_buffer->handle(), m_quad_index->get_count(), 1, 0, 0, 0);
 
             m_lighting_pass->end(*command_buffer);
         }
