@@ -21,9 +21,9 @@ VulkanRenderer::VulkanRenderer() {
     m_swapchain = std::make_shared<VulkanSwapchain>();
 
     const auto vertex =
-        std::make_shared<VulkanShaderModule>("../assets/shaders/vertex.spv", VulkanShaderModule::Stage::Vertex);
+        std::make_shared<VulkanShader>("../assets/shaders/vertex.spv", VulkanShader::Stage::Vertex);
     const auto fragment =
-        std::make_shared<VulkanShaderModule>("../assets/shaders/fragment.spv", VulkanShaderModule::Stage::Fragment);
+        std::make_shared<VulkanShader>("../assets/shaders/fragment.spv", VulkanShader::Stage::Fragment);
 
     const auto pipeline_description = VulkanGraphicsPipeline::Description{
         .vertex_shader = vertex,
@@ -32,11 +32,11 @@ VulkanRenderer::VulkanRenderer() {
     };
     m_pipeline = std::make_shared<VulkanGraphicsPipeline>(pipeline_description);
 
-    const auto flat_color_vertex = std::make_shared<VulkanShaderModule>("../assets/shaders/flat_color_vertex.spv",
-                                                                        VulkanShaderModule::Stage::Vertex);
+    const auto flat_color_vertex = std::make_shared<VulkanShader>("../assets/shaders/flat_color_vertex.spv",
+                                                                        VulkanShader::Stage::Vertex);
 
-    const auto flat_color_fragment = std::make_shared<VulkanShaderModule>("../assets/shaders/flat_color_fragment.spv",
-                                                                          VulkanShaderModule::Stage::Fragment);
+    const auto flat_color_fragment = std::make_shared<VulkanShader>("../assets/shaders/flat_color_fragment.spv",
+                                                                          VulkanShader::Stage::Fragment);
 
     const auto flat_color_pipeline_description = VulkanGraphicsPipeline::Description{
         .vertex_shader = flat_color_vertex,

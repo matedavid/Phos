@@ -25,7 +25,7 @@
 #include "renderer/backend/vulkan/vulkan_queue.h"
 #include "renderer/backend/vulkan/vulkan_descriptors.h"
 #include "renderer/backend/vulkan/vulkan_texture.h"
-#include "renderer/backend/vulkan/vulkan_shader_module.h"
+#include "renderer/backend/vulkan/vulkan_shader.h"
 
 namespace Phos {
 

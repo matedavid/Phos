@@ -29,7 +29,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_physical_device.cpp
         src/renderer/backend/vulkan/vulkan_device.cpp
         src/renderer/backend/vulkan/vulkan_swapchain.cpp
-        src/renderer/backend/vulkan/vulkan_shader_module.cpp
+        src/renderer/backend/vulkan/vulkan_shader.cpp
         src/renderer/backend/vulkan/vulkan_render_pass.cpp
         src/renderer/backend/vulkan/vulkan_graphics_pipeline.cpp
         src/renderer/backend/vulkan/vulkan_command_pool.cpp

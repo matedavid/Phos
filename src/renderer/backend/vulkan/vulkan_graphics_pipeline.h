@@ -8,17 +8,14 @@ namespace Phos {
 
 // Forward declarations
 class VulkanDevice;
-class VulkanShaderModule;
-class VulkanRenderPass;
+class VulkanShader;
 class VulkanCommandBuffer;
 class VulkanFramebuffer;
 
 class VulkanGraphicsPipeline {
   public:
     struct Description {
-        std::shared_ptr<VulkanShaderModule> vertex_shader;
-        std::shared_ptr<VulkanShaderModule> fragment_shader;
-
+        std::shared_ptr<VulkanShader> shader;
         std::shared_ptr<VulkanFramebuffer> target_framebuffer;
     };
 

@@ -3,8 +3,7 @@
 #include <ranges>
 
 #include "renderer/backend/vulkan/vulkan_device.h"
-#include "renderer/backend/vulkan/vulkan_shader_module.h"
-#include "renderer/backend/vulkan/vulkan_render_pass.h"
+#include "renderer/backend/vulkan/vulkan_shader.h"
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_context.h"
 #include "renderer/backend/vulkan/vulkan_framebuffer.h"
@@ -15,18 +14,13 @@ namespace Phos {
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     // Shaders
     const std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
-        description.vertex_shader->get_shader_stage_create_info(),
-        description.fragment_shader->get_shader_stage_create_info(),
+        description.shader->get_vertex_create_info(),
+        description.shader->get_fragment_create_info(),
     };
 
-    PS_ASSERT(description.vertex_shader->get_stage() == VulkanShaderModule::Stage::Vertex,
-              "Vertex shader must be vertex shader");
-    PS_ASSERT(description.fragment_shader->get_stage() == VulkanShaderModule::Stage::Fragment,
-              "Fragment shader must be fragment shader");
-
     // Vertex input
-    const auto binding_description = description.vertex_shader->get_binding_description();
-    const auto attribute_descriptions = description.vertex_shader->get_attribute_descriptions();
+    const auto binding_description = description.shader->get_binding_description();
+    const auto attribute_descriptions = description.shader->get_attribute_descriptions();
 
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info{};
     vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -97,11 +91,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
         color_blend_attachments.push_back(state);
     }
 
-    //    VkPipelineColorBlendAttachmentState color_blend_attachment{};
-    //    color_blend_attachment.blendEnable = VK_FALSE;
-    //    color_blend_attachment.colorWriteMask =
-    //        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
     VkPipelineColorBlendStateCreateInfo color_blend_create_info{};
     color_blend_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     color_blend_create_info.logicOpEnable = VK_FALSE;
@@ -117,25 +106,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     dynamic_state_create_info.pDynamicStates = dynamic_state.data();
 
     // Pipeline Layout
-
-    // TODO: At this moment descriptor sets are probably separated by shader module (vertex, fragment), leaving like
-    // this at the moment but probably not the most efficient way to organize descriptor sets
-
-    std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
-    for (const auto& set_layout : description.vertex_shader->get_descriptor_sets_layout()) {
-        descriptor_sets_layout.push_back(set_layout);
-    }
-    for (const auto& set_layout : description.fragment_shader->get_descriptor_sets_layout()) {
-        descriptor_sets_layout.push_back(set_layout);
-    }
-
-    std::vector<VkPushConstantRange> push_constant_ranges;
-    for (const auto& push_constant_range : description.vertex_shader->get_push_constant_ranges()) {
-        push_constant_ranges.push_back(push_constant_range);
-    }
-    for (const auto& push_constant_range : description.fragment_shader->get_push_constant_ranges()) {
-        push_constant_ranges.push_back(push_constant_range);
-    }
+    const auto descriptor_sets_layout = description.shader->get_descriptor_sets_layout();
+    const auto push_constant_ranges = description.shader->get_push_constant_ranges();
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

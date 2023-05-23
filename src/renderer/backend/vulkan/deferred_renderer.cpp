@@ -70,10 +70,8 @@ DeferredRenderer::DeferredRenderer() {
         });
 
         m_geometry_pipeline = std::make_shared<VulkanGraphicsPipeline>(VulkanGraphicsPipeline::Description{
-            .vertex_shader = std::make_shared<VulkanShaderModule>("../assets/shaders/geometry_vertex.spv",
-                                                                  VulkanShaderModule::Stage::Vertex),
-            .fragment_shader = std::make_shared<VulkanShaderModule>("../assets/shaders/geometry_fragment.spv",
-                                                                    VulkanShaderModule::Stage::Fragment),
+            .shader = std::make_shared<VulkanShader>("../assets/shaders/geometry_vertex.spv",
+                                                     "../assets/shaders/geometry_fragment.spv"),
             .target_framebuffer = m_geometry_framebuffer,
         });
 
@@ -86,10 +84,8 @@ DeferredRenderer::DeferredRenderer() {
     // Lighting pass
     {
         m_lighting_pipeline = std::make_shared<VulkanGraphicsPipeline>(VulkanGraphicsPipeline::Description{
-            .vertex_shader = std::make_shared<VulkanShaderModule>("../assets/shaders/lighting_vertex.spv",
-                                                                  VulkanShaderModule::Stage::Vertex),
-            .fragment_shader = std::make_shared<VulkanShaderModule>("../assets/shaders/lighting_fragment.spv",
-                                                                    VulkanShaderModule::Stage::Fragment),
+            .shader = std::make_shared<VulkanShader>("../assets/shaders/lighting_vertex.spv",
+                                                     "../assets/shaders/lighting_fragment.spv"),
             .target_framebuffer = m_swapchain->get_target_framebuffer(),
         });
 
@@ -102,10 +98,8 @@ DeferredRenderer::DeferredRenderer() {
     // Flat color pass
     {
         m_flat_color_pipeline = std::make_shared<VulkanGraphicsPipeline>(VulkanGraphicsPipeline::Description{
-            .vertex_shader = std::make_shared<VulkanShaderModule>("../assets/shaders/flat_color_vertex.spv",
-                                                                  VulkanShaderModule::Stage::Vertex),
-            .fragment_shader = std::make_shared<VulkanShaderModule>("../assets/shaders/flat_color_fragment.spv",
-                                                                    VulkanShaderModule::Stage::Fragment),
+            .shader = std::make_shared<VulkanShader>("../assets/shaders/flat_color_vertex.spv",
+                                                     "../assets/shaders/flat_color_fragment.spv"),
             .target_framebuffer = m_geometry_framebuffer,
         });
     }
