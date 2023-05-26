@@ -7,6 +7,8 @@
 #include <memory>
 #include <optional>
 
+#include "renderer/backend/buffers.h"
+
 #include "renderer/backend/vulkan/vulkan_device.h"
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_buffer.h"
@@ -20,10 +22,10 @@ class VulkanCommandBuffer;
 //
 // Vertex Buffer
 //
-template <typename T>
-class VulkanVertexBuffer {
+class VulkanVertexBuffer : public VertexBuffer {
   public:
-    VulkanVertexBuffer(const std::vector<T>& data) {
+    template<typename T>
+    explicit VulkanVertexBuffer(const std::vector<T>& data) {
         const VkDeviceSize size = data.size() * sizeof(T);
 
         const auto staging_buffer = VulkanBuffer{
@@ -43,16 +45,16 @@ class VulkanVertexBuffer {
         m_size = (uint32_t)data.size();
     }
 
-    ~VulkanVertexBuffer() = default;
+    ~VulkanVertexBuffer() override = default;
 
-    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const {
+    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const override {
         std::array<VkBuffer, 1> vertex_buffers = {m_buffer->handle()};
         VkDeviceSize offsets[] = {0};
 
         vkCmdBindVertexBuffers(command_buffer->handle(), 0, vertex_buffers.size(), vertex_buffers.data(), offsets);
     }
 
-    [[nodiscard]] uint32_t get_size() const { return m_size; }
+    [[nodiscard]] uint32_t get_size() const override { return m_size; }
 
     [[nodiscard]] VkBuffer handle() const { return m_buffer->handle(); }
 

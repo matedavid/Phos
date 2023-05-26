@@ -112,7 +112,7 @@ DeferredRenderer::DeferredRenderer() {
             {.position = glm::vec3(-1.0f, 1.0f, 0.0f), .texture_coord = glm::vec2(0.0f, 1.0f)},
             {.position = glm::vec3(1.0f, 1.0f, 0.0f), .texture_coord = glm::vec2(1.0f, 1.0f)},
         };
-        m_quad_vertex = std::make_shared<VulkanVertexBuffer<DeferredVertex>>(vertex_info);
+        m_quad_vertex = std::make_shared<VulkanVertexBuffer>(vertex_info);
 
         const std::vector<uint32_t> index_info = {0, 2, 1, 2, 3, 1};
         m_quad_index = std::make_shared<VulkanIndexBuffer>(index_info);

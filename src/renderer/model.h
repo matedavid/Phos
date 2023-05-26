@@ -14,7 +14,7 @@ namespace Phos {
 
 class Model {
   public:
-    Model(const std::string& path, bool flip_uvs = false);
+    explicit Model(const std::string& path, bool flip_uvs = false);
     ~Model() = default;
 
     [[nodiscard]] const std::vector<std::unique_ptr<Mesh>>& get_meshes() const { return m_meshes; }

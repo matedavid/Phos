@@ -77,7 +77,7 @@ class DeferredRenderer {
     std::shared_ptr<VulkanRenderPass> m_geometry_pass;
 
     // Lighting pass
-    std::shared_ptr<VulkanVertexBuffer<DeferredVertex>> m_quad_vertex;
+    std::shared_ptr<VulkanVertexBuffer> m_quad_vertex;
     std::shared_ptr<VulkanIndexBuffer> m_quad_index;
 
     std::shared_ptr<VulkanGraphicsPipeline> m_lighting_pipeline;
