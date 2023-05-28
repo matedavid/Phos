@@ -274,7 +274,7 @@ void DeferredRenderer::update() {
                 vertex_buffer->bind(command_buffer);
                 index_buffer->bind(command_buffer);
 
-                vkCmdDrawIndexed(m_command_buffer->handle(), index_buffer->get_count(), 1, 0, 0, 0);
+                vkCmdDrawIndexed(m_command_buffer->handle(), index_buffer->count(), 1, 0, 0, 0);
             }
 
             // Draw lights
@@ -316,7 +316,7 @@ void DeferredRenderer::update() {
                 mesh->get_vertex_buffer()->bind(command_buffer);
                 mesh->get_index_buffer()->bind(command_buffer);
 
-                vkCmdDrawIndexed(m_command_buffer->handle(), mesh->get_index_buffer()->get_count(), 1, 0, 0, 0);
+                vkCmdDrawIndexed(m_command_buffer->handle(), mesh->get_index_buffer()->count(), 1, 0, 0, 0);
             }
 
             m_geometry_pass->end(*command_buffer);
@@ -346,7 +346,7 @@ void DeferredRenderer::update() {
             m_quad_vertex->bind(command_buffer);
             m_quad_index->bind(command_buffer);
 
-            vkCmdDrawIndexed(m_command_buffer->handle(), m_quad_index->get_count(), 1, 0, 0, 0);
+            vkCmdDrawIndexed(m_command_buffer->handle(), m_quad_index->count(), 1, 0, 0, 0);
 
             m_lighting_pass->end(*command_buffer);
         }

@@ -19,9 +19,18 @@ class SandboxLayer : public Phos::Layer {
 constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 960;
 
+struct V {
+    float h;
+};
+
+#define As(T, value) std::dynamic_pointer_cast<T>(value)
+
 Phos::Application* create_application() {
     auto* application = new Phos::Application("Phos Engine", WIDTH, HEIGHT);
     application->push_layer<SandboxLayer>();
+
+    auto u = Phos::UniformBuffer<V>::create();
+    u->update(V{.h = 4.0f});
 
     return application;
 }

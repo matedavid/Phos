@@ -259,7 +259,7 @@ void VulkanRenderer::update() {
             vertex_buffer->bind(command_buffer);
             index_buffer->bind(command_buffer);
 
-            vkCmdDrawIndexed(m_command_buffer->handle(), index_buffer->get_count(), 1, 0, 0, 0);
+            vkCmdDrawIndexed(m_command_buffer->handle(), index_buffer->count(), 1, 0, 0, 0);
         }
         // ==========================
 

@@ -55,7 +55,7 @@ Mesh::Mesh(const aiMesh* mesh) {
 
 void Mesh::setup_mesh() {
     m_vertex_buffer = VertexBuffer::create(m_vertices);
-    m_index_buffer = std::make_unique<VulkanIndexBuffer>(m_indices);
+    m_index_buffer = IndexBuffer::create(m_indices);
 }
 
 } // namespace Phos

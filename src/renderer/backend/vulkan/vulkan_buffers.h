@@ -24,7 +24,7 @@ class VulkanCommandBuffer;
 //
 class VulkanVertexBuffer : public VertexBuffer {
   public:
-    template<typename T>
+    template <typename T>
     explicit VulkanVertexBuffer(const std::vector<T>& data) {
         const VkDeviceSize size = data.size() * sizeof(T);
 
@@ -54,7 +54,7 @@ class VulkanVertexBuffer : public VertexBuffer {
         vkCmdBindVertexBuffers(command_buffer->handle(), 0, vertex_buffers.size(), vertex_buffers.data(), offsets);
     }
 
-    [[nodiscard]] uint32_t get_size() const override { return m_size; }
+    [[nodiscard]] uint32_t size() const override { return m_size; }
 
     [[nodiscard]] VkBuffer handle() const { return m_buffer->handle(); }
 
@@ -66,13 +66,13 @@ class VulkanVertexBuffer : public VertexBuffer {
 //
 // Index Buffer
 //
-class VulkanIndexBuffer {
+class VulkanIndexBuffer : public IndexBuffer {
   public:
-    VulkanIndexBuffer(const std::vector<uint32_t>& indices);
-    ~VulkanIndexBuffer() = default;
+    explicit VulkanIndexBuffer(const std::vector<uint32_t>& indices);
+    ~VulkanIndexBuffer() override = default;
 
-    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;
-    [[nodiscard]] uint32_t get_count() const { return m_count; }
+    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const override;
+    [[nodiscard]] uint32_t count() const override { return m_count; }
 
     [[nodiscard]] VkBuffer handle() const { return m_buffer->handle(); }
 
@@ -86,9 +86,9 @@ class VulkanIndexBuffer {
 //
 
 template <typename T>
-class VulkanUniformBuffer {
+class VulkanUniformBuffer : public UniformBuffer<T> {
   public:
-    explicit VulkanUniformBuffer() {
+    VulkanUniformBuffer() {
         m_size = sizeof(T);
         m_buffer =
             std::make_unique<VulkanBuffer>(m_size,
@@ -98,11 +98,11 @@ class VulkanUniformBuffer {
         m_buffer->map_memory(m_map_data);
     }
 
-    ~VulkanUniformBuffer() { m_buffer->unmap_memory(); }
+    ~VulkanUniformBuffer() override { m_buffer->unmap_memory(); }
 
-    void update(const T& data) { memcpy(m_map_data, &data, m_size); }
+    void update(const T& data) override { memcpy(m_map_data, &data, m_size); }
 
-    [[nodiscard]] uint32_t size() const { return m_size; }
+    [[nodiscard]] uint32_t size() const override { return m_size; }
     [[nodiscard]] VkBuffer handle() const { return m_buffer->handle(); }
 
   private:
