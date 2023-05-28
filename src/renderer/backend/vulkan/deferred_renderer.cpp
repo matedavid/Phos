@@ -133,17 +133,18 @@ DeferredRenderer::DeferredRenderer() {
     lights_info.offset = 0;
 
     VkDescriptorImageInfo position_map_info{};
-    position_map_info.imageView = m_position_texture->get_image()->view();
+    position_map_info.imageView = std::dynamic_pointer_cast<VulkanImage>(m_position_texture->get_image())->view();
     position_map_info.sampler = m_position_texture->sampler();
     position_map_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VkDescriptorImageInfo normal_map_info{};
-    normal_map_info.imageView = m_normal_texture->get_image()->view();
+    normal_map_info.imageView = std::dynamic_pointer_cast<VulkanImage>(m_normal_texture->get_image())->view();
     normal_map_info.sampler = m_normal_texture->sampler();
     normal_map_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VkDescriptorImageInfo color_specular_map_info{};
-    color_specular_map_info.imageView = m_color_specular_texture->get_image()->view();
+    color_specular_map_info.imageView =
+        std::dynamic_pointer_cast<VulkanImage>(m_color_specular_texture->get_image())->view();
     color_specular_map_info.sampler = m_color_specular_texture->sampler();
     color_specular_map_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 

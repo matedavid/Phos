@@ -25,6 +25,7 @@
 #include "renderer/backend/vulkan/vulkan_queue.h"
 #include "renderer/backend/vulkan/vulkan_descriptors.h"
 #include "renderer/backend/vulkan/vulkan_texture.h"
+#include "renderer/backend/vulkan/vulkan_image.h"
 #include "renderer/backend/vulkan/vulkan_shader.h"
 
 namespace Phos {
@@ -121,4 +122,3 @@ class DeferredRenderer {
 };
 
 } // namespace Phos
-

@@ -7,7 +7,7 @@
 namespace Phos {
 
 // Forward declarations
-class VulkanImage;
+class Image;
 
 enum class LoadOperation {
     Load,
@@ -23,7 +23,7 @@ enum class StoreOperation {
 class Framebuffer {
   public:
     struct Attachment {
-        std::shared_ptr<VulkanImage> image;
+        std::shared_ptr<Image> image;
 
         LoadOperation load_operation;
         StoreOperation store_operation;

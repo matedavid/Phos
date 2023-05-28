@@ -113,7 +113,10 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description) : m_descrip
 
     std::vector<VkImageView> framebuffer_attachments;
     for (const auto& attachment : description.attachments) {
-        framebuffer_attachments.push_back(attachment.image->view());
+        // TODO: Maybe do differently?
+        const auto img = std::dynamic_pointer_cast<VulkanImage>(attachment.image);
+
+        framebuffer_attachments.push_back(img->view());
 
         PS_ASSERT(m_width == attachment.image->width() && m_height == attachment.image->height(),
                   "All attachments to framebuffer must have the same width and height")
@@ -139,7 +142,10 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description, VkRenderPas
 
     std::vector<VkImageView> framebuffer_attachments;
     for (const auto& attachment : m_description.attachments) {
-        framebuffer_attachments.push_back(attachment.image->view());
+        // TODO: Maybe do differently?
+        const auto img = std::dynamic_pointer_cast<VulkanImage>(attachment.image);
+
+        framebuffer_attachments.push_back(img->view());
 
         PS_ASSERT(m_width == attachment.image->width() && m_height == attachment.image->height(),
                   "All attachments to framebuffer must have the same width and height")
