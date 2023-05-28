@@ -25,6 +25,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/mesh.cpp
 
         src/renderer/backend/buffers.cpp
+        src/renderer/backend/framebuffer.cpp
 
         src/renderer/backend/vulkan/vulkan_context.cpp
         src/renderer/backend/vulkan/vulkan_instance.cpp
