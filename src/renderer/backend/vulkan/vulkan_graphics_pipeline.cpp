@@ -12,15 +12,19 @@
 namespace Phos {
 
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
+    // TODO: Maybe do differently?
+    const auto shader = std::dynamic_pointer_cast<VulkanShader>(description.shader);
+    const auto target_framebuffer = std::dynamic_pointer_cast<VulkanFramebuffer>(description.target_framebuffer);
+
     // Shaders
     const std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
-        description.shader->get_vertex_create_info(),
-        description.shader->get_fragment_create_info(),
+        shader->get_vertex_create_info(),
+        shader->get_fragment_create_info(),
     };
 
     // Vertex input
-    const auto binding_description = description.shader->get_binding_description();
-    const auto attribute_descriptions = description.shader->get_attribute_descriptions();
+    const auto binding_description = shader->get_binding_description();
+    const auto attribute_descriptions = shader->get_attribute_descriptions();
 
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info{};
     vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -106,8 +110,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     dynamic_state_create_info.pDynamicStates = dynamic_state.data();
 
     // Pipeline Layout
-    const auto descriptor_sets_layout = description.shader->get_descriptor_sets_layout();
-    const auto push_constant_ranges = description.shader->get_push_constant_ranges();
+    const auto descriptor_sets_layout = shader->get_descriptor_sets_layout();
+    const auto push_constant_ranges = shader->get_push_constant_ranges();
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -136,7 +140,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     create_info.pColorBlendState = &color_blend_create_info;
     create_info.pDynamicState = &dynamic_state_create_info;
     create_info.layout = m_pipeline_layout;
-    create_info.renderPass = description.target_framebuffer->get_render_pass();
+    create_info.renderPass = target_framebuffer->get_render_pass();
     create_info.subpass = 0;
 
     VK_CHECK(vkCreateGraphicsPipelines(VulkanContext::device->handle(), nullptr, 1, &create_info, nullptr, &m_pipeline))

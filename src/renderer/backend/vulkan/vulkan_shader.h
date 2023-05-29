@@ -8,6 +8,8 @@
 #include <optional>
 #include <unordered_map>
 
+#include "renderer/backend/shader.h"
+
 // Forward declarations
 struct SpvReflectShaderModule;
 
@@ -17,11 +19,10 @@ namespace Phos {
 class VulkanDevice;
 class VulkanDescriptorLayoutCache;
 
-class VulkanShader {
+class VulkanShader : public Shader {
   public:
-    // VulkanShader(const std::string& path, Stage stage);
     VulkanShader(const std::string& vertex_path, const std::string& fragment_path);
-    ~VulkanShader();
+    ~VulkanShader() override;
 
     [[nodiscard]] VkPipelineShaderStageCreateInfo get_vertex_create_info() const;
     [[nodiscard]] VkPipelineShaderStageCreateInfo get_fragment_create_info() const;

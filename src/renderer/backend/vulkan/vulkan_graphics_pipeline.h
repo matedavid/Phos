@@ -4,25 +4,21 @@
 #include <memory>
 #include <vector>
 
+#include "renderer/backend/graphics_pipeline.h"
+
 namespace Phos {
 
 // Forward declarations
 class VulkanDevice;
 class VulkanShader;
-class VulkanCommandBuffer;
 class VulkanFramebuffer;
 
-class VulkanGraphicsPipeline {
+class VulkanGraphicsPipeline : public GraphicsPipeline {
   public:
-    struct Description {
-        std::shared_ptr<VulkanShader> shader;
-        std::shared_ptr<VulkanFramebuffer> target_framebuffer;
-    };
-
     explicit VulkanGraphicsPipeline(const Description& description);
-    ~VulkanGraphicsPipeline();
+    ~VulkanGraphicsPipeline() override;
 
-    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;
+    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const override;
 
     [[nodiscard]] VkPipeline handle() const { return m_pipeline; }
     [[nodiscard]] VkPipelineLayout layout() const { return m_pipeline_layout; }
