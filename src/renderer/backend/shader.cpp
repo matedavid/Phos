@@ -8,4 +8,4 @@ std::shared_ptr<Shader> Shader::create(const std::string& vertex_path, const std
     return std::dynamic_pointer_cast<Shader>(std::make_shared<VulkanShader>(vertex_path, fragment_path));
 }
 
-}
+} // namespace Phos

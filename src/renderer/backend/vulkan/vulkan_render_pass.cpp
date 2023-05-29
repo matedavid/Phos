@@ -32,16 +32,21 @@ VulkanRenderPass::VulkanRenderPass(Description description) : m_description(std:
     PS_ASSERT(m_description.presentation_target || m_description.target_framebuffer != nullptr,
               "You must provide a target framebuffer");
 
-    if (m_description.target_framebuffer != nullptr) {
-        m_clear_values = get_clear_values(m_description.target_framebuffer);
+    // TODO: Maybe do differently?
+    const auto target_framebuffer = m_description.target_framebuffer != nullptr
+                                        ? std::dynamic_pointer_cast<VulkanFramebuffer>(m_description.target_framebuffer)
+                                        : nullptr;
+
+    if (target_framebuffer != nullptr) {
+        m_clear_values = get_clear_values(target_framebuffer);
     }
 
     m_begin_info = VkRenderPassBeginInfo{};
     m_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 
     if (!m_description.presentation_target) {
-        m_begin_info.renderPass = m_description.target_framebuffer->get_render_pass();
-        m_begin_info.framebuffer = m_description.target_framebuffer->handle();
+        m_begin_info.renderPass = target_framebuffer->get_render_pass();
+        m_begin_info.framebuffer = target_framebuffer->handle();
 
         m_begin_info.renderArea.offset = {0, 0};
         m_begin_info.renderArea.extent = {
