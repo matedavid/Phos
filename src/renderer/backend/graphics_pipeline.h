@@ -7,6 +7,7 @@ namespace Phos {
 // Forward declarations
 class Shader;
 class Framebuffer;
+class CommandBuffer;
 class VulkanCommandBuffer;
 
 class GraphicsPipeline {
@@ -20,7 +21,7 @@ class GraphicsPipeline {
 
     static std::shared_ptr<GraphicsPipeline> create(const Description& description);
 
-    virtual void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const = 0;
+    virtual void bind(const std::shared_ptr<CommandBuffer>& command_buffer) const = 0;
 };
 
 } // namespace Phos

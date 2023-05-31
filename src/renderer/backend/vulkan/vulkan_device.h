@@ -25,11 +25,8 @@ class VulkanDevice {
                  const VulkanPhysicalDevice::Requirements& requirements);
     ~VulkanDevice();
 
-    [[nodiscard]] std::shared_ptr<VulkanCommandBuffer> create_command_buffer(VulkanQueue::Type type) const;
-    void free_command_buffer(const std::shared_ptr<VulkanCommandBuffer>& command_buffer, VulkanQueue::Type type) const;
-
-    void single_time_command_buffer(VulkanQueue::Type type,
-                                    const std::function<void(const VulkanCommandBuffer&)>& func) const;
+    [[nodiscard]] VkCommandBuffer create_command_buffer(VulkanQueue::Type type) const;
+    void free_command_buffer(VkCommandBuffer command_buffer, VulkanQueue::Type type) const;
 
     [[nodiscard]] std::shared_ptr<VulkanQueue> get_graphics_queue() const {
         PS_ASSERT(m_graphics_queue != nullptr, "Graphics queue was not requested")
@@ -39,6 +36,8 @@ class VulkanDevice {
         PS_ASSERT(m_presentation_queue != nullptr, "Presentation queue was not requested")
         return m_presentation_queue;
     }
+
+    [[nodiscard]] const std::shared_ptr<VulkanQueue>& get_queue_from_type(VulkanQueue::Type type) const;
 
     [[nodiscard]] VkDevice handle() const { return m_device; }
     [[nodiscard]] VulkanPhysicalDevice physical_device() const { return m_physical_device; }
@@ -51,8 +50,6 @@ class VulkanDevice {
     std::shared_ptr<VulkanQueue> m_presentation_queue = nullptr;
 
     std::unique_ptr<VulkanCommandPool> m_graphics_command_pool = nullptr;
-
-    [[nodiscard]] const std::shared_ptr<VulkanQueue>& get_queue_from_type(VulkanQueue::Type type) const;
 
     [[nodiscard]] VulkanPhysicalDevice select_physical_device(const std::unique_ptr<VulkanInstance>& instance,
                                                               const VulkanPhysicalDevice::Requirements& reqs) const;

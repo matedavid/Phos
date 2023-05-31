@@ -61,21 +61,21 @@ void VulkanBuffer::copy_to_buffer(const VulkanBuffer& buffer) const {
     PS_ASSERT(m_size == buffer.m_size, "Size of buffers do not match")
 
     // TODO: Maybe should use transfer queue instead of graphics
-    VulkanContext::device->single_time_command_buffer(
-        VulkanQueue::Type::Graphics, [&](const VulkanCommandBuffer& command_buffer) {
+    VulkanCommandBuffer::submit_single_time(
+        VulkanQueue::Type::Graphics, [&](const std::shared_ptr<VulkanCommandBuffer>& command_buffer) {
             VkBufferCopy copy{};
             copy.srcOffset = 0;
             copy.dstOffset = 0;
             copy.size = m_size;
 
-            vkCmdCopyBuffer(command_buffer.handle(), m_buffer, buffer.handle(), 1, &copy);
+            vkCmdCopyBuffer(command_buffer->handle(), m_buffer, buffer.handle(), 1, &copy);
         });
 }
 
 void VulkanBuffer::copy_to_image(const VulkanImage& image) const {
     // TODO: Maybe should use transfer queue instead of graphics
-    VulkanContext::device->single_time_command_buffer(
-        VulkanQueue::Type::Graphics, [&](const VulkanCommandBuffer& command_buffer) {
+    VulkanCommandBuffer::submit_single_time(
+        VulkanQueue::Type::Graphics, [&](const std::shared_ptr<VulkanCommandBuffer>& command_buffer) {
             VkBufferImageCopy region{};
             region.bufferOffset = 0;
             region.bufferRowLength = 0;
@@ -90,7 +90,7 @@ void VulkanBuffer::copy_to_image(const VulkanImage& image) const {
             region.imageExtent = {image.width(), image.height(), 1};
 
             vkCmdCopyBufferToImage(
-                command_buffer.handle(), m_buffer, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+                command_buffer->handle(), m_buffer, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
         });
 }
 

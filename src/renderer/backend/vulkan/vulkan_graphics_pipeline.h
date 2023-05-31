@@ -18,7 +18,7 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
     explicit VulkanGraphicsPipeline(const Description& description);
     ~VulkanGraphicsPipeline() override;
 
-    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const override;
+    void bind(const std::shared_ptr<CommandBuffer>& command_buffer) const override;
 
     [[nodiscard]] VkPipeline handle() const { return m_pipeline; }
     [[nodiscard]] VkPipelineLayout layout() const { return m_pipeline_layout; }

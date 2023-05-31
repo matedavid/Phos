@@ -19,10 +19,11 @@ class VulkanRenderPass : public RenderPass {
     explicit VulkanRenderPass(Description description);
     ~VulkanRenderPass() override = default;
 
-    void begin(const VulkanCommandBuffer& command_buffer);
-    void begin(const VulkanCommandBuffer& command_buffer, const std::shared_ptr<VulkanFramebuffer>& framebuffer);
+    void begin(const std::shared_ptr<CommandBuffer>& command_buffer) override;
+    void begin(const std::shared_ptr<CommandBuffer>& command_buffer,
+               const std::shared_ptr<Framebuffer>& framebuffer) override;
 
-    void end(const VulkanCommandBuffer& command_buffer);
+    void end(const std::shared_ptr<CommandBuffer>& command_buffer) override;
 
   private:
     Description m_description;

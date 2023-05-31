@@ -154,8 +154,9 @@ VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
     vkDestroyPipeline(VulkanContext::device->handle(), m_pipeline, nullptr);
 }
 
-void VulkanGraphicsPipeline::bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const {
-    vkCmdBindPipeline(command_buffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+void VulkanGraphicsPipeline::bind(const std::shared_ptr<CommandBuffer>& command_buffer) const {
+    const auto native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
+    vkCmdBindPipeline(native_command_buffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 }
 
 } // namespace Phos

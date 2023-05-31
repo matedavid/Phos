@@ -74,8 +74,8 @@ VulkanImage::~VulkanImage() {
 }
 
 void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_layout) const {
-    VulkanContext::device->single_time_command_buffer(
-        VulkanQueue::Type::Graphics, [&](const VulkanCommandBuffer& command_buffer) {
+    VulkanCommandBuffer::submit_single_time(
+        VulkanQueue::Type::Graphics, [&](const std::shared_ptr<VulkanCommandBuffer>& command_buffer) {
             VkImageMemoryBarrier barrier{};
             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             barrier.oldLayout = old_layout;
@@ -117,7 +117,7 @@ void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_
             }
 
             vkCmdPipelineBarrier(
-                command_buffer.handle(), source_stage, destination_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+                command_buffer->handle(), source_stage, destination_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         });
 }
 

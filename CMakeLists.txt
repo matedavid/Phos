@@ -28,6 +28,8 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/framebuffer.cpp
         src/renderer/backend/image.cpp
         src/renderer/backend/texture.cpp
+        src/renderer/backend/command_buffer.cpp
+        src/renderer/backend/render_pass.cpp
 
         src/renderer/backend/vulkan/vulkan_context.cpp
         src/renderer/backend/vulkan/vulkan_instance.cpp

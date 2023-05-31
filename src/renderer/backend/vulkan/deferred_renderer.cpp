@@ -17,7 +17,7 @@ DeferredRenderer::DeferredRenderer() {
     m_swapchain = std::make_shared<VulkanSwapchain>();
 
     // Command buffer
-    m_command_buffer = VulkanContext::device->create_command_buffer(VulkanQueue::Type::Graphics);
+    m_command_buffer = std::make_shared<VulkanCommandBuffer>();
 
     m_allocator = std::make_shared<VulkanDescriptorAllocator>();
 
@@ -238,7 +238,7 @@ void DeferredRenderer::update() {
         // Geometry pass
         // =============
         {
-            m_geometry_pass->begin(*command_buffer);
+            m_geometry_pass->begin(command_buffer);
 
             // Draw models
             m_geometry_pipeline->bind(command_buffer);
@@ -320,13 +320,13 @@ void DeferredRenderer::update() {
                 vkCmdDrawIndexed(m_command_buffer->handle(), mesh->get_index_buffer()->count(), 1, 0, 0, 0);
             }
 
-            m_geometry_pass->end(*command_buffer);
+            m_geometry_pass->end(command_buffer);
         }
 
         // Lighting pass
         // ==========================
         {
-            m_lighting_pass->begin(*command_buffer, swapchain_framebuffer);
+            m_lighting_pass->begin(command_buffer, swapchain_framebuffer);
 
             // Draw quad
             m_lighting_pipeline->bind(command_buffer);
@@ -349,7 +349,7 @@ void DeferredRenderer::update() {
 
             vkCmdDrawIndexed(m_command_buffer->handle(), m_quad_index->count(), 1, 0, 0, 0);
 
-            m_lighting_pass->end(*command_buffer);
+            m_lighting_pass->end(command_buffer);
         }
     });
 
