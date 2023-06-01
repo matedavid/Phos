@@ -3,7 +3,7 @@
 #include "renderer/backend/vulkan/vulkan_context.h"
 #include "renderer/backend/vulkan/vulkan_renderer_api.h"
 
-#include "renderer/model.h"
+#include "renderer/static_mesh.h"
 #include "core/window.h"
 
 namespace Phos {
@@ -178,9 +178,9 @@ DeferredRenderer::DeferredRenderer() {
         vkCreateSemaphore(VulkanContext::device->handle(), &semaphoreCreateInfo, nullptr, &render_finished_semaphore))
     VK_CHECK(vkCreateFence(VulkanContext::device->handle(), &fenceCreateInfo, nullptr, &in_flight_fence))
 
-    // Model
-    m_model = std::make_shared<Model>("../assets/suzanne.fbx", false);
-    m_cube = std::make_shared<Model>("../assets/cube.fbx", false);
+    // StaticMesh
+    m_model = std::make_shared<StaticMesh>("../assets/suzanne.fbx", false);
+    m_cube = std::make_shared<StaticMesh>("../assets/cube.fbx", false);
 }
 
 DeferredRenderer::~DeferredRenderer() {
@@ -257,7 +257,7 @@ void DeferredRenderer::update() {
                                     0,
                                     nullptr);
 
-            for (const auto& mesh : m_model->get_meshes()) {
+            for (const auto& mesh : m_model->get_sub_meshes()) {
                 const auto& vertex_buffer = std::dynamic_pointer_cast<VulkanVertexBuffer>(mesh->get_vertex_buffer());
                 const auto& index_buffer = std::dynamic_pointer_cast<VulkanIndexBuffer>(mesh->get_index_buffer());
 
@@ -310,7 +310,7 @@ void DeferredRenderer::update() {
                                    sizeof(ModelInfoPushConstant),
                                    &constants);
 
-                const auto& mesh = m_cube->get_meshes()[0];
+                const auto& mesh = m_cube->get_sub_meshes()[0];
                 const auto vertex_buffer = std::dynamic_pointer_cast<VulkanVertexBuffer>(mesh->get_vertex_buffer());
                 const auto index_buffer = std::dynamic_pointer_cast<VulkanIndexBuffer>(mesh->get_index_buffer());
 

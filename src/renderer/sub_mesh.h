@@ -14,7 +14,7 @@ namespace Phos {
 class VertexBuffer;
 class IndexBuffer;
 
-class Mesh {
+class SubMesh {
   public:
     struct Vertex {
         glm::vec3 position;
@@ -23,8 +23,8 @@ class Mesh {
         glm::vec3 tangent;
     };
 
-    explicit Mesh(const aiMesh* mesh);
-    ~Mesh() = default;
+    explicit SubMesh(const aiMesh* mesh);
+    ~SubMesh() = default;
 
     [[nodiscard]] const std::shared_ptr<VertexBuffer>& get_vertex_buffer() const { return m_vertex_buffer; }
     [[nodiscard]] const std::shared_ptr<IndexBuffer>& get_index_buffer() const { return m_index_buffer; }

@@ -21,8 +21,8 @@ target_sources(${PROJECT_NAME} PRIVATE
 
         src/input/input.cpp
 
-        src/renderer/model.cpp
-        src/renderer/mesh.cpp
+        src/renderer/static_mesh.cpp
+        src/renderer/sub_mesh.cpp
 
         src/renderer/backend/buffers.cpp
         src/renderer/backend/framebuffer.cpp

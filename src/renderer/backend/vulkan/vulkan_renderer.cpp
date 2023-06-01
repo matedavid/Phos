@@ -127,9 +127,9 @@ VulkanRenderer::VulkanRenderer() {
     PS_ASSERT(result1 && result2, "Error creating descriptor set")
     // =======================
 
-    // Model
-    m_model = std::make_shared<Model>("../assets/suzanne.fbx", false);
-    m_cube = std::make_shared<Model>("../assets/cube.fbx", false);
+    // StaticMesh
+    m_model = std::make_shared<StaticMesh>("../assets/suzanne.fbx", false);
+    m_cube = std::make_shared<StaticMesh>("../assets/cube.fbx", false);
 }
 
 VulkanRenderer::~VulkanRenderer() {
@@ -251,7 +251,7 @@ void VulkanRenderer::update() {
                                sizeof(ModelInfoPushConstant),
                                &constants);
 
-            const auto& mesh = m_cube->get_meshes()[0];
+            const auto& mesh = m_cube->get_sub_meshes()[0];
 
             const auto& vertex_buffer = mesh->get_vertex_buffer();
             const auto& index_buffer = mesh->get_index_buffer();

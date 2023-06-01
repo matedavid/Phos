@@ -32,7 +32,7 @@ namespace Phos {
 
 // Forward declarations
 class Window;
-class Model;
+class StaticMesh;
 
 struct CameraUniformBuffer {
     glm::mat4 projection;
@@ -95,8 +95,8 @@ class DeferredRenderer {
     VkDescriptorSet m_lighting_fragment_set;
 
     // Models
-    std::shared_ptr<Model> m_model;
-    std::shared_ptr<Model> m_cube;
+    std::shared_ptr<StaticMesh> m_model;
+    std::shared_ptr<StaticMesh> m_cube;
 
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;
