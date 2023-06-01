@@ -1,6 +1,7 @@
 #include "deferred_renderer.h"
 
 #include "renderer/backend/vulkan/vulkan_context.h"
+#include "renderer/backend/vulkan/vulkan_renderer_api.h"
 
 #include "renderer/model.h"
 #include "core/window.h"
@@ -257,8 +258,8 @@ void DeferredRenderer::update() {
                                     nullptr);
 
             for (const auto& mesh : m_model->get_meshes()) {
-                const auto& vertex_buffer = mesh->get_vertex_buffer();
-                const auto& index_buffer = mesh->get_index_buffer();
+                const auto& vertex_buffer = std::dynamic_pointer_cast<VulkanVertexBuffer>(mesh->get_vertex_buffer());
+                const auto& index_buffer = std::dynamic_pointer_cast<VulkanIndexBuffer>(mesh->get_index_buffer());
 
                 ModelInfoPushConstant constants = {
                     .model = glm::mat4(1.0f),
@@ -272,10 +273,7 @@ void DeferredRenderer::update() {
                                    sizeof(ModelInfoPushConstant),
                                    &constants);
 
-                vertex_buffer->bind(command_buffer);
-                index_buffer->bind(command_buffer);
-
-                vkCmdDrawIndexed(m_command_buffer->handle(), index_buffer->count(), 1, 0, 0, 0);
+                VulkanRendererAPI::draw_indexed(m_command_buffer, vertex_buffer, index_buffer);
             }
 
             // Draw lights
@@ -313,11 +311,10 @@ void DeferredRenderer::update() {
                                    &constants);
 
                 const auto& mesh = m_cube->get_meshes()[0];
+                const auto vertex_buffer = std::dynamic_pointer_cast<VulkanVertexBuffer>(mesh->get_vertex_buffer());
+                const auto index_buffer = std::dynamic_pointer_cast<VulkanIndexBuffer>(mesh->get_index_buffer());
 
-                mesh->get_vertex_buffer()->bind(command_buffer);
-                mesh->get_index_buffer()->bind(command_buffer);
-
-                vkCmdDrawIndexed(m_command_buffer->handle(), mesh->get_index_buffer()->count(), 1, 0, 0, 0);
+                VulkanRendererAPI::draw_indexed(m_command_buffer, vertex_buffer, index_buffer);
             }
 
             m_geometry_pass->end(command_buffer);
@@ -344,10 +341,7 @@ void DeferredRenderer::update() {
                                     0,
                                     nullptr);
 
-            m_quad_vertex->bind(command_buffer);
-            m_quad_index->bind(command_buffer);
-
-            vkCmdDrawIndexed(m_command_buffer->handle(), m_quad_index->count(), 1, 0, 0, 0);
+            VulkanRendererAPI::draw_indexed(m_command_buffer, m_quad_vertex, m_quad_index);
 
             m_lighting_pass->end(command_buffer);
         }

@@ -31,6 +31,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/command_buffer.cpp
         src/renderer/backend/render_pass.cpp
 
+        # Vulkan backend
         src/renderer/backend/vulkan/vulkan_context.cpp
         src/renderer/backend/vulkan/vulkan_instance.cpp
         src/renderer/backend/vulkan/vulkan_physical_device.cpp
@@ -51,6 +52,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_utils.cpp
         src/renderer/backend/vulkan/vulkan_renderer.cpp
         src/renderer/backend/vulkan/deferred_renderer.cpp
+        src/renderer/backend/vulkan/vulkan_renderer_api.cpp
 
         src/main.cpp
         )
