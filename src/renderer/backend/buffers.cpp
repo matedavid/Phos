@@ -1,11 +1,17 @@
 #include "buffers.h"
 
+#include "renderer/backend/renderer.h"
 #include "renderer/backend/vulkan/vulkan_buffers.h"
 
 namespace Phos {
 
 std::shared_ptr<IndexBuffer> IndexBuffer::create(const std::vector<uint32_t>& data) {
-    return std::make_shared<VulkanIndexBuffer>(data);
+    switch (Renderer::graphics_api()) {
+    case GraphicsAPI::Vulkan:
+        return std::make_shared<VulkanIndexBuffer>(data);
+    default:
+        PS_FAIL("Vulkan is the only supported api")
+    }
 }
 
 } // namespace Phos
