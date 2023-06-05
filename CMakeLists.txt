@@ -24,6 +24,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         # Renderer
         src/renderer/static_mesh.cpp
         src/renderer/sub_mesh.cpp
+        src/renderer/camera.cpp
 
         # Renderer Backend
         src/renderer/backend/renderer.cpp

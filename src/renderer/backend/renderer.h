@@ -8,6 +8,7 @@ namespace Phos {
 class StaticMesh;
 class CommandBuffer;
 class RenderPass;
+class Camera;
 class Window;
 
 enum class GraphicsAPI {
@@ -15,13 +16,21 @@ enum class GraphicsAPI {
 };
 
 struct RendererConfig {
-    GraphicsAPI graphics_api;
+    GraphicsAPI graphics_api = GraphicsAPI::Vulkan; // Vulkan API by default
     std::shared_ptr<Window> window;
+};
+
+struct FrameInformation {
+    std::shared_ptr<Camera> camera;
+    std::vector<Light> lights;
 };
 
 class INativeRenderer {
   public:
     virtual ~INativeRenderer() = default;
+
+    virtual void begin_frame(const FrameInformation& info) = 0;
+    virtual void end_frame() = 0;
 
     virtual void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
                                     const std::shared_ptr<StaticMesh>& mesh) = 0;
@@ -40,8 +49,10 @@ class INativeRenderer {
 class Renderer {
   public:
     static void initialize(const RendererConfig& config);
-
     static void shutdown();
+
+    static void begin_frame(const FrameInformation& info);
+    static void end_frame();
 
     static void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
                                    const std::shared_ptr<StaticMesh>& mesh);

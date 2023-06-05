@@ -20,6 +20,14 @@ void Renderer::shutdown() {
     m_native_renderer.reset();
 }
 
+void Renderer::begin_frame(const FrameInformation& info) {
+    m_native_renderer->begin_frame(info);
+}
+
+void Renderer::end_frame() {
+    m_native_renderer->end_frame();
+}
+
 void Renderer::submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
                                   const std::shared_ptr<StaticMesh>& mesh) {
     m_native_renderer->submit_static_mesh(command_buffer, mesh);

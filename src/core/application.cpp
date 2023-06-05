@@ -1,6 +1,5 @@
 #include "application.h"
 
-#include <algorithm>
 #include <ranges>
 
 #include "core/window.h"
