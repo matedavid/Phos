@@ -88,8 +88,8 @@ class DeferredRenderer {
     std::shared_ptr<VulkanGraphicsPipeline> m_flat_color_pipeline;
 
     // Uniform buffers
-    std::shared_ptr<VulkanUniformBuffer<CameraUniformBuffer>> m_camera_ubo;
-    std::shared_ptr<VulkanUniformBuffer<LightsUniformBuffer>> m_lights_ubo;
+    std::shared_ptr<VulkanUniformBuffer> m_camera_ubo;
+    std::shared_ptr<VulkanUniformBuffer> m_lights_ubo;
 
     VkDescriptorSet m_camera_set;
     VkDescriptorSet m_lighting_fragment_set;

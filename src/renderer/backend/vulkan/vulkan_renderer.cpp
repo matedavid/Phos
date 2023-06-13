@@ -15,37 +15,42 @@ namespace Phos {
 VulkanRenderer::VulkanRenderer(const RendererConfig& config) {
     VulkanContext::init(config.window);
 
-    m_camera_ubo = std::make_shared<VulkanUniformBuffer<CameraUniformBuffer>>();
-
-    const auto allocator = std::make_shared<VulkanDescriptorAllocator>();
-
-    VkDescriptorBufferInfo camera_info{};
-    camera_info.buffer = m_camera_ubo->handle();
-    camera_info.range = m_camera_ubo->size();
-    camera_info.offset = 0;
-
-    // VkDescriptorBufferInfo lights_info{};
-
-    const bool built = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, allocator)
-                           .bind_buffer(0, camera_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                           // .bind_buffer(1, )
-                           .build(m_frame_descriptor_set);
-
-    PS_ASSERT(built, "Error creating frame descriptor set");
+    //    m_camera_ubo = VulkanUniformBuffer::create<CameraUniformBuffer>();
+    //
+    //    const auto allocator = std::make_shared<VulkanDescriptorAllocator>();
+    //
+    //    VkDescriptorBufferInfo camera_info{};
+    //    camera_info.buffer = m_camera_ubo->handle();
+    //    camera_info.range = m_camera_ubo->size();
+    //    camera_info.offset = 0;
+    //
+    //    // VkDescriptorBufferInfo lights_info{};
+    //
+    //    const bool built = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, allocator)
+    //                           .bind_buffer(0, camera_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    //                           VK_SHADER_STAGE_VERTEX_BIT)
+    //                           // .bind_buffer(1, )
+    //                           .build(m_frame_descriptor_set);
+    //
+    //    PS_ASSERT(built, "Error creating frame descriptor set")
 }
 
 VulkanRenderer::~VulkanRenderer() {
+    // Destroy camera ubo
+    // m_camera_ubo.reset();
+
     VulkanContext::free();
 }
 
 void VulkanRenderer::begin_frame(const FrameInformation& info) {
-    const auto camera_info = CameraUniformBuffer{
-        .projection = info.camera->projection_matrix(),
-        .view = info.camera->view_matrix(),
-        .view_projection = info.camera->projection_matrix() * info.camera->view_matrix(),
-        .position = info.camera->position(),
-    };
-    m_camera_ubo->update(camera_info);
+    (void)info;
+//    const auto camera_info = CameraUniformBuffer{
+//        .projection = info.camera->projection_matrix(),
+//        .view = info.camera->view_matrix(),
+//        .view_projection = info.camera->projection_matrix() * info.camera->view_matrix(),
+//        .position = info.camera->position(),
+//    };
+//    m_camera_ubo->update(camera_info);
 
     // TODO:
     PS_FAIL("unimplemented")

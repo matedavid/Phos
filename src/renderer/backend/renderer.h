@@ -22,7 +22,7 @@ struct RendererConfig {
 
 struct FrameInformation {
     std::shared_ptr<Camera> camera;
-    std::vector<Light> lights;
+    // TODO: std::vector<Light> lights;
 };
 
 class INativeRenderer {
@@ -73,8 +73,5 @@ class Renderer {
     static std::shared_ptr<INativeRenderer> m_native_renderer;
     static RendererConfig m_config;
 };
-
-inline std::shared_ptr<INativeRenderer> Renderer::m_native_renderer = nullptr;
-inline RendererConfig Renderer::m_config;
 
 } // namespace Phos

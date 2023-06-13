@@ -8,7 +8,6 @@ namespace Phos {
 // Forward declarations
 class VulkanVertexBuffer;
 class VulkanIndexBuffer;
-template <typename T>
 class VulkanUniformBuffer;
 class VulkanCommandBuffer;
 
@@ -35,16 +34,24 @@ class IndexBuffer {
     [[nodiscard]] virtual uint32_t count() const = 0;
 };
 
-template <typename T>
 class UniformBuffer {
   public:
     virtual ~UniformBuffer() = default;
 
-    static std::shared_ptr<UniformBuffer<T>> create() {
-        return std::dynamic_pointer_cast<UniformBuffer<T>>(std::make_shared<VulkanUniformBuffer<T>>());
+    template <typename T>
+    static std::shared_ptr<UniformBuffer> create() {
+        const uint32_t size = sizeof(T);
+        return std::dynamic_pointer_cast<UniformBuffer>(std::make_shared<VulkanUniformBuffer>(size));
     }
 
-    virtual void update(const T& data) = 0;
+    template <typename T>
+    void update(const T& data) {
+        PS_ASSERT(sizeof(data) == size(), "Size of data must be equal to size of creation data")
+        set_data(&data);
+    }
+
+    virtual void set_data(const void* data) = 0;
+
     [[nodiscard]] virtual uint32_t size() const = 0;
 };
 

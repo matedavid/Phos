@@ -4,6 +4,9 @@
 
 namespace Phos {
 
+std::shared_ptr<INativeRenderer> Renderer::m_native_renderer = nullptr;
+RendererConfig Renderer::m_config;
+
 void Renderer::initialize(const RendererConfig& config) {
     switch (config.graphics_api) {
     case GraphicsAPI::Vulkan:

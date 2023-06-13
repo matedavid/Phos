@@ -10,7 +10,6 @@
 namespace Phos {
 
 // Forward declarations
-template <typename T>
 class VulkanUniformBuffer;
 
 class VulkanRenderer : public INativeRenderer {
@@ -42,10 +41,10 @@ class VulkanRenderer : public INativeRenderer {
         glm::vec3 position;
     };
 
-    std::shared_ptr<VulkanUniformBuffer<CameraUniformBuffer>> m_camera_ubo;
+    // std::shared_ptr<VulkanUniformBuffer> m_camera_ubo;
     // std::shared_ptr<VulkanUniformBuffer<CameraUniformBuffer>> m_lights_ubo;
 
-    VkDescriptorSet m_frame_descriptor_set{VK_NULL_HANDLE};
+    // VkDescriptorSet m_frame_descriptor_set{VK_NULL_HANDLE};
 };
 
 } // namespace Phos

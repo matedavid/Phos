@@ -90,6 +90,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
 
 # assimp
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/assimp)
 target_link_libraries(${PROJECT_NAME} PRIVATE assimp)
 

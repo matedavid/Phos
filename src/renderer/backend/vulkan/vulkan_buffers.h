@@ -85,22 +85,18 @@ class VulkanIndexBuffer : public IndexBuffer {
 // Uniform Buffer
 //
 
-template <typename T>
-class VulkanUniformBuffer : public UniformBuffer<T> {
+class VulkanUniformBuffer : public UniformBuffer {
   public:
-    VulkanUniformBuffer() {
-        m_size = sizeof(T);
-        m_buffer =
-            std::make_unique<VulkanBuffer>(m_size,
-                                           VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    explicit VulkanUniformBuffer(uint32_t size);
+    ~VulkanUniformBuffer() override;
 
-        m_buffer->map_memory(m_map_data);
+    template <typename T>
+    static std::shared_ptr<VulkanUniformBuffer> create() {
+        const uint32_t size = sizeof(T);
+        return std::make_shared<VulkanUniformBuffer>(size);
     }
 
-    ~VulkanUniformBuffer() override { m_buffer->unmap_memory(); }
-
-    void update(const T& data) override { memcpy(m_map_data, &data, m_size); }
+    void set_data(const void* data) override;
 
     [[nodiscard]] uint32_t size() const override { return m_size; }
     [[nodiscard]] VkBuffer handle() const { return m_buffer->handle(); }

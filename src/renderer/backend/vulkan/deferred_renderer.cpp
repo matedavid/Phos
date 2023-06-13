@@ -120,8 +120,8 @@ DeferredRenderer::DeferredRenderer() {
     }
 
     // Uniform buffers
-    m_camera_ubo = std::make_shared<VulkanUniformBuffer<CameraUniformBuffer>>();
-    m_lights_ubo = std::make_shared<VulkanUniformBuffer<LightsUniformBuffer>>();
+    m_camera_ubo = VulkanUniformBuffer::create<CameraUniformBuffer>();
+    m_lights_ubo = VulkanUniformBuffer::create<LightsUniformBuffer>();
 
     VkDescriptorBufferInfo camera_info{};
     camera_info.buffer = m_camera_ubo->handle();
@@ -211,7 +211,7 @@ void DeferredRenderer::update() {
     view = glm::rotate(view, m_camera_info.rotation.y, glm::vec3(1.0f, 0.0f, 0.0f));
     view = glm::rotate(view, -m_camera_info.rotation.x, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    m_camera_ubo->update({
+    m_camera_ubo->update(CameraUniformBuffer{
         .projection = projection,
         .view = view,
         .position = glm::vec3(glm::inverse(view)[3]),
