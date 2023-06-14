@@ -44,13 +44,13 @@ VulkanRenderer::~VulkanRenderer() {
 
 void VulkanRenderer::begin_frame(const FrameInformation& info) {
     (void)info;
-//    const auto camera_info = CameraUniformBuffer{
-//        .projection = info.camera->projection_matrix(),
-//        .view = info.camera->view_matrix(),
-//        .view_projection = info.camera->projection_matrix() * info.camera->view_matrix(),
-//        .position = info.camera->position(),
-//    };
-//    m_camera_ubo->update(camera_info);
+    //    const auto camera_info = CameraUniformBuffer{
+    //        .projection = info.camera->projection_matrix(),
+    //        .view = info.camera->view_matrix(),
+    //        .view_projection = info.camera->projection_matrix() * info.camera->view_matrix(),
+    //        .position = info.camera->position(),
+    //    };
+    //    m_camera_ubo->update(camera_info);
 
     // TODO:
     PS_FAIL("unimplemented")
@@ -94,6 +94,11 @@ void VulkanRenderer::record_render_pass(const std::shared_ptr<CommandBuffer>& co
 
     // End Render Pass
     end_render_pass(command_buffer, render_pass);
+}
+
+std::shared_ptr<Framebuffer> VulkanRenderer::presentation_framebuffer() {
+    // TODO:
+    PS_FAIL("unimplemented")
 }
 
 } // namespace Phos

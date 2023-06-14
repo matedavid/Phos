@@ -2,11 +2,12 @@
 
 layout (location = 0) out vec4 ResultColor;
 
+// TODO: Should be set = 0
 layout (std140, set = 1, binding = 0) uniform LightsUniformBuffer {
     vec4 positions[10];
     vec4 colors[10];
     int count;
-};
+} uLightInfo;
 
 layout (set = 1, binding = 1) uniform sampler2D uPositionMap;
 layout (set = 1, binding = 2) uniform sampler2D uNormalMap;
@@ -16,7 +17,7 @@ layout (location = 0) in vec2 vTexCoordinates;
 layout (location = 1) in vec3 vCameraPosition;
 
 vec3 CalcPointLight(int idx, vec3 normal, vec3 fragPos, vec3 viewDir, vec4 Color) {
-    vec3 lightDir = normalize(positions[idx].xyz - fragPos);
+    vec3 lightDir = normalize(uLightInfo.positions[idx].xyz - fragPos);
 
     // diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
@@ -31,7 +32,7 @@ vec3 CalcPointLight(int idx, vec3 normal, vec3 fragPos, vec3 viewDir, vec4 Color
 
     // combine results
     vec3 ambient = vec3(0.01f) * Color.xyz;
-    vec3 diffuse = colors[idx].xyz * diff * Color.xyz;
+    vec3 diffuse = uLightInfo.colors[idx].xyz * diff * Color.xyz;
     vec3 specular = vec3(1.0f) * spec * vec3(Color.w);
 
 //    ambient *= attenuation;
@@ -52,7 +53,7 @@ void main() {
     vec3 viewDir = normalize(vCameraPosition - position.xyz);
 
     vec3 result = vec3(0.0f);
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < uLightInfo.count; i++) {
         result += CalcPointLight(i, norm, position.xyz, viewDir, color);
     }
 

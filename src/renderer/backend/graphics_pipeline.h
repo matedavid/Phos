@@ -8,7 +8,8 @@ namespace Phos {
 class Shader;
 class Framebuffer;
 class CommandBuffer;
-class VulkanCommandBuffer;
+class UniformBuffer;
+class Texture;
 
 class GraphicsPipeline {
   public:
@@ -21,7 +22,11 @@ class GraphicsPipeline {
 
     static std::shared_ptr<GraphicsPipeline> create(const Description& description);
 
-    virtual void bind(const std::shared_ptr<CommandBuffer>& command_buffer) const = 0;
+    virtual void bind(const std::shared_ptr<CommandBuffer>& command_buffer) = 0;
+    [[nodiscard]] virtual bool bake() = 0;
+
+    virtual void add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) = 0;
+    virtual void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) = 0;
 };
 
 } // namespace Phos

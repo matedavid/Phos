@@ -10,6 +10,7 @@ class CommandBuffer;
 class RenderPass;
 class Camera;
 class Window;
+class Framebuffer;
 
 enum class GraphicsAPI {
     Vulkan,
@@ -44,6 +45,8 @@ class INativeRenderer {
     virtual void record_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                     const std::shared_ptr<RenderPass>& render_pass,
                                     const std::function<void(void)>& func) = 0;
+
+    virtual std::shared_ptr<Framebuffer> presentation_framebuffer() = 0;
 };
 
 class Renderer {
@@ -67,7 +70,11 @@ class Renderer {
                                    const std::shared_ptr<RenderPass>& render_pass,
                                    const std::function<void(void)>& func);
 
+    static std::shared_ptr<Framebuffer> presentation_framebuffer();
+
     static GraphicsAPI graphics_api() { return m_config.graphics_api; }
+
+    static const RendererConfig& config() { return m_config; }
 
   private:
     static std::shared_ptr<INativeRenderer> m_native_renderer;

@@ -52,4 +52,8 @@ void Renderer::record_render_pass(const std::shared_ptr<CommandBuffer>& command_
     m_native_renderer->record_render_pass(command_buffer, render_pass, func);
 }
 
+std::shared_ptr<Framebuffer> Renderer::presentation_framebuffer() {
+    return m_native_renderer->presentation_framebuffer();
+}
+
 } // namespace Phos

@@ -22,6 +22,10 @@ DeferredRenderer::DeferredRenderer() {
 
     m_allocator = std::make_shared<VulkanDescriptorAllocator>();
 
+    // Uniform buffers
+    m_camera_ubo = VulkanUniformBuffer::create<CameraUniformBuffer>();
+    m_lights_ubo = VulkanUniformBuffer::create<LightsUniformBuffer>();
+
     const auto width = VulkanContext::window->get_width();
     const auto height = VulkanContext::window->get_height();
 
@@ -90,6 +94,12 @@ DeferredRenderer::DeferredRenderer() {
             .target_framebuffer = m_swapchain->get_target_framebuffer(),
         });
 
+        m_lighting_pipeline->add_input("uLightInfo", m_lights_ubo);
+        m_lighting_pipeline->add_input("uPositionMap", m_position_texture);
+        m_lighting_pipeline->add_input("uNormalMap", m_normal_texture);
+        m_lighting_pipeline->add_input("uColorSpecularMap", m_color_specular_texture);
+        PS_ASSERT(m_geometry_pipeline->bake(), "Failed to bake Lighting Pipeline")
+
         m_lighting_pass = std::make_shared<VulkanRenderPass>(VulkanRenderPass::Description{
             .debug_name = "Deferred-Lighting",
             .presentation_target = true,
@@ -119,50 +129,47 @@ DeferredRenderer::DeferredRenderer() {
         m_quad_index = std::make_shared<VulkanIndexBuffer>(index_info);
     }
 
-    // Uniform buffers
-    m_camera_ubo = VulkanUniformBuffer::create<CameraUniformBuffer>();
-    m_lights_ubo = VulkanUniformBuffer::create<LightsUniformBuffer>();
-
     VkDescriptorBufferInfo camera_info{};
     camera_info.buffer = m_camera_ubo->handle();
     camera_info.range = m_camera_ubo->size();
     camera_info.offset = 0;
 
-    VkDescriptorBufferInfo lights_info{};
-    lights_info.buffer = m_lights_ubo->handle();
-    lights_info.range = m_lights_ubo->size();
-    lights_info.offset = 0;
-
-    VkDescriptorImageInfo position_map_info{};
-    position_map_info.imageView = std::dynamic_pointer_cast<VulkanImage>(m_position_texture->get_image())->view();
-    position_map_info.sampler = m_position_texture->sampler();
-    position_map_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    VkDescriptorImageInfo normal_map_info{};
-    normal_map_info.imageView = std::dynamic_pointer_cast<VulkanImage>(m_normal_texture->get_image())->view();
-    normal_map_info.sampler = m_normal_texture->sampler();
-    normal_map_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    VkDescriptorImageInfo color_specular_map_info{};
-    color_specular_map_info.imageView =
-        std::dynamic_pointer_cast<VulkanImage>(m_color_specular_texture->get_image())->view();
-    color_specular_map_info.sampler = m_color_specular_texture->sampler();
-    color_specular_map_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    //    VkDescriptorBufferInfo lights_info{};
+    //    lights_info.buffer = m_lights_ubo->handle();
+    //    lights_info.range = m_lights_ubo->size();
+    //    lights_info.offset = 0;
+    //
+    //    VkDescriptorImageInfo position_map_info{};
+    //    position_map_info.imageView = std::dynamic_pointer_cast<VulkanImage>(m_position_texture->get_image())->view();
+    //    position_map_info.sampler = m_position_texture->sampler();
+    //    position_map_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    //
+    //    VkDescriptorImageInfo normal_map_info{};
+    //    normal_map_info.imageView = std::dynamic_pointer_cast<VulkanImage>(m_normal_texture->get_image())->view();
+    //    normal_map_info.sampler = m_normal_texture->sampler();
+    //    normal_map_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    //
+    //    VkDescriptorImageInfo color_specular_map_info{};
+    //    color_specular_map_info.imageView =
+    //        std::dynamic_pointer_cast<VulkanImage>(m_color_specular_texture->get_image())->view();
+    //    color_specular_map_info.sampler = m_color_specular_texture->sampler();
+    //    color_specular_map_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     bool result1 = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
                        .bind_buffer(0, camera_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                        .build(m_camera_set);
 
-    bool result2 =
-        VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
-            .bind_buffer(0, lights_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .bind_image(1, position_map_info, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .bind_image(2, normal_map_info, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .bind_image(
-                3, color_specular_map_info, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .build(m_lighting_fragment_set);
+    //    bool result2 =
+    //        VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
+    //            .bind_buffer(0, lights_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+    //            .bind_image(1, position_map_info, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+    //            VK_SHADER_STAGE_FRAGMENT_BIT) .bind_image(2, normal_map_info,
+    //            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT) .bind_image(
+    //                3, color_specular_map_info, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+    //                VK_SHADER_STAGE_FRAGMENT_BIT)
+    //            .build(m_lighting_fragment_set);
 
-    PS_ASSERT(result1 && result2, "Error creating descriptor set")
+    PS_ASSERT(result1, "Error creating descriptor set")
 
     // Synchronization
     VkSemaphoreCreateInfo semaphoreCreateInfo{};
@@ -330,7 +337,7 @@ void DeferredRenderer::update() {
             vkCmdSetViewport(command_buffer->handle(), 0, 1, &viewport);
             vkCmdSetScissor(command_buffer->handle(), 0, 1, &scissor);
 
-            std::vector<VkDescriptorSet> descriptor_sets = {m_camera_set, m_lighting_fragment_set};
+            std::vector<VkDescriptorSet> descriptor_sets = {m_camera_set};
 
             vkCmdBindDescriptorSets(command_buffer->handle(),
                                     VK_PIPELINE_BIND_POINT_GRAPHICS,

@@ -43,9 +43,9 @@ VulkanShader::VulkanShader(const std::string& vertex_path, const std::string& fr
         fragment_src.size(), reinterpret_cast<const uint32_t*>(fragment_src.data()), &fragment_module))
 
     PS_ASSERT(static_cast<VkShaderStageFlagBits>(vertex_module.shader_stage) == VK_SHADER_STAGE_VERTEX_BIT,
-              "Vertex stage does not match");
+              "Vertex stage does not match")
     PS_ASSERT(static_cast<VkShaderStageFlagBits>(fragment_module.shader_stage) == VK_SHADER_STAGE_FRAGMENT_BIT,
-              "Fragment stage does not match");
+              "Fragment stage does not match")
 
     // Retrieve SPIR-V info
     retrieve_vertex_input_info(vertex_module);
@@ -82,6 +82,14 @@ VkPipelineShaderStageCreateInfo VulkanShader::get_fragment_create_info() const {
     create_info.pName = "main";
 
     return create_info;
+}
+
+std::optional<VulkanDescriptorInfo> VulkanShader::descriptor_info(std::string_view name) const {
+    const auto result = m_descriptor_info.find(std::string(name));
+    if (result == m_descriptor_info.end())
+        return {};
+
+    return result->second;
 }
 
 std::vector<char> VulkanShader::read_shader_file(const std::string& path) const {
@@ -159,33 +167,41 @@ void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& v
     constexpr auto max_descriptor_set = 4;
     std::vector<std::vector<VkDescriptorSetLayoutBinding>> set_bindings(max_descriptor_set);
 
-    const auto retrieve_set_bindings =
-        [&set_bindings, max_descriptor_set](const std::vector<SpvReflectDescriptorSet*>& descriptor_sets,
-                                            VkShaderStageFlags stage) {
-            for (const auto& set_info : descriptor_sets) {
-                for (uint32_t i = 0; i < set_info->binding_count; ++i) {
-                    const auto* set_binding = set_info->bindings[i];
+    const auto retrieve_set_bindings = [&](const std::vector<SpvReflectDescriptorSet*>& descriptor_sets,
+                                           VkShaderStageFlags stage) {
+        for (const auto& set_info : descriptor_sets) {
+            for (uint32_t i = 0; i < set_info->binding_count; ++i) {
+                auto* set_binding = set_info->bindings[i];
 
-                    VkDescriptorSetLayoutBinding binding{};
-                    binding.binding = set_binding->binding;
-                    binding.descriptorType = static_cast<VkDescriptorType>(set_binding->descriptor_type);
-                    binding.descriptorCount = set_binding->count;
-                    binding.stageFlags = stage;
-                    binding.pImmutableSamplers = VK_NULL_HANDLE;
+                VkDescriptorSetLayoutBinding binding{};
+                binding.binding = set_binding->binding;
+                binding.descriptorType = static_cast<VkDescriptorType>(set_binding->descriptor_type);
+                binding.descriptorCount = set_binding->count;
+                binding.stageFlags = stage;
+                binding.pImmutableSamplers = VK_NULL_HANDLE;
 
-                    // Don't know why, but it's done this way in the example
-                    // (https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_descriptors.cpp)
-                    for (uint32_t i_dim = 0; i_dim < set_binding->array.dims_count; ++i_dim)
-                        binding.descriptorCount *= set_binding->array.dims[i_dim];
+                // Don't know why, but it's done this way in the example
+                // (https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_descriptors.cpp)
+                for (uint32_t i_dim = 0; i_dim < set_binding->array.dims_count; ++i_dim)
+                    binding.descriptorCount *= set_binding->array.dims[i_dim];
 
-                    PS_ASSERT(set_info->set < max_descriptor_set,
-                              "Cannot create descriptor set bigger than {}",
-                              max_descriptor_set)
+                PS_ASSERT(set_info->set < max_descriptor_set,
+                          "Cannot create descriptor set bigger than {}",
+                          max_descriptor_set)
 
-                    set_bindings[set_info->set].push_back(binding);
-                }
+                set_bindings[set_info->set].push_back(binding);
+
+                // Add to descriptor info for reference
+                VulkanDescriptorInfo descriptor_info{};
+                descriptor_info.name = std::string(set_binding->name);
+                descriptor_info.type = static_cast<VkDescriptorType>(set_binding->descriptor_type);
+                descriptor_info.stage = stage;
+                descriptor_info.binding = set_binding->binding;
+
+                m_descriptor_info.insert({descriptor_info.name, descriptor_info});
             }
-        };
+        }
+    };
 
     retrieve_set_bindings(vertex_descriptor_sets, VK_SHADER_STAGE_VERTEX_BIT);
     retrieve_set_bindings(fragment_descriptor_sets, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -206,7 +222,7 @@ void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& v
             VulkanContext::descriptor_layout_cache->create_descriptor_layout(descriptor_set_create_info);
         PS_ASSERT(layout != VK_NULL_HANDLE, "Layout has null")
 
-        m_descriptor_sets_layout.push_back(layout);
+        m_descriptor_set_layouts.push_back(layout);
     }
 }
 

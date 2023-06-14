@@ -33,6 +33,8 @@ class VulkanRenderer : public INativeRenderer {
                             const std::shared_ptr<RenderPass>& render_pass,
                             const std::function<void(void)>& func) override;
 
+    std::shared_ptr<Framebuffer> presentation_framebuffer() override;
+
   private:
     struct CameraUniformBuffer {
         glm::mat4 projection;

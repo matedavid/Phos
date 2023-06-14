@@ -7,24 +7,27 @@
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_context.h"
 #include "renderer/backend/vulkan/vulkan_framebuffer.h"
+#include "renderer/backend/vulkan/vulkan_buffers.h"
 #include "renderer/backend/vulkan/vulkan_image.h"
+#include "renderer/backend/vulkan/vulkan_texture.h"
+#include "renderer/backend/vulkan/vulkan_descriptors.h"
 
 namespace Phos {
 
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     // TODO: Maybe do differently?
-    const auto shader = std::dynamic_pointer_cast<VulkanShader>(description.shader);
+    m_shader = std::dynamic_pointer_cast<VulkanShader>(description.shader);
     const auto target_framebuffer = std::dynamic_pointer_cast<VulkanFramebuffer>(description.target_framebuffer);
 
     // Shaders
     const std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
-        shader->get_vertex_create_info(),
-        shader->get_fragment_create_info(),
+        m_shader->get_vertex_create_info(),
+        m_shader->get_fragment_create_info(),
     };
 
     // Vertex input
-    const auto binding_description = shader->get_binding_description();
-    const auto attribute_descriptions = shader->get_attribute_descriptions();
+    const auto binding_description = m_shader->get_binding_description();
+    const auto attribute_descriptions = m_shader->get_attribute_descriptions();
 
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info{};
     vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -110,8 +113,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     dynamic_state_create_info.pDynamicStates = dynamic_state.data();
 
     // Pipeline Layout
-    const auto descriptor_sets_layout = shader->get_descriptor_sets_layout();
-    const auto push_constant_ranges = shader->get_push_constant_ranges();
+    const auto descriptor_sets_layout = m_shader->get_descriptor_set_layouts();
+    const auto push_constant_ranges = m_shader->get_push_constant_ranges();
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -144,6 +147,9 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     create_info.subpass = 0;
 
     VK_CHECK(vkCreateGraphicsPipelines(VulkanContext::device->handle(), nullptr, 1, &create_info, nullptr, &m_pipeline))
+
+    // Start descriptor builder
+    m_allocator = std::make_shared<VulkanDescriptorAllocator>();
 }
 
 VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
@@ -154,9 +160,76 @@ VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
     vkDestroyPipeline(VulkanContext::device->handle(), m_pipeline, nullptr);
 }
 
-void VulkanGraphicsPipeline::bind(const std::shared_ptr<CommandBuffer>& command_buffer) const {
+void VulkanGraphicsPipeline::bind(const std::shared_ptr<CommandBuffer>& command_buffer) {
+    bool has_descriptor_set = !m_buffer_descriptor_info.empty() || !m_buffer_descriptor_info.empty();
+    if (has_descriptor_set && m_set == VK_NULL_HANDLE) {
+        PS_ASSERT(bake(), "Error when baking graphics pipeline")
+    }
+
     const auto native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
+
+    // Bind pipeline
     vkCmdBindPipeline(native_command_buffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+
+    // Bind descriptor set
+    if (has_descriptor_set) {
+        const std::vector<VkDescriptorSet> descriptor_sets = {m_set};
+        vkCmdBindDescriptorSets(native_command_buffer->handle(),
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                m_pipeline_layout,
+                                1, // Set = 1 for pipeline specific descriptors
+                                static_cast<uint32_t>(descriptor_sets.size()),
+                                descriptor_sets.data(),
+                                0,
+                                nullptr);
+    }
+}
+
+bool VulkanGraphicsPipeline::bake() {
+    auto builder = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator);
+
+    for (const auto& [info, write] : m_buffer_descriptor_info) {
+        builder = builder.bind_buffer(info.binding, write, info.type, info.stage);
+    }
+
+    for (const auto& [info, write] : m_image_descriptor_info) {
+        builder = builder.bind_image(info.binding, write, info.type, info.stage);
+    }
+
+    return builder.build(m_set);
+}
+
+void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) {
+    const auto native_ubo = std::dynamic_pointer_cast<VulkanUniformBuffer>(ubo);
+
+    const auto info = m_shader->descriptor_info(name);
+    PS_ASSERT(info.has_value() && info->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+              "Graphics Pipeline does not contain Uniform Buffer with name: {}",
+              name)
+
+    VkDescriptorBufferInfo descriptor{};
+    descriptor.buffer = native_ubo->handle();
+    descriptor.range = native_ubo->size();
+    descriptor.offset = 0;
+
+    m_buffer_descriptor_info.emplace_back(info.value(), descriptor);
+}
+
+void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_ptr<Texture>& texture) {
+    const auto native_texture = std::dynamic_pointer_cast<VulkanTexture>(texture);
+    const auto native_image = std::dynamic_pointer_cast<VulkanImage>(texture->get_image());
+
+    const auto info = m_shader->descriptor_info(name);
+    PS_ASSERT(info.has_value() && info->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+              "Graphics Pipeline does not contain Sampler with name: {}",
+              name)
+
+    VkDescriptorImageInfo descriptor{};
+    descriptor.imageView = native_image->view();
+    descriptor.sampler = native_texture->sampler();
+    descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    m_image_descriptor_info.emplace_back(info.value(), descriptor);
 }
 
 } // namespace Phos
