@@ -40,6 +40,11 @@ class INativeRenderer {
     virtual void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
                                         const std::shared_ptr<GraphicsPipeline>& pipeline) = 0;
 
+    virtual void bind_push_constant(const std::shared_ptr<CommandBuffer>& command_buffer,
+                                    const std::shared_ptr<GraphicsPipeline>& pipeline,
+                                    uint32_t size,
+                                    const void* data) = 0;
+
     virtual void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                    const std::shared_ptr<RenderPass>& render_pass) = 0;
 
@@ -71,6 +76,13 @@ class Renderer {
 
     static void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
                                        const std::shared_ptr<GraphicsPipeline>& pipeline);
+
+    template <typename T>
+    static void bind_push_constant(const std::shared_ptr<CommandBuffer>& command_buffer,
+                                   const std::shared_ptr<GraphicsPipeline>& pipeline,
+                                   const T& data) {
+        m_native_renderer->bind_push_constant(command_buffer, pipeline, sizeof(T), &data);
+    }
 
     static void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                   const std::shared_ptr<RenderPass>& render_pass);

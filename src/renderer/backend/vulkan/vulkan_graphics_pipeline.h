@@ -19,7 +19,7 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
     explicit VulkanGraphicsPipeline(const Description& description);
     ~VulkanGraphicsPipeline() override;
 
-    void bind(const std::shared_ptr<CommandBuffer>& command_buffer) override;
+    void bind(const std::shared_ptr<CommandBuffer>& command_buffer);
 
     // Builds the descriptor sets
     [[nodiscard]] bool bake() override;

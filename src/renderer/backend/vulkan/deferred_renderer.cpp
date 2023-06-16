@@ -297,9 +297,9 @@ void DeferredRenderer::update() {
                                     0,
                                     nullptr);
 
-            for (int i = 0; i < light_info.count; ++i) {
-                const glm::vec3 position = glm::vec3(light_info.positions[i]);
-                const glm::vec4 color = light_info.colors[i];
+            for (int i = 0; i < m_light_info.count; ++i) {
+                const glm::vec3 position = glm::vec3(m_light_info.positions[i]);
+                const glm::vec4 color = m_light_info.colors[i];
 
                 glm::mat4 model{1.0f};
                 model = glm::translate(model, position);
@@ -429,24 +429,24 @@ void DeferredRenderer::on_event(Event& event) {
 }
 
 void DeferredRenderer::update_light_info() {
-    light_info.count = 5;
+    m_light_info.count = 5;
 
-    light_info.positions[0] = glm::vec4(0.0f, 0.0f, 2.0f, 0.0f);
-    light_info.colors[0] = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    m_light_info.positions[0] = glm::vec4(0.0f, 0.0f, 2.0f, 0.0f);
+    m_light_info.colors[0] = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
-    light_info.positions[1] = glm::vec4(2.0f, 0.0f, 0.0f, 0.0f);
-    light_info.colors[1] = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+    m_light_info.positions[1] = glm::vec4(2.0f, 0.0f, 0.0f, 0.0f);
+    m_light_info.colors[1] = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
-    light_info.positions[2] = glm::vec4(-2.0f, 1.0f, 0.0f, 0.0f);
-    light_info.colors[2] = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+    m_light_info.positions[2] = glm::vec4(-2.0f, 1.0f, 0.0f, 0.0f);
+    m_light_info.colors[2] = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 
-    light_info.positions[3] = glm::vec4(-1.0f, -1.0f, -1.0f, 0.0f);
-    light_info.colors[3] = glm::vec4(0.2f, 0.5f, 0.3f, 1.0f);
+    m_light_info.positions[3] = glm::vec4(-1.0f, -1.0f, -1.0f, 0.0f);
+    m_light_info.colors[3] = glm::vec4(0.2f, 0.5f, 0.3f, 1.0f);
 
-    light_info.positions[4] = glm::vec4(-1.0f, -2.0f, 1.0f, 0.0);
-    light_info.colors[4] = glm::vec4(0.1f, 0.2f, 0.3f, 1.0f);
+    m_light_info.positions[4] = glm::vec4(-1.0f, -2.0f, 1.0f, 0.0);
+    m_light_info.colors[4] = glm::vec4(0.1f, 0.2f, 0.3f, 1.0f);
 
-    m_lights_ubo->update(light_info);
+    m_lights_ubo->update(m_light_info);
 }
 
 } // namespace Phos

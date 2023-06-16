@@ -30,7 +30,7 @@ void Camera::recalculate_view_matrix() {
 //
 
 PerspectiveCamera::PerspectiveCamera() {
-    m_projection = glm::perspective(60.0f, 1.0f, 0.001f, 100.0f);
+    m_projection = glm::perspective(glm::radians(60.0f), 1.0f, 0.001f, 100.0f);
     recalculate_view_matrix();
 }
 

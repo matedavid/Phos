@@ -78,9 +78,6 @@ class DeferredRenderer {
     std::shared_ptr<VulkanRenderPass> m_geometry_pass;
 
     // Lighting pass
-    std::shared_ptr<VulkanVertexBuffer> m_quad_vertex;
-    std::shared_ptr<VulkanIndexBuffer> m_quad_index;
-
     std::shared_ptr<VulkanGraphicsPipeline> m_lighting_pipeline;
     std::shared_ptr<VulkanRenderPass> m_lighting_pass;
 
@@ -115,7 +112,7 @@ class DeferredRenderer {
 
     CameraInfo m_camera_info{};
 
-    LightsUniformBuffer light_info{};
+    LightsUniformBuffer m_light_info{};
 
     void on_event(Event& event);
     void update_light_info();

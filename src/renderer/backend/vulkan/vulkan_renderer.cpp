@@ -176,6 +176,19 @@ void VulkanRenderer::bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>
                             nullptr);
 }
 
+void VulkanRenderer::bind_push_constant(const std::shared_ptr<CommandBuffer>& command_buffer,
+                                        const std::shared_ptr<GraphicsPipeline>& pipeline,
+                                        uint32_t size,
+                                        const void* data) {
+    const auto& native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
+    const auto& native_pipeline = std::dynamic_pointer_cast<VulkanGraphicsPipeline>(pipeline);
+
+    // TODO: Should check if push constant exists in Pipeline, maybe passing name to check?
+
+    vkCmdPushConstants(
+        native_command_buffer->handle(), native_pipeline->layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, size, data);
+}
+
 void VulkanRenderer::begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                        const std::shared_ptr<RenderPass>& render_pass) {
     render_pass->begin(command_buffer);

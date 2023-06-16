@@ -157,20 +157,12 @@ void DeferredRenderer::update() {
             // Draw model
             Renderer::bind_graphics_pipeline(m_command_buffer, m_geometry_pipeline);
 
-            // TODO: remove
-            {
-                const ModelInfoPushConstant constants = {
-                    .model = glm::mat4(1.0f),
-                    .color = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f),
-                };
+            auto constants = ModelInfoPushConstant{
+                .model = glm::mat4(1.0f),
+                .color = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f),
+            };
 
-                vkCmdPushConstants(std::dynamic_pointer_cast<VulkanCommandBuffer>(m_command_buffer)->handle(),
-                                   std::dynamic_pointer_cast<VulkanGraphicsPipeline>(m_geometry_pipeline)->layout(),
-                                   VK_SHADER_STAGE_VERTEX_BIT,
-                                   0,
-                                   sizeof(ModelInfoPushConstant),
-                                   &constants);
-            }
+            Renderer::bind_push_constant(m_command_buffer, m_geometry_pipeline, constants);
 
             Renderer::submit_static_mesh(m_command_buffer, m_model);
 
@@ -181,25 +173,16 @@ void DeferredRenderer::update() {
                 const glm::vec3 position = glm::vec3(m_light_info.positions[i]);
                 const glm::vec4 color = m_light_info.colors[i];
 
-                // TODO: Remove
-                {
-                    glm::mat4 model{1.0f};
-                    model = glm::translate(model, position);
-                    model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
+                glm::mat4 model{1.0f};
+                model = glm::translate(model, position);
+                model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
 
-                    const ModelInfoPushConstant constants = {
-                        .model = model,
-                        .color = color,
-                    };
+                constants = {
+                    .model = model,
+                    .color = color,
+                };
 
-                    vkCmdPushConstants(
-                        std::dynamic_pointer_cast<VulkanCommandBuffer>(m_command_buffer)->handle(),
-                        std::dynamic_pointer_cast<VulkanGraphicsPipeline>(m_flat_color_pipeline)->layout(),
-                        VK_SHADER_STAGE_VERTEX_BIT,
-                        0,
-                        sizeof(ModelInfoPushConstant),
-                        &constants);
-                }
+                Renderer::bind_push_constant(m_command_buffer, m_flat_color_pipeline, constants);
 
                 Renderer::submit_static_mesh(m_command_buffer, m_cube);
             }
