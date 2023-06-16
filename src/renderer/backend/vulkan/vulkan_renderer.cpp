@@ -93,6 +93,10 @@ VulkanRenderer::~VulkanRenderer() {
     VulkanContext::free();
 }
 
+void VulkanRenderer::wait_idle() {
+    vkDeviceWaitIdle(VulkanContext::device->handle());
+}
+
 void VulkanRenderer::begin_frame(const FrameInformation& info) {
     vkWaitForFences(VulkanContext::device->handle(), 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
 

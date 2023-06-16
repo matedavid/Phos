@@ -33,6 +33,7 @@ class INativeRenderer {
 
     virtual void begin_frame(const FrameInformation& info) = 0;
     virtual void end_frame() = 0;
+    virtual void wait_idle() = 0;
 
     virtual void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
                                     const std::shared_ptr<StaticMesh>& mesh) = 0;
@@ -67,6 +68,7 @@ class Renderer {
   public:
     static void initialize(const RendererConfig& config);
     static void shutdown();
+    static void wait_idle();
 
     static void begin_frame(const FrameInformation& info);
     static void end_frame();

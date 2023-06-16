@@ -23,6 +23,10 @@ void Renderer::shutdown() {
     m_native_renderer.reset();
 }
 
+void Renderer::wait_idle() {
+    m_native_renderer->wait_idle();
+}
+
 void Renderer::begin_frame(const FrameInformation& info) {
     m_native_renderer->begin_frame(info);
 }

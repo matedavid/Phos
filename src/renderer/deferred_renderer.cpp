@@ -21,9 +21,6 @@
 #include "renderer/backend/render_pass.h"
 #include "renderer/backend/buffers.h"
 
-#include "renderer/backend/vulkan/vulkan_graphics_pipeline.h"
-#include "renderer/backend/vulkan/vulkan_context.h"
-
 namespace Phos {
 
 DeferredRenderer::DeferredRenderer() {
@@ -134,7 +131,7 @@ DeferredRenderer::DeferredRenderer() {
 }
 
 DeferredRenderer::~DeferredRenderer() {
-    vkDeviceWaitIdle(VulkanContext::device->handle());
+    Renderer::wait_idle();
 }
 
 void DeferredRenderer::update() {

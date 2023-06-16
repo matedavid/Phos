@@ -21,6 +21,7 @@ class VulkanRenderer : public INativeRenderer {
   public:
     explicit VulkanRenderer(const RendererConfig& config);
     ~VulkanRenderer() override;
+    void wait_idle() override;
 
     void begin_frame(const FrameInformation& info) override;
     void end_frame() override;
@@ -29,9 +30,9 @@ class VulkanRenderer : public INativeRenderer {
                                 const std::shared_ptr<GraphicsPipeline>& pipeline) override;
 
     void bind_push_constant(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                    const std::shared_ptr<GraphicsPipeline>& pipeline,
-                                    uint32_t size,
-                                    const void* data) override;
+                            const std::shared_ptr<GraphicsPipeline>& pipeline,
+                            uint32_t size,
+                            const void* data) override;
 
     void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
                             const std::shared_ptr<StaticMesh>& mesh) override;
