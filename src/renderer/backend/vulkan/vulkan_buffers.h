@@ -15,10 +15,6 @@
 
 namespace Phos {
 
-// Forward declarations
-class VulkanDevice;
-class VulkanCommandBuffer;
-
 //
 // Vertex Buffer
 //

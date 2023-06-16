@@ -26,7 +26,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/sub_mesh.cpp
         src/renderer/camera.cpp
 
-        # TODO: src/renderer/deferred_renderer.cpp
+        src/renderer/deferred_renderer.cpp
 
         # Renderer Backend
         src/renderer/backend/renderer.cpp
@@ -36,6 +36,8 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/texture.cpp
         src/renderer/backend/command_buffer.cpp
         src/renderer/backend/render_pass.cpp
+        src/renderer/backend/shader.cpp
+        src/renderer/backend/graphics_pipeline.cpp
 
         # Vulkan Backend
         src/renderer/backend/vulkan/vulkan_renderer.cpp
@@ -59,8 +61,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_utils.cpp
         src/renderer/backend/vulkan/vulkan_renderer_api.cpp
 
-        # TODO: Remove
-        src/renderer/backend/vulkan/deferred_renderer.cpp
+        # src/renderer/backend/vulkan/deferred_renderer.cpp
 
         src/main.cpp
         )

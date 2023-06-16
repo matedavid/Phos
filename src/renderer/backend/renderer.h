@@ -8,6 +8,7 @@ namespace Phos {
 class StaticMesh;
 class CommandBuffer;
 class RenderPass;
+class GraphicsPipeline;
 class Camera;
 class Window;
 class Framebuffer;
@@ -36,6 +37,9 @@ class INativeRenderer {
     virtual void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
                                     const std::shared_ptr<StaticMesh>& mesh) = 0;
 
+    virtual void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
+                                        const std::shared_ptr<GraphicsPipeline>& pipeline) = 0;
+
     virtual void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                    const std::shared_ptr<RenderPass>& render_pass) = 0;
 
@@ -46,6 +50,11 @@ class INativeRenderer {
                                     const std::shared_ptr<RenderPass>& render_pass,
                                     const std::function<void(void)>& func) = 0;
 
+    virtual void submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer) = 0;
+
+    virtual void draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer) = 0;
+
+    virtual std::shared_ptr<Framebuffer> current_frame_framebuffer() = 0;
     virtual std::shared_ptr<Framebuffer> presentation_framebuffer() = 0;
 };
 
@@ -60,6 +69,9 @@ class Renderer {
     static void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
                                    const std::shared_ptr<StaticMesh>& mesh);
 
+    static void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
+                                       const std::shared_ptr<GraphicsPipeline>& pipeline);
+
     static void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                   const std::shared_ptr<RenderPass>& render_pass);
 
@@ -70,6 +82,11 @@ class Renderer {
                                    const std::shared_ptr<RenderPass>& render_pass,
                                    const std::function<void(void)>& func);
 
+    static void submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer);
+
+    static void draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer);
+
+    static std::shared_ptr<Framebuffer> current_frame_framebuffer();
     static std::shared_ptr<Framebuffer> presentation_framebuffer();
 
     static GraphicsAPI graphics_api() { return m_config.graphics_api; }
