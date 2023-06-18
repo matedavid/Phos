@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
 
+#include "renderer/light.h"
 #include "renderer/backend/renderer.h"
 
 namespace Phos {
@@ -16,6 +17,9 @@ class VulkanIndexBuffer;
 class VulkanSwapchain;
 class VulkanQueue;
 class VulkanDescriptorAllocator;
+
+constexpr uint32_t MAX_POINT_LIGHTS = 10;
+constexpr uint32_t MAX_DIRECTIONAL_LIGHTS = 1;
 
 class VulkanRenderer : public INativeRenderer {
   public:
@@ -70,6 +74,24 @@ class VulkanRenderer : public INativeRenderer {
         glm::mat4 view;
         // glm::mat4 view_projection;
         glm::vec3 position;
+    };
+
+    struct PointLightStruct {
+        glm::vec4 color;
+        glm::vec4 position;
+    };
+
+    struct DirectionalLightStruct {
+        glm::vec4 color;
+        glm::vec4 direction;
+    };
+
+    struct LightsUniformBuffer {
+        std::array<PointLightStruct, MAX_POINT_LIGHTS> point_lights{};
+        std::array<DirectionalLightStruct, MAX_DIRECTIONAL_LIGHTS> directional_lights{};
+
+        uint32_t number_point_lights = 0;
+        uint32_t number_directional_lights = 0;
     };
 
     std::shared_ptr<VulkanDescriptorAllocator> m_allocator;

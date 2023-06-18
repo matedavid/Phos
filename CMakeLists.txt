@@ -25,6 +25,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/static_mesh.cpp
         src/renderer/sub_mesh.cpp
         src/renderer/camera.cpp
+        src/renderer/light.cpp
 
         src/renderer/deferred_renderer.cpp
 

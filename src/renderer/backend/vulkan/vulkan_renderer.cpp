@@ -2,6 +2,7 @@
 
 #include "renderer/static_mesh.h"
 #include "renderer/camera.h"
+#include "renderer/light.h"
 
 #include "renderer/backend/vulkan/vulkan_context.h"
 #include "renderer/backend/vulkan/vulkan_renderer_api.h"
@@ -43,16 +44,21 @@ VulkanRenderer::VulkanRenderer(const RendererConfig& config) {
     m_allocator = std::make_shared<VulkanDescriptorAllocator>();
 
     m_camera_ubo = VulkanUniformBuffer::create<CameraUniformBuffer>();
+    m_lights_ubo = VulkanUniformBuffer::create<LightsUniformBuffer>();
 
     VkDescriptorBufferInfo camera_info{};
     camera_info.buffer = m_camera_ubo->handle();
     camera_info.range = m_camera_ubo->size();
     camera_info.offset = 0;
 
-    // VkDescriptorBufferInfo lights_info{};
+    VkDescriptorBufferInfo lights_info{};
+    lights_info.buffer = m_lights_ubo->handle();
+    lights_info.range = m_lights_ubo->size();
+    lights_info.offset = 0;
 
     bool built = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
                      .bind_buffer(0, camera_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                     .bind_buffer(1, lights_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
                      .build(m_frame_descriptor_set);
 
     PS_ASSERT(built, "Error creating frame descriptor set")
@@ -77,8 +83,9 @@ VulkanRenderer::~VulkanRenderer() {
     vkDestroySemaphore(VulkanContext::device->handle(), render_finished_semaphore, nullptr);
     vkDestroyFence(VulkanContext::device->handle(), in_flight_fence, nullptr);
 
-    // Destroy camera ubo
+    // Destroy ubos
     m_camera_ubo.reset();
+    m_lights_ubo.reset();
 
     // Destroy screen quads
     m_screen_quad_vertex.reset();
@@ -100,10 +107,16 @@ void VulkanRenderer::wait_idle() {
 void VulkanRenderer::begin_frame(const FrameInformation& info) {
     vkWaitForFences(VulkanContext::device->handle(), 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
 
+    //
+    // Update frame descriptors
+    //
+
+    fmt::print("Size: {}\n", sizeof(LightsUniformBuffer));
+
+    // Camera
     auto projection = info.camera->projection_matrix();
     projection[1][1] *= -1;
 
-    // Update frame descriptors
     const auto camera_info = CameraUniformBuffer{
         .projection = projection,
         .view = info.camera->view_matrix(),
@@ -112,7 +125,33 @@ void VulkanRenderer::begin_frame(const FrameInformation& info) {
     };
     m_camera_ubo->update(camera_info);
 
+    // Lights
+    LightsUniformBuffer lights_info{};
+
+    for (const auto& light : info.lights) {
+        if (light->type() == Light::Type::Point && lights_info.number_point_lights < MAX_POINT_LIGHTS) {
+            const auto& pl = std::dynamic_pointer_cast<PointLight>(light);
+            lights_info.point_lights[lights_info.number_point_lights] = {
+                .color = pl->color,
+                .position = glm::vec4(pl->position, 1.0f),
+            };
+            lights_info.number_point_lights += 1;
+        } else if (light->type() == Light::Type::Directional &&
+                   lights_info.number_directional_lights < MAX_DIRECTIONAL_LIGHTS) {
+            const auto& dl = std::dynamic_pointer_cast<DirectionalLight>(light);
+            lights_info.directional_lights[lights_info.number_directional_lights] = {
+                .color = dl->color,
+                .direction = glm::vec4(dl->direction, 0.0f),
+            };
+            lights_info.number_directional_lights += 1;
+        }
+    }
+
+    m_lights_ubo->update(lights_info);
+
+    //
     // Acquire next swapchain image
+    //
     m_swapchain->acquire_next_image(image_available_semaphore, VK_NULL_HANDLE);
     vkResetFences(VulkanContext::device->handle(), 1, &in_flight_fence);
 }

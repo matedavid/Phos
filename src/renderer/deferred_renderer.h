@@ -69,7 +69,6 @@ class DeferredRenderer {
 
     // Uniform buffers
     std::shared_ptr<UniformBuffer> m_camera_ubo;
-    std::shared_ptr<UniformBuffer> m_lights_ubo;
 
     // Models
     std::shared_ptr<StaticMesh> m_model;

@@ -12,6 +12,7 @@ class GraphicsPipeline;
 class Camera;
 class Window;
 class Framebuffer;
+class Light;
 
 enum class GraphicsAPI {
     Vulkan,
@@ -24,7 +25,7 @@ struct RendererConfig {
 
 struct FrameInformation {
     std::shared_ptr<Camera> camera;
-    // TODO: std::vector<Light> lights;
+    std::vector<std::shared_ptr<Light>> lights;
 };
 
 class INativeRenderer {

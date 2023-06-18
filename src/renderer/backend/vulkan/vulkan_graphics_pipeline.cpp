@@ -161,7 +161,7 @@ VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
 }
 
 void VulkanGraphicsPipeline::bind(const std::shared_ptr<CommandBuffer>& command_buffer) {
-    bool has_descriptor_set = !m_buffer_descriptor_info.empty() || !m_buffer_descriptor_info.empty();
+    bool has_descriptor_set = !m_buffer_descriptor_info.empty() || !m_image_descriptor_info.empty();
     if (has_descriptor_set && m_set == VK_NULL_HANDLE) {
         PS_ASSERT(bake(), "Error when baking graphics pipeline")
     }

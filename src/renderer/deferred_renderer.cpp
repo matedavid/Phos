@@ -10,6 +10,7 @@
 
 #include "renderer/static_mesh.h"
 #include "renderer/camera.h"
+#include "renderer/light.h"
 
 #include "renderer/backend/renderer.h"
 #include "renderer/backend/command_buffer.h"
@@ -30,7 +31,6 @@ DeferredRenderer::DeferredRenderer() {
 
     // Uniform buffers
     m_camera_ubo = UniformBuffer::create<CameraUniformBuffer>();
-    m_lights_ubo = UniformBuffer::create<LightsUniformBuffer>();
 
     const auto width = Renderer::config().window->get_width();
     const auto height = Renderer::config().window->get_height();
@@ -100,7 +100,6 @@ DeferredRenderer::DeferredRenderer() {
             .target_framebuffer = Renderer::presentation_framebuffer(),
         });
 
-        m_lighting_pipeline->add_input("uLightInfo", m_lights_ubo);
         m_lighting_pipeline->add_input("uPositionMap", m_position_texture);
         m_lighting_pipeline->add_input("uNormalMap", m_normal_texture);
         m_lighting_pipeline->add_input("uColorSpecularMap", m_color_specular_texture);
@@ -139,6 +138,14 @@ void DeferredRenderer::update() {
 
     const FrameInformation frame_info = {
         .camera = m_camera,
+        .lights =
+            {
+                std::make_shared<PointLight>(m_light_info.positions[0], m_light_info.colors[0]),
+                std::make_shared<PointLight>(m_light_info.positions[1], m_light_info.colors[1]),
+                std::make_shared<PointLight>(m_light_info.positions[2], m_light_info.colors[2]),
+                std::make_shared<PointLight>(m_light_info.positions[3], m_light_info.colors[3]),
+                std::make_shared<PointLight>(m_light_info.positions[4], m_light_info.colors[4]),
+            },
     };
 
     Renderer::begin_frame(frame_info);
@@ -223,8 +230,6 @@ void DeferredRenderer::update_light_info() {
 
     m_light_info.positions[4] = glm::vec4(-1.0f, -2.0f, 1.0f, 0.0);
     m_light_info.colors[4] = glm::vec4(0.1f, 0.2f, 0.3f, 1.0f);
-
-    m_lights_ubo->update(m_light_info);
 }
 
 void DeferredRenderer::on_event(Event& event) {
