@@ -111,8 +111,6 @@ void VulkanRenderer::begin_frame(const FrameInformation& info) {
     // Update frame descriptors
     //
 
-    fmt::print("Size: {}\n", sizeof(LightsUniformBuffer));
-
     // Camera
     auto projection = info.camera->projection_matrix();
     projection[1][1] *= -1;
