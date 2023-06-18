@@ -112,4 +112,8 @@ VulkanTexture::~VulkanTexture() {
     vkDestroySampler(VulkanContext::device->handle(), m_sampler, nullptr);
 }
 
+std::shared_ptr<Image> VulkanTexture::get_image() const {
+    return std::dynamic_pointer_cast<Image>(m_image);
+}
+
 } // namespace Phos

@@ -21,9 +21,27 @@ target_sources(${PROJECT_NAME} PRIVATE
 
         src/input/input.cpp
 
-        src/renderer/model.cpp
-        src/renderer/mesh.cpp
+        # Renderer
+        src/renderer/static_mesh.cpp
+        src/renderer/sub_mesh.cpp
+        src/renderer/camera.cpp
+        src/renderer/light.cpp
 
+        src/renderer/deferred_renderer.cpp
+
+        # Renderer Backend
+        src/renderer/backend/renderer.cpp
+        src/renderer/backend/buffers.cpp
+        src/renderer/backend/framebuffer.cpp
+        src/renderer/backend/image.cpp
+        src/renderer/backend/texture.cpp
+        src/renderer/backend/command_buffer.cpp
+        src/renderer/backend/render_pass.cpp
+        src/renderer/backend/shader.cpp
+        src/renderer/backend/graphics_pipeline.cpp
+
+        # Vulkan Backend
+        src/renderer/backend/vulkan/vulkan_renderer.cpp
         src/renderer/backend/vulkan/vulkan_context.cpp
         src/renderer/backend/vulkan/vulkan_instance.cpp
         src/renderer/backend/vulkan/vulkan_physical_device.cpp
@@ -42,8 +60,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_texture.cpp
         src/renderer/backend/vulkan/vulkan_descriptors.cpp
         src/renderer/backend/vulkan/vulkan_utils.cpp
-        src/renderer/backend/vulkan/vulkan_renderer.cpp
-        src/renderer/backend/vulkan/deferred_renderer.cpp
+        src/renderer/backend/vulkan/vulkan_renderer_api.cpp
 
         src/main.cpp
         )
@@ -76,6 +93,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
 
 # assimp
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/assimp)
 target_link_libraries(${PROJECT_NAME} PRIVATE assimp)
 

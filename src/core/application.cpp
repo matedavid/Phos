@@ -1,10 +1,9 @@
 #include "application.h"
 
-#include <algorithm>
 #include <ranges>
 
 #include "core/window.h"
-#include "renderer/backend/vulkan/vulkan_context.h"
+#include "renderer/backend/renderer.h"
 
 namespace Phos {
 
@@ -14,14 +13,17 @@ Application::Application(std::string_view title, uint32_t width, uint32_t height
     m_window = std::make_shared<Window>(title, width, height);
     m_window->add_event_callback_func([&](Event& event) { on_event(event); });
 
-    VulkanContext::init(m_window);
+    Renderer::initialize(RendererConfig{
+        .graphics_api = GraphicsAPI::Vulkan,
+        .window = m_window,
+    });
 
     m_instance = this;
 }
 
 Application::~Application() {
     m_layers.clear();
-    VulkanContext::free();
+    Renderer::shutdown();
 
     m_instance = nullptr;
 }

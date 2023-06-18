@@ -26,4 +26,24 @@ void VulkanIndexBuffer::bind(const std::shared_ptr<VulkanCommandBuffer>& command
     vkCmdBindIndexBuffer(command_buffer->handle(), m_buffer->handle(), 0, VK_INDEX_TYPE_UINT32);
 }
 
+//
+// Uniform Buffer
+//
+VulkanUniformBuffer::VulkanUniformBuffer(uint32_t size) : m_size(size) {
+    m_buffer =
+        std::make_unique<VulkanBuffer>(m_size,
+                                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    m_buffer->map_memory(m_map_data);
+}
+
+VulkanUniformBuffer::~VulkanUniformBuffer() {
+    m_buffer->unmap_memory();
+}
+
+void VulkanUniformBuffer::set_data(const void* data) {
+    memcpy(m_map_data, data, m_size);
+}
+
 } // namespace Phos

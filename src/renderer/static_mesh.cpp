@@ -1,10 +1,10 @@
-#include "model.h"
+#include "static_mesh.h"
 
-#include "renderer/mesh.h"
+#include "renderer/sub_mesh.h"
 
 namespace Phos {
 
-Model::Model(const std::string& path, bool flip_uvs) {
+StaticMesh::StaticMesh(const std::string& path, bool flip_uvs) {
     Assimp::Importer importer;
 
     uint32_t flags = aiProcess_Triangulate | aiProcess_CalcTangentSpace;
@@ -22,10 +22,10 @@ Model::Model(const std::string& path, bool flip_uvs) {
     process_node_r(scene->mRootNode, scene);
 }
 
-void Model::process_node_r(aiNode* node, const aiScene* scene) {
+void StaticMesh::process_node_r(aiNode* node, const aiScene* scene) {
     for (uint32_t i = 0; i < node->mNumMeshes; ++i) {
         const aiMesh* m = scene->mMeshes[node->mMeshes[i]];
-        m_meshes.push_back(std::make_unique<Mesh>(m));
+        m_meshes.push_back(std::make_unique<SubMesh>(m));
     }
 
     for (uint32_t i = 0; i < node->mNumChildren; ++i) {

@@ -7,23 +7,21 @@
 #include <memory>
 #include <optional>
 
+#include "renderer/backend/buffers.h"
+
 #include "renderer/backend/vulkan/vulkan_device.h"
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_buffer.h"
 
 namespace Phos {
 
-// Forward declarations
-class VulkanDevice;
-class VulkanCommandBuffer;
-
 //
 // Vertex Buffer
 //
-template <typename T>
-class VulkanVertexBuffer {
+class VulkanVertexBuffer : public VertexBuffer {
   public:
-    VulkanVertexBuffer(const std::vector<T>& data) {
+    template <typename T>
+    explicit VulkanVertexBuffer(const std::vector<T>& data) {
         const VkDeviceSize size = data.size() * sizeof(T);
 
         const auto staging_buffer = VulkanBuffer{
@@ -43,16 +41,16 @@ class VulkanVertexBuffer {
         m_size = (uint32_t)data.size();
     }
 
-    ~VulkanVertexBuffer() = default;
+    ~VulkanVertexBuffer() override = default;
 
-    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const {
+    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const override {
         std::array<VkBuffer, 1> vertex_buffers = {m_buffer->handle()};
         VkDeviceSize offsets[] = {0};
 
         vkCmdBindVertexBuffers(command_buffer->handle(), 0, vertex_buffers.size(), vertex_buffers.data(), offsets);
     }
 
-    [[nodiscard]] uint32_t get_size() const { return m_size; }
+    [[nodiscard]] uint32_t size() const override { return m_size; }
 
     [[nodiscard]] VkBuffer handle() const { return m_buffer->handle(); }
 
@@ -64,13 +62,13 @@ class VulkanVertexBuffer {
 //
 // Index Buffer
 //
-class VulkanIndexBuffer {
+class VulkanIndexBuffer : public IndexBuffer {
   public:
-    VulkanIndexBuffer(const std::vector<uint32_t>& indices);
-    ~VulkanIndexBuffer() = default;
+    explicit VulkanIndexBuffer(const std::vector<uint32_t>& indices);
+    ~VulkanIndexBuffer() override = default;
 
-    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;
-    [[nodiscard]] uint32_t get_count() const { return m_count; }
+    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const override;
+    [[nodiscard]] uint32_t count() const override { return m_count; }
 
     [[nodiscard]] VkBuffer handle() const { return m_buffer->handle(); }
 
@@ -83,24 +81,20 @@ class VulkanIndexBuffer {
 // Uniform Buffer
 //
 
-template <typename T>
-class VulkanUniformBuffer {
+class VulkanUniformBuffer : public UniformBuffer {
   public:
-    explicit VulkanUniformBuffer() {
-        m_size = sizeof(T);
-        m_buffer =
-            std::make_unique<VulkanBuffer>(m_size,
-                                           VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    explicit VulkanUniformBuffer(uint32_t size);
+    ~VulkanUniformBuffer() override;
 
-        m_buffer->map_memory(m_map_data);
+    template <typename T>
+    static std::shared_ptr<VulkanUniformBuffer> create() {
+        const uint32_t size = sizeof(T);
+        return std::make_shared<VulkanUniformBuffer>(size);
     }
 
-    ~VulkanUniformBuffer() { m_buffer->unmap_memory(); }
+    void set_data(const void* data) override;
 
-    void update(const T& data) { memcpy(m_map_data, &data, m_size); }
-
-    [[nodiscard]] uint32_t size() const { return m_size; }
+    [[nodiscard]] uint32_t size() const override { return m_size; }
     [[nodiscard]] VkBuffer handle() const { return m_buffer->handle(); }
 
   private:

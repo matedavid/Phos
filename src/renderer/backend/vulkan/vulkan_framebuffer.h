@@ -6,6 +6,8 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 
+#include "renderer/backend/framebuffer.h"
+
 namespace Phos {
 
 // Forward declarations
@@ -13,47 +15,17 @@ class VulkanDevice;
 class VulkanRenderPass;
 class VulkanImage;
 
-enum class LoadOperation {
-    Load,
-    Clear,
-    DontCare
-};
-
-enum class StoreOperation {
-    Store,
-    DontCare
-};
-
-class VulkanFramebuffer {
+class VulkanFramebuffer : public Framebuffer {
   public:
-    struct Attachment {
-        std::shared_ptr<VulkanImage> image;
-
-        LoadOperation load_operation;
-        StoreOperation store_operation;
-
-        glm::vec3 clear_value;
-
-        bool is_presentation = false; // If attachment image will be used for presentation
-    };
-
-    struct Description {
-        std::vector<Attachment> attachments;
-    };
-
     explicit VulkanFramebuffer(const Description& description);
     explicit VulkanFramebuffer(const Description& description, VkRenderPass render_pass);
 
-    //    VulkanFramebuffer(const std::shared_ptr<VulkanRenderPass>& render_pass,
-    //                      uint32_t width,
-    //                      uint32_t height,
-    //                      const std::vector<VkImageView>& attachments);
-    ~VulkanFramebuffer();
+    ~VulkanFramebuffer() override;
 
-    [[nodiscard]] uint32_t width() const { return m_width; }
-    [[nodiscard]] uint32_t height() const { return m_height; }
+    [[nodiscard]] uint32_t width() const override { return m_width; }
+    [[nodiscard]] uint32_t height() const override { return m_height; }
 
-    [[nodiscard]] const std::vector<Attachment>& get_attachments() const { return m_description.attachments; }
+    [[nodiscard]] const std::vector<Attachment>& get_attachments() const override { return m_description.attachments; }
 
     [[nodiscard]] VkFramebuffer handle() const { return m_framebuffer; }
     [[nodiscard]] VkRenderPass get_render_pass() const { return m_render_pass; }

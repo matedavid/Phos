@@ -15,9 +15,9 @@ class VulkanCommandPool {
     VulkanCommandPool(VkDevice raw_device, uint32_t queue_family);
     ~VulkanCommandPool();
 
-    [[nodiscard]] std::vector<std::shared_ptr<VulkanCommandBuffer>> allocate(uint32_t count) const;
+    [[nodiscard]] std::vector<VkCommandBuffer> allocate(uint32_t count) const;
 
-    void free_command_buffer(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;
+    void free_command_buffer(VkCommandBuffer command_buffer) const;
 
     [[nodiscard]] uint32_t get_queue_family() const { return m_queue_family; }
 

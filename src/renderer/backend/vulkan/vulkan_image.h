@@ -5,39 +5,21 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 
+#include "renderer/backend/image.h"
+
 namespace Phos {
 
-class VulkanImage {
+class VulkanImage : public Image {
   public:
-    enum class Type {
-        Image2D,
-        Image3D
-    };
-
-    enum class Format {
-        B8G8R8_SRGB,
-        D32_SFLOAT
-    };
-
-    struct Description {
-        uint32_t width{};
-        uint32_t height{};
-        Type type = Type::Image2D;
-        Format format = Format::B8G8R8_SRGB;
-
-        bool transfer = false; // Will the image be used for transfer operations
-        bool attachment = false; // Will the image be used as an attachment of a Framebuffer
-    };
-
     explicit VulkanImage(const Description& description);
     explicit VulkanImage(const Description& description, VkImage image);
-    ~VulkanImage();
+    ~VulkanImage() override;
 
     void transition_layout(VkImageLayout old_layout, VkImageLayout new_layout) const;
 
-    [[nodiscard]] uint32_t width() const { return m_width; }
-    [[nodiscard]] uint32_t height() const { return m_height; }
-    [[nodiscard]] Format format() const { return m_format; }
+    [[nodiscard]] uint32_t width() const override { return m_width; }
+    [[nodiscard]] uint32_t height() const override { return m_height; }
+    [[nodiscard]] Format format() const override { return m_format; }
 
     [[nodiscard]] VkImage handle() const { return m_image; }
     [[nodiscard]] VkImageView view() const { return m_image_view; }

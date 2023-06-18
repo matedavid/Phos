@@ -4,25 +4,28 @@
 #include <memory>
 #include <vector>
 
+#include "renderer/backend/graphics_pipeline.h"
+
 namespace Phos {
 
 // Forward declarations
-class VulkanDevice;
 class VulkanShader;
-class VulkanCommandBuffer;
-class VulkanFramebuffer;
+class VulkanDescriptorBuilder;
+class VulkanDescriptorAllocator;
+struct VulkanDescriptorInfo;
 
-class VulkanGraphicsPipeline {
+class VulkanGraphicsPipeline : public GraphicsPipeline {
   public:
-    struct Description {
-        std::shared_ptr<VulkanShader> shader;
-        std::shared_ptr<VulkanFramebuffer> target_framebuffer;
-    };
-
     explicit VulkanGraphicsPipeline(const Description& description);
-    ~VulkanGraphicsPipeline();
+    ~VulkanGraphicsPipeline() override;
 
-    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;
+    void bind(const std::shared_ptr<CommandBuffer>& command_buffer);
+
+    // Builds the descriptor sets
+    [[nodiscard]] bool bake() override;
+
+    void add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) override;
+    void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) override;
 
     [[nodiscard]] VkPipeline handle() const { return m_pipeline; }
     [[nodiscard]] VkPipelineLayout layout() const { return m_pipeline_layout; }
@@ -31,7 +34,15 @@ class VulkanGraphicsPipeline {
     VkPipeline m_pipeline{};
     VkPipelineLayout m_pipeline_layout{};
 
-    std::shared_ptr<VulkanDevice> m_device;
+    std::shared_ptr<VulkanShader> m_shader;
+
+    // Descriptors and descriptor sets
+    std::shared_ptr<VulkanDescriptorAllocator> m_allocator;
+
+    std::vector<std::pair<VulkanDescriptorInfo, VkDescriptorBufferInfo>> m_buffer_descriptor_info;
+    std::vector<std::pair<VulkanDescriptorInfo, VkDescriptorImageInfo>> m_image_descriptor_info;
+
+    VkDescriptorSet m_set{VK_NULL_HANDLE};
 };
 
 } // namespace Phos

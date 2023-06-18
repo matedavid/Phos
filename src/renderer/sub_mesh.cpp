@@ -1,8 +1,10 @@
-#include "mesh.h"
+#include "sub_mesh.h"
+
+#include "renderer/backend/buffers.h"
 
 namespace Phos {
 
-Mesh::Mesh(const aiMesh* mesh) {
+SubMesh::SubMesh(const aiMesh* mesh) {
     // Vertices
     for (uint32_t i = 0; i < mesh->mNumVertices; ++i) {
         Vertex vertex{};
@@ -51,9 +53,9 @@ Mesh::Mesh(const aiMesh* mesh) {
     setup_mesh();
 }
 
-void Mesh::setup_mesh() {
-    m_vertex_buffer = std::make_unique<VulkanVertexBuffer<Vertex>>(m_vertices);
-    m_index_buffer = std::make_unique<VulkanIndexBuffer>(m_indices);
+void SubMesh::setup_mesh() {
+    m_vertex_buffer = VertexBuffer::create(m_vertices);
+    m_index_buffer = IndexBuffer::create(m_indices);
 }
 
 } // namespace Phos

@@ -2,109 +2,113 @@
 
 #include "vk_core.h"
 
-#include <memory>
-
-#define GLM_FORCE_RADIANS
-#define GLM_DEPTH_ZERO_TO_ONE
+#include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
-#include <core/window.h>
-#include <input/input.h>
+#include "renderer/light.h"
+#include "renderer/backend/renderer.h"
 
-#include "renderer/backend/vulkan/vulkan_instance.h"
-#include "renderer/backend/vulkan/vulkan_physical_device.h"
-#include "renderer/backend/vulkan/vulkan_swapchain.h"
-#include "renderer/backend/vulkan/vulkan_device.h"
-#include "renderer/backend/vulkan/vulkan_render_pass.h"
-#include "renderer/backend/vulkan/vulkan_graphics_pipeline.h"
-#include "renderer/backend/vulkan/vulkan_framebuffer.h"
-#include "renderer/backend/vulkan/vulkan_command_buffer.h"
-#include "renderer/backend/vulkan/vulkan_command_pool.h"
-#include "renderer/backend/vulkan/vulkan_buffers.h"
-#include "renderer/backend/vulkan/vulkan_queue.h"
-#include "renderer/backend/vulkan/vulkan_descriptors.h"
-#include "renderer/backend/vulkan/vulkan_texture.h"
-#include "renderer/backend/vulkan/vulkan_shader.h"
-
-/*
 namespace Phos {
 
 // Forward declarations
-class Window;
-class Model;
+class VulkanUniformBuffer;
+class VulkanVertexBuffer;
+class VulkanIndexBuffer;
+class VulkanSwapchain;
+class VulkanQueue;
+class VulkanDescriptorAllocator;
 
-//struct CameraUniformBuffer {
-//    glm::mat4 projection;
-//    glm::mat4 view;
-//    glm::vec3 position;
-//};
-//
-//struct ColorUniformBuffer {
-//    glm::vec4 color;
-//};
-//
-//struct LightsUniformBuffer {
-//    glm::vec4 positions[10];
-//    glm::vec4 colors[10];
-//    int count;
-//};
-//
-//struct ModelInfoPushConstant {
-//    glm::mat4 model;
-//    glm::vec4 color;
-//};
+constexpr uint32_t MAX_POINT_LIGHTS = 10;
+constexpr uint32_t MAX_DIRECTIONAL_LIGHTS = 1;
 
-class VulkanRenderer {
+class VulkanRenderer : public INativeRenderer {
   public:
-    VulkanRenderer();
-    ~VulkanRenderer();
+    explicit VulkanRenderer(const RendererConfig& config);
+    ~VulkanRenderer() override;
+    void wait_idle() override;
 
-    void update();
+    void begin_frame(const FrameInformation& info) override;
+    void end_frame() override;
+
+    void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
+                                const std::shared_ptr<GraphicsPipeline>& pipeline) override;
+
+    void bind_push_constant(const std::shared_ptr<CommandBuffer>& command_buffer,
+                            const std::shared_ptr<GraphicsPipeline>& pipeline,
+                            uint32_t size,
+                            const void* data) override;
+
+    void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
+                            const std::shared_ptr<StaticMesh>& mesh) override;
+
+    void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
+                           const std::shared_ptr<RenderPass>& render_pass) override;
+
+    void end_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
+                         const std::shared_ptr<RenderPass>& render_pass) override;
+
+    void record_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
+                            const std::shared_ptr<RenderPass>& render_pass,
+                            const std::function<void(void)>& func) override;
+
+    void submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer) override;
+
+    void draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer) override;
+
+    std::shared_ptr<Framebuffer> current_frame_framebuffer() override;
+    std::shared_ptr<Framebuffer> presentation_framebuffer() override;
 
   private:
     std::shared_ptr<VulkanSwapchain> m_swapchain;
 
-    std::shared_ptr<VulkanRenderPass> m_render_pass;
-    std::shared_ptr<VulkanGraphicsPipeline> m_pipeline;
-
-    std::shared_ptr<VulkanGraphicsPipeline> m_flat_color_pipeline;
-
-    std::shared_ptr<VulkanCommandBuffer> m_command_buffer;
-
-    std::shared_ptr<Model> m_model;
-    std::shared_ptr<Model> m_cube;
-
-    VkSemaphore image_available_semaphore;
-    VkSemaphore render_finished_semaphore;
-    VkFence in_flight_fence;
-
     std::shared_ptr<VulkanQueue> m_graphics_queue;
     std::shared_ptr<VulkanQueue> m_presentation_queue;
 
-    std::shared_ptr<VulkanDescriptorAllocator> m_allocator;
+    VkSemaphore image_available_semaphore{VK_NULL_HANDLE};
+    VkSemaphore render_finished_semaphore{VK_NULL_HANDLE};
+    VkFence in_flight_fence{VK_NULL_HANDLE};
 
-    VkDescriptorSet m_vertex_shader_set{VK_NULL_HANDLE};
-    VkDescriptorSet m_fragment_shader_set{VK_NULL_HANDLE};
-
-    std::shared_ptr<VulkanUniformBuffer<ColorUniformBuffer>> m_color_ubo;
-    std::shared_ptr<VulkanUniformBuffer<CameraUniformBuffer>> m_camera_ubo;
-    std::shared_ptr<VulkanUniformBuffer<LightsUniformBuffer>> m_lights_ubo;
-
-    struct CameraInfo {
+    // Frame descriptors
+    struct CameraUniformBuffer {
+        glm::mat4 projection;
+        glm::mat4 view;
+        // glm::mat4 view_projection;
         glm::vec3 position;
-        glm::vec2 rotation;
-        glm::vec2 mouse_pos;
     };
 
-    CameraInfo m_camera_info{};
+    struct PointLightStruct {
+        glm::vec4 color;
+        glm::vec4 position;
+    };
 
-    LightsUniformBuffer light_info{};
+    struct DirectionalLightStruct {
+        glm::vec4 color;
+        glm::vec4 direction;
+    };
 
-    void on_event(Event& event);
-    void update_light_info();
+    struct LightsUniformBuffer {
+        std::array<PointLightStruct, MAX_POINT_LIGHTS> point_lights{};
+        std::array<DirectionalLightStruct, MAX_DIRECTIONAL_LIGHTS> directional_lights{};
+
+        uint32_t number_point_lights = 0;
+        uint32_t number_directional_lights = 0;
+    };
+
+    std::shared_ptr<VulkanDescriptorAllocator> m_allocator;
+
+    std::shared_ptr<VulkanUniformBuffer> m_camera_ubo;
+    std::shared_ptr<VulkanUniformBuffer> m_lights_ubo;
+
+    VkDescriptorSet m_frame_descriptor_set{VK_NULL_HANDLE};
+
+    // Screen quad info
+    struct ScreenQuadVertex {
+        glm::vec3 position;
+        glm::vec2 texture_coord;
+    };
+
+    std::shared_ptr<VulkanVertexBuffer> m_screen_quad_vertex;
+    std::shared_ptr<VulkanIndexBuffer> m_screen_quad_index;
 };
 
 } // namespace Phos
-
- */

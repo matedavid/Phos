@@ -5,6 +5,8 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 
+#include "renderer/backend/render_pass.h"
+
 namespace Phos {
 
 // Forward declarations
@@ -12,22 +14,16 @@ class VulkanDevice;
 class VulkanFramebuffer;
 class VulkanCommandBuffer;
 
-class VulkanRenderPass {
+class VulkanRenderPass : public RenderPass {
   public:
-    struct Description {
-        std::string debug_name;
-
-        bool presentation_target = false; // Is render pass used in presentation pass
-        std::shared_ptr<VulkanFramebuffer> target_framebuffer = nullptr;
-    };
-
     explicit VulkanRenderPass(Description description);
-    ~VulkanRenderPass() = default;
+    ~VulkanRenderPass() override = default;
 
-    void begin(const VulkanCommandBuffer& command_buffer);
-    void begin(const VulkanCommandBuffer& command_buffer, const std::shared_ptr<VulkanFramebuffer>& framebuffer);
+    void begin(const std::shared_ptr<CommandBuffer>& command_buffer) override;
+    void begin(const std::shared_ptr<CommandBuffer>& command_buffer,
+               const std::shared_ptr<Framebuffer>& framebuffer) override;
 
-    void end(const VulkanCommandBuffer& command_buffer);
+    void end(const std::shared_ptr<CommandBuffer>& command_buffer) override;
 
   private:
     Description m_description;

@@ -2,8 +2,7 @@
 #include "core/layer.h"
 #include "core/application.h"
 
-#include "renderer/backend/vulkan/vulkan_renderer.h"
-#include "renderer/backend/vulkan/deferred_renderer.h"
+#include "renderer/deferred_renderer.h"
 
 class SandboxLayer : public Phos::Layer {
   public:
