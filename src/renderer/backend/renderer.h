@@ -48,14 +48,11 @@ class INativeRenderer {
                                     const void* data) = 0;
 
     virtual void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                   const std::shared_ptr<RenderPass>& render_pass) = 0;
+                                   const std::shared_ptr<RenderPass>& render_pass,
+                                   bool presentation_target) = 0;
 
     virtual void end_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                  const std::shared_ptr<RenderPass>& render_pass) = 0;
-
-    virtual void record_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                    const std::shared_ptr<RenderPass>& render_pass,
-                                    const std::function<void(void)>& func) = 0;
 
     virtual void submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer) = 0;
 
@@ -88,14 +85,11 @@ class Renderer {
     }
 
     static void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                  const std::shared_ptr<RenderPass>& render_pass);
+                                  const std::shared_ptr<RenderPass>& render_pass,
+                                  bool presentation_target = false);
 
     static void end_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                 const std::shared_ptr<RenderPass>& render_pass);
-
-    static void record_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                   const std::shared_ptr<RenderPass>& render_pass,
-                                   const std::function<void(void)>& func);
 
     static void submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer);
 

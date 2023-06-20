@@ -46,19 +46,14 @@ void Renderer::bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& comm
 }
 
 void Renderer::begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                 const std::shared_ptr<RenderPass>& render_pass) {
-    m_native_renderer->begin_render_pass(command_buffer, render_pass);
+                                 const std::shared_ptr<RenderPass>& render_pass,
+                                 bool presentation_target) {
+    m_native_renderer->begin_render_pass(command_buffer, render_pass, presentation_target);
 }
 
 void Renderer::end_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                const std::shared_ptr<RenderPass>& render_pass) {
     m_native_renderer->end_render_pass(command_buffer, render_pass);
-}
-
-void Renderer::record_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                  const std::shared_ptr<RenderPass>& render_pass,
-                                  const std::function<void(void)>& func) {
-    m_native_renderer->record_render_pass(command_buffer, render_pass, func);
 }
 
 void Renderer::submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer) {

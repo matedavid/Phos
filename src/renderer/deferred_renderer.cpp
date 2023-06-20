@@ -150,13 +150,12 @@ void DeferredRenderer::update() {
 
     Renderer::begin_frame(frame_info);
 
-    const auto frame_framebuffer = Renderer::current_frame_framebuffer();
-
     m_command_buffer->record([&]() {
         // Geometry pass
         // =============
         {
-            m_geometry_pass->begin(m_command_buffer);
+            // m_geometry_pass->begin(m_command_buffer);
+            Renderer::begin_render_pass(m_command_buffer, m_geometry_pass);
 
             // Draw model
             Renderer::bind_graphics_pipeline(m_command_buffer, m_geometry_pipeline);
@@ -191,19 +190,19 @@ void DeferredRenderer::update() {
                 Renderer::submit_static_mesh(m_command_buffer, m_cube);
             }
 
-            m_geometry_pass->end(m_command_buffer);
+            Renderer::end_render_pass(m_command_buffer, m_geometry_pass);
         }
 
         // Lighting pass
         // ==========================
         {
-            m_lighting_pass->begin(m_command_buffer, frame_framebuffer);
+            Renderer::begin_render_pass(m_command_buffer, m_lighting_pass, true);
 
             // Draw quad
             Renderer::bind_graphics_pipeline(m_command_buffer, m_lighting_pipeline);
             Renderer::draw_screen_quad(m_command_buffer);
 
-            m_lighting_pass->end(m_command_buffer);
+            Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
         }
     });
 

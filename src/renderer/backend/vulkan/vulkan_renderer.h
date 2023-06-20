@@ -42,14 +42,11 @@ class VulkanRenderer : public INativeRenderer {
                             const std::shared_ptr<StaticMesh>& mesh) override;
 
     void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                           const std::shared_ptr<RenderPass>& render_pass) override;
+                           const std::shared_ptr<RenderPass>& render_pass,
+                           bool presentation_target) override;
 
     void end_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                          const std::shared_ptr<RenderPass>& render_pass) override;
-
-    void record_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                            const std::shared_ptr<RenderPass>& render_pass,
-                            const std::function<void(void)>& func) override;
 
     void submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer) override;
 

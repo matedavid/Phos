@@ -231,26 +231,17 @@ void VulkanRenderer::bind_push_constant(const std::shared_ptr<CommandBuffer>& co
 }
 
 void VulkanRenderer::begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                       const std::shared_ptr<RenderPass>& render_pass) {
-    render_pass->begin(command_buffer);
+                                       const std::shared_ptr<RenderPass>& render_pass,
+                                       bool presentation_target) {
+    if (presentation_target)
+        render_pass->begin(command_buffer, m_swapchain->get_current_framebuffer());
+    else
+        render_pass->begin(command_buffer);
 }
 
 void VulkanRenderer::end_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                      const std::shared_ptr<RenderPass>& render_pass) {
     render_pass->end(command_buffer);
-}
-
-void VulkanRenderer::record_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                        const std::shared_ptr<RenderPass>& render_pass,
-                                        const std::function<void(void)>& func) {
-    // Begin Render Pass
-    begin_render_pass(command_buffer, render_pass);
-
-    // Call Record Function
-    func();
-
-    // End Render Pass
-    end_render_pass(command_buffer, render_pass);
 }
 
 void VulkanRenderer::submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer) {
