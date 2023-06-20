@@ -29,9 +29,6 @@ DeferredRenderer::DeferredRenderer() {
 
     m_command_buffer = CommandBuffer::create();
 
-    // Uniform buffers
-    m_camera_ubo = UniformBuffer::create<CameraUniformBuffer>();
-
     const auto width = Renderer::config().window->get_width();
     const auto height = Renderer::config().window->get_height();
 
@@ -127,6 +124,7 @@ DeferredRenderer::DeferredRenderer() {
     // Camera
     const auto aspect_ratio = width / height;
     m_camera = std::make_shared<PerspectiveCamera>(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
+    m_camera->set_position({0.0f, 0.0f, 4.0f});
 }
 
 DeferredRenderer::~DeferredRenderer() {

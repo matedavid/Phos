@@ -20,12 +20,6 @@ class StaticMesh;
 class Camera;
 class Event;
 
-struct CameraUniformBuffer {
-    glm::mat4 projection;
-    glm::mat4 view;
-    glm::vec3 position;
-};
-
 struct LightsUniformBuffer {
     glm::vec4 positions[10];
     glm::vec4 colors[10];
@@ -66,9 +60,6 @@ class DeferredRenderer {
 
     // Flat color pipeline
     std::shared_ptr<GraphicsPipeline> m_flat_color_pipeline;
-
-    // Uniform buffers
-    std::shared_ptr<UniformBuffer> m_camera_ubo;
 
     // Models
     std::shared_ptr<StaticMesh> m_model;
