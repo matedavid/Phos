@@ -9,7 +9,7 @@ layout (std140, set = 0, binding = 0) uniform CameraUniformBuffer {
     mat4 projection;
     mat4 view;
     vec3 position;
-};
+} uCamera;
 
 layout (push_constant) uniform ModelInfoPushConstants {
     mat4 model;
@@ -21,7 +21,7 @@ layout (location = 1) out vec3 vNormal;
 layout (location = 2) out vec4 vColor;
 
 void main() {
-    gl_Position = projection * view * model * vec4(aPosition, 1.0f);
+    gl_Position = uCamera.projection * uCamera.view * model * vec4(aPosition, 1.0f);
 
     vPosition = gl_Position;
     vNormal = aNormal;
