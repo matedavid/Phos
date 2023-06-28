@@ -13,6 +13,7 @@ class Camera;
 class Window;
 class Framebuffer;
 class Light;
+class Material;
 
 enum class GraphicsAPI {
     Vulkan,
@@ -37,7 +38,8 @@ class INativeRenderer {
     virtual void wait_idle() = 0;
 
     virtual void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                    const std::shared_ptr<StaticMesh>& mesh) = 0;
+                                    const std::shared_ptr<StaticMesh>& mesh,
+                                    const std::shared_ptr<Material>& material) = 0;
 
     virtual void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
                                         const std::shared_ptr<GraphicsPipeline>& pipeline) = 0;
@@ -72,7 +74,8 @@ class Renderer {
     static void end_frame();
 
     static void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                   const std::shared_ptr<StaticMesh>& mesh);
+                                   const std::shared_ptr<StaticMesh>& mesh,
+                                   const std::shared_ptr<Material>& material);
 
     static void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
                                        const std::shared_ptr<GraphicsPipeline>& pipeline);

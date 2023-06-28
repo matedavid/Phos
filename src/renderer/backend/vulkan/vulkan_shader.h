@@ -24,6 +24,7 @@ struct VulkanDescriptorInfo {
     std::string name;
     VkDescriptorType type;
     VkShaderStageFlags stage;
+    uint32_t set;
     uint32_t binding;
 };
 
@@ -36,6 +37,7 @@ class VulkanShader : public Shader {
     [[nodiscard]] VkPipelineShaderStageCreateInfo get_fragment_create_info() const;
 
     [[nodiscard]] std::optional<VulkanDescriptorInfo> descriptor_info(std::string_view name) const;
+    [[nodiscard]] std::vector<VulkanDescriptorInfo> descriptors_in_set(uint32_t set) const;
 
     [[nodiscard]] std::optional<VkVertexInputBindingDescription> get_binding_description() const {
         return m_binding_description;

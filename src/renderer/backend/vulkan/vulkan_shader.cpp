@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <fstream>
 #include <spirv_reflect.h>
-#include <vulkan/vk_format_utils.h>
 
 #include "renderer/backend/vulkan/vulkan_device.h"
 #include "renderer/backend/vulkan/vulkan_utils.h"
@@ -90,6 +89,16 @@ std::optional<VulkanDescriptorInfo> VulkanShader::descriptor_info(std::string_vi
         return {};
 
     return result->second;
+}
+
+std::vector<VulkanDescriptorInfo> VulkanShader::descriptors_in_set(uint32_t set) const {
+    std::vector<VulkanDescriptorInfo> descriptors;
+    for (const auto& [_, info] : m_descriptor_info) {
+        if (info.set == set)
+            descriptors.push_back(info);
+    }
+
+    return descriptors;
 }
 
 std::vector<char> VulkanShader::read_shader_file(const std::string& path) const {
@@ -196,6 +205,7 @@ void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& v
                 descriptor_info.name = std::string(set_binding->name);
                 descriptor_info.type = static_cast<VkDescriptorType>(set_binding->descriptor_type);
                 descriptor_info.stage = stage;
+                descriptor_info.set = set_binding->set;
                 descriptor_info.binding = set_binding->binding;
 
                 m_descriptor_info.insert({descriptor_info.name, descriptor_info});
@@ -210,8 +220,8 @@ void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& v
     for (uint32_t i = 0; i < max_descriptor_set; ++i) {
         const auto bindings = set_bindings[i];
 
-        if (bindings.empty())
-            continue;
+        //        if (bindings.empty())
+        //            continue;
 
         VkDescriptorSetLayoutCreateInfo descriptor_set_create_info{};
         descriptor_set_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

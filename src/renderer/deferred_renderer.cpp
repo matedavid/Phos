@@ -21,6 +21,10 @@
 #include "renderer/backend/graphics_pipeline.h"
 #include "renderer/backend/render_pass.h"
 #include "renderer/backend/buffers.h"
+#include "renderer/backend/material.h"
+
+#include "renderer/backend/vulkan/vulkan_material.h"
+#include "renderer/backend/vulkan/vulkan_graphics_pipeline.h"
 
 namespace Phos {
 
@@ -117,6 +121,25 @@ DeferredRenderer::DeferredRenderer() {
         });
     }
 
+    // Material test
+    {
+        auto shader =
+            Shader::create("../assets/shaders/material_vertex.spv", "../assets/shaders/material_fragment.spv");
+        m_material_test_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
+            .shader = shader,
+            .target_framebuffer = Renderer::presentation_framebuffer(),
+        });
+
+        std::unordered_map<std::string, std::shared_ptr<Texture>> textures;
+        textures.insert(std::make_pair("uTexture", Texture::create("../assets/texture2.png")));
+
+        m_material = Material::create(Material::Definition{
+            .shader = shader,
+            .name = "Simple Material",
+            .textures = textures,
+        });
+    }
+
     // Static Meshes
     m_model = std::make_shared<StaticMesh>("../assets/suzanne.fbx", false);
     m_cube = std::make_shared<StaticMesh>("../assets/cube.fbx", false);
@@ -148,6 +171,7 @@ void DeferredRenderer::update() {
 
     Renderer::begin_frame(frame_info);
 
+    /*
     m_command_buffer->record([&]() {
         // Geometry pass
         // =============
@@ -202,6 +226,32 @@ void DeferredRenderer::update() {
 
             Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
         }
+    });
+     */
+
+    m_command_buffer->record([&]() {
+        Renderer::begin_render_pass(m_command_buffer, m_lighting_pass, true);
+
+        Renderer::bind_graphics_pipeline(m_command_buffer, m_material_test_pipeline);
+
+        const auto& native_mat = std::dynamic_pointer_cast<VulkanMaterial>(m_material);
+        const auto& native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(m_command_buffer);
+        const auto& native_pip = std::dynamic_pointer_cast<VulkanGraphicsPipeline>(m_material_test_pipeline);
+
+        std::array<VkDescriptorSet, 1> sets = {native_mat->get_set()};
+
+        vkCmdBindDescriptorSets(
+            native_cb->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, native_pip->layout(), 2, 1, sets.data(), 0, 0);
+
+        const ModelInfoPushConstant constants = {
+            .model = glm::mat4{1.0f},
+            .color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
+        };
+
+        Renderer::bind_push_constant(m_command_buffer, m_flat_color_pipeline, constants);
+        Renderer::submit_static_mesh(m_command_buffer, m_model, m_material);
+
+        Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
     });
 
     // Submit command buffer

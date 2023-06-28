@@ -14,6 +14,7 @@
 #include "renderer/backend/vulkan/vulkan_swapchain.h"
 #include "renderer/backend/vulkan/vulkan_framebuffer.h"
 #include "renderer/backend/vulkan/vulkan_queue.h"
+#include "renderer/backend/vulkan/vulkan_material.h"
 
 namespace Phos {
 
@@ -169,8 +170,10 @@ void VulkanRenderer::end_frame() {
 }
 
 void VulkanRenderer::submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                        const std::shared_ptr<StaticMesh>& mesh) {
+                                        const std::shared_ptr<StaticMesh>& mesh,
+                                        const std::shared_ptr<Material>& material) {
     const auto& native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
+    const auto& native_material = std::dynamic_pointer_cast<VulkanMaterial>(material);
 
     for (const auto& sub : mesh->get_sub_meshes()) {
         const auto& native_vertex_buffer = std::dynamic_pointer_cast<VulkanVertexBuffer>(sub->get_vertex_buffer());

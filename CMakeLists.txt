@@ -39,6 +39,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/render_pass.cpp
         src/renderer/backend/shader.cpp
         src/renderer/backend/graphics_pipeline.cpp
+        src/renderer/backend/material.cpp
 
         # Vulkan Backend
         src/renderer/backend/vulkan/vulkan_renderer.cpp
@@ -61,6 +62,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_descriptors.cpp
         src/renderer/backend/vulkan/vulkan_utils.cpp
         src/renderer/backend/vulkan/vulkan_renderer_api.cpp
+        src/renderer/backend/vulkan/vulkan_material.cpp
 
         src/main.cpp
         )

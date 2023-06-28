@@ -17,6 +17,7 @@ class VertexBuffer;
 class IndexBuffer;
 class UniformBuffer;
 class StaticMesh;
+class Material;
 class Camera;
 class Event;
 
@@ -60,6 +61,10 @@ class DeferredRenderer {
 
     // Flat color pipeline
     std::shared_ptr<GraphicsPipeline> m_flat_color_pipeline;
+
+    // Material test pipeline
+    std::shared_ptr<GraphicsPipeline> m_material_test_pipeline;
+    std::shared_ptr<Material> m_material;
 
     // Models
     std::shared_ptr<StaticMesh> m_model;
