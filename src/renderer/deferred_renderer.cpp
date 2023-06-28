@@ -23,9 +23,6 @@
 #include "renderer/backend/buffers.h"
 #include "renderer/backend/material.h"
 
-#include "renderer/backend/vulkan/vulkan_material.h"
-#include "renderer/backend/vulkan/vulkan_graphics_pipeline.h"
-
 namespace Phos {
 
 DeferredRenderer::DeferredRenderer() {
@@ -233,15 +230,6 @@ void DeferredRenderer::update() {
         Renderer::begin_render_pass(m_command_buffer, m_lighting_pass, true);
 
         Renderer::bind_graphics_pipeline(m_command_buffer, m_material_test_pipeline);
-
-        const auto& native_mat = std::dynamic_pointer_cast<VulkanMaterial>(m_material);
-        const auto& native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(m_command_buffer);
-        const auto& native_pip = std::dynamic_pointer_cast<VulkanGraphicsPipeline>(m_material_test_pipeline);
-
-        std::array<VkDescriptorSet, 1> sets = {native_mat->get_set()};
-
-        vkCmdBindDescriptorSets(
-            native_cb->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, native_pip->layout(), 2, 1, sets.data(), 0, 0);
 
         const ModelInfoPushConstant constants = {
             .model = glm::mat4{1.0f},

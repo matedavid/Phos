@@ -175,6 +175,8 @@ void VulkanRenderer::submit_static_mesh(const std::shared_ptr<CommandBuffer>& co
     const auto& native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
     const auto& native_material = std::dynamic_pointer_cast<VulkanMaterial>(material);
 
+    native_material->bind(native_command_buffer);
+
     for (const auto& sub : mesh->get_sub_meshes()) {
         const auto& native_vertex_buffer = std::dynamic_pointer_cast<VulkanVertexBuffer>(sub->get_vertex_buffer());
         const auto& native_index_buffer = std::dynamic_pointer_cast<VulkanIndexBuffer>(sub->get_index_buffer());

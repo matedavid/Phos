@@ -52,6 +52,8 @@ VulkanShader::VulkanShader(const std::string& vertex_path, const std::string& fr
     retrieve_descriptor_sets_info(vertex_module, fragment_module);
     retrieve_push_constants(vertex_module, fragment_module);
 
+    create_pipeline_layout();
+
     // Cleanup
     spvReflectDestroyShaderModule(&vertex_module);
     spvReflectDestroyShaderModule(&fragment_module);
@@ -61,6 +63,9 @@ VulkanShader::~VulkanShader() {
     // Destroy shader modules
     vkDestroyShaderModule(VulkanContext::device->handle(), m_vertex_shader, nullptr);
     vkDestroyShaderModule(VulkanContext::device->handle(), m_fragment_shader, nullptr);
+
+    // Destroy pipeline layout
+    vkDestroyPipelineLayout(VulkanContext::device->handle(), m_pipeline_layout, nullptr);
 }
 
 VkPipelineShaderStageCreateInfo VulkanShader::get_vertex_create_info() const {
@@ -258,6 +263,18 @@ void VulkanShader::retrieve_push_constants(const SpvReflectShaderModule& vertex_
 
     retrieve_push_constant_ranges(vertex_module, VK_SHADER_STAGE_VERTEX_BIT);
     retrieve_push_constant_ranges(fragment_module, VK_SHADER_STAGE_FRAGMENT_BIT);
+}
+
+void VulkanShader::create_pipeline_layout() {
+    VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
+    pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_create_info.setLayoutCount = static_cast<uint32_t>(m_descriptor_set_layouts.size());
+    pipeline_layout_create_info.pSetLayouts = m_descriptor_set_layouts.data();
+    pipeline_layout_create_info.pushConstantRangeCount = static_cast<uint32_t>(m_push_constant_ranges.size());
+    pipeline_layout_create_info.pPushConstantRanges = m_push_constant_ranges.data();
+
+    VK_CHECK(vkCreatePipelineLayout(
+        VulkanContext::device->handle(), &pipeline_layout_create_info, nullptr, &m_pipeline_layout))
 }
 
 } // namespace Phos

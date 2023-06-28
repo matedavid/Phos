@@ -45,10 +45,8 @@ class VulkanShader : public Shader {
     [[nodiscard]] std::vector<VkVertexInputAttributeDescription> get_attribute_descriptions() const {
         return m_attribute_descriptions;
     }
-    [[nodiscard]] std::vector<VkDescriptorSetLayout> get_descriptor_set_layouts() const {
-        return m_descriptor_set_layouts;
-    }
-    [[nodiscard]] std::vector<VkPushConstantRange> get_push_constant_ranges() const { return m_push_constant_ranges; }
+
+    [[nodiscard]] VkPipelineLayout get_pipeline_layout() const { return m_pipeline_layout; }
 
   private:
     VkShaderModule m_vertex_shader{};
@@ -59,6 +57,8 @@ class VulkanShader : public Shader {
     std::vector<VkDescriptorSetLayout> m_descriptor_set_layouts;
     std::vector<VkPushConstantRange> m_push_constant_ranges;
 
+    VkPipelineLayout m_pipeline_layout;
+
     std::unordered_map<std::string, VulkanDescriptorInfo> m_descriptor_info;
 
     [[nodiscard]] std::vector<char> read_shader_file(const std::string& path) const;
@@ -68,6 +68,8 @@ class VulkanShader : public Shader {
                                        const SpvReflectShaderModule& fragment_module);
     void retrieve_push_constants(const SpvReflectShaderModule& vertex_module,
                                  const SpvReflectShaderModule& fragment_module);
+
+    void create_pipeline_layout();
 };
 
 } // namespace Phos

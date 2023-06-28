@@ -112,20 +112,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     dynamic_state_create_info.dynamicStateCount = dynamic_state.size();
     dynamic_state_create_info.pDynamicStates = dynamic_state.data();
 
-    // Pipeline Layout
-    const auto descriptor_sets_layout = m_shader->get_descriptor_set_layouts();
-    const auto push_constant_ranges = m_shader->get_push_constant_ranges();
-
-    VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
-    pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.setLayoutCount = (uint32_t)descriptor_sets_layout.size();
-    pipeline_layout_create_info.pSetLayouts = descriptor_sets_layout.data();
-    pipeline_layout_create_info.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
-    pipeline_layout_create_info.pPushConstantRanges = push_constant_ranges.data();
-
-    VK_CHECK(vkCreatePipelineLayout(
-        VulkanContext::device->handle(), &pipeline_layout_create_info, nullptr, &m_pipeline_layout))
-
     //
     // Create pipeline
     //
@@ -142,7 +128,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     create_info.pDepthStencilState = &depth_stencil_create_info;
     create_info.pColorBlendState = &color_blend_create_info;
     create_info.pDynamicState = &dynamic_state_create_info;
-    create_info.layout = m_pipeline_layout;
+    create_info.layout = m_shader->get_pipeline_layout();
     create_info.renderPass = target_framebuffer->get_render_pass();
     create_info.subpass = 0;
 
@@ -153,9 +139,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
 }
 
 VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
-    // Destroy pipeline layout
-    vkDestroyPipelineLayout(VulkanContext::device->handle(), m_pipeline_layout, nullptr);
-
     // Destroy pipeline
     vkDestroyPipeline(VulkanContext::device->handle(), m_pipeline, nullptr);
 }
@@ -176,13 +159,17 @@ void VulkanGraphicsPipeline::bind(const std::shared_ptr<CommandBuffer>& command_
         const std::vector<VkDescriptorSet> descriptor_sets = {m_set};
         vkCmdBindDescriptorSets(native_command_buffer->handle(),
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                m_pipeline_layout,
+                                m_shader->get_pipeline_layout(),
                                 1, // Set = 1 for pipeline specific descriptors
                                 static_cast<uint32_t>(descriptor_sets.size()),
                                 descriptor_sets.data(),
                                 0,
                                 nullptr);
     }
+}
+
+VkPipelineLayout VulkanGraphicsPipeline::layout() const {
+    return m_shader->get_pipeline_layout();
 }
 
 bool VulkanGraphicsPipeline::bake() {

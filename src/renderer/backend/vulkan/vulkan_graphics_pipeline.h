@@ -28,11 +28,10 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
     void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) override;
 
     [[nodiscard]] VkPipeline handle() const { return m_pipeline; }
-    [[nodiscard]] VkPipelineLayout layout() const { return m_pipeline_layout; }
+    [[nodiscard]] VkPipelineLayout layout() const;
 
   private:
     VkPipeline m_pipeline{};
-    VkPipelineLayout m_pipeline_layout{};
 
     std::shared_ptr<VulkanShader> m_shader;
 

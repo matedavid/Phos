@@ -4,6 +4,7 @@
 
 #include "renderer/backend/vulkan/vulkan_context.h"
 #include "renderer/backend/vulkan/vulkan_shader.h"
+#include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_texture.h"
 #include "renderer/backend/vulkan/vulkan_image.h"
 #include "renderer/backend/vulkan/vulkan_descriptors.h"
@@ -11,12 +12,12 @@
 namespace Phos {
 
 VulkanMaterial::VulkanMaterial(const Definition& definition) : m_definition(definition) {
-    const auto& shader = std::dynamic_pointer_cast<VulkanShader>(definition.shader);
+    m_shader = std::dynamic_pointer_cast<VulkanShader>(definition.shader);
     m_allocator = std::make_shared<VulkanDescriptorAllocator>();
 
     auto builder = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator);
 
-    const auto descriptors = shader->descriptors_in_set(2);
+    const auto descriptors = m_shader->descriptors_in_set(2);
 
     for (const auto& [name, texture] : definition.textures) {
         const auto result =
@@ -39,6 +40,11 @@ VulkanMaterial::VulkanMaterial(const Definition& definition) : m_definition(defi
     }
 
     PS_ASSERT(builder.build(m_set), "Failed to create {} Material descriptor set", definition.name)
+}
+
+void VulkanMaterial::bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const {
+    vkCmdBindDescriptorSets(
+        command_buffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_shader->get_pipeline_layout(), 2, 1, &m_set, 0, 0);
 }
 
 } // namespace Phos

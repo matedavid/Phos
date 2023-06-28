@@ -11,6 +11,7 @@ namespace Phos {
 
 // Forward declarations
 class VulkanShader;
+class VulkanCommandBuffer;
 class VulkanDescriptorAllocator;
 struct VulkanDescriptorInfo;
 
@@ -19,10 +20,11 @@ class VulkanMaterial : public Material {
     explicit VulkanMaterial(const Definition& definition);
     ~VulkanMaterial() override = default;
 
-    [[nodiscard]] VkDescriptorSet get_set() const { return m_set; }
+    void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;
 
   private:
     Definition m_definition;
+    std::shared_ptr<VulkanShader> m_shader;
 
     std::vector<std::pair<VulkanDescriptorInfo, VkDescriptorImageInfo>> m_image_descriptor_info;
 
