@@ -11,19 +11,21 @@
 
 namespace Phos {
 
+constexpr uint32_t MATERIAL_DESCRIPTOR_SET = 2;
+
 VulkanMaterial::VulkanMaterial(const Definition& definition) : m_definition(definition) {
     m_shader = std::dynamic_pointer_cast<VulkanShader>(definition.shader);
     m_allocator = std::make_shared<VulkanDescriptorAllocator>();
 
     auto builder = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator);
 
-    const auto descriptors = m_shader->descriptors_in_set(2);
+    const auto descriptors = m_shader->descriptors_in_set(MATERIAL_DESCRIPTOR_SET);
 
     for (const auto& [name, texture] : definition.textures) {
         const auto result =
             std::ranges::find_if(descriptors, [&](const VulkanDescriptorInfo& info) { return info.name == name; });
 
-        if (result == descriptors.end()) {
+        if (result == descriptors.end() || result->type != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
             PS_ERROR("Texture with name {} not found in shader", name)
             continue;
         }

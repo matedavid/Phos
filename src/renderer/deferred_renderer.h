@@ -16,7 +16,7 @@ class RenderPass;
 class VertexBuffer;
 class IndexBuffer;
 class UniformBuffer;
-class StaticMesh;
+class Mesh;
 class Material;
 class Camera;
 class Event;
@@ -67,8 +67,8 @@ class DeferredRenderer {
     std::shared_ptr<Material> m_material;
 
     // Models
-    std::shared_ptr<StaticMesh> m_model;
-    std::shared_ptr<StaticMesh> m_cube;
+    std::shared_ptr<Mesh> m_model;
+    std::shared_ptr<Mesh> m_cube;
 
     // Frame information
     std::shared_ptr<Camera> m_camera;

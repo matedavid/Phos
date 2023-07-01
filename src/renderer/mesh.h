@@ -12,10 +12,10 @@
 
 namespace Phos {
 
-class StaticMesh {
+class Mesh {
   public:
-    explicit StaticMesh(const std::string& path, bool flip_uvs = false);
-    ~StaticMesh() = default;
+    explicit Mesh(const std::string& path, bool flip_uvs = false);
+    ~Mesh() = default;
 
     [[nodiscard]] const std::vector<std::unique_ptr<SubMesh>>& get_sub_meshes() const { return m_meshes; }
 

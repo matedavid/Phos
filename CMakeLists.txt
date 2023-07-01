@@ -22,7 +22,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/input/input.cpp
 
         # Renderer
-        src/renderer/static_mesh.cpp
+        src/renderer/mesh.cpp
         src/renderer/sub_mesh.cpp
         src/renderer/camera.cpp
         src/renderer/light.cpp

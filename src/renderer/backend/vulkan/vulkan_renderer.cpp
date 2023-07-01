@@ -1,6 +1,6 @@
 #include "vulkan_renderer.h"
 
-#include "renderer/static_mesh.h"
+#include "renderer/mesh.h"
 #include "renderer/camera.h"
 #include "renderer/light.h"
 
@@ -170,7 +170,7 @@ void VulkanRenderer::end_frame() {
 }
 
 void VulkanRenderer::submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                        const std::shared_ptr<StaticMesh>& mesh,
+                                        const std::shared_ptr<Mesh>& mesh,
                                         const std::shared_ptr<Material>& material) {
     const auto& native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
     const auto& native_material = std::dynamic_pointer_cast<VulkanMaterial>(material);

@@ -8,7 +8,7 @@
 #include "input/events.h"
 #include "input/input.h"
 
-#include "renderer/static_mesh.h"
+#include "renderer/mesh.h"
 #include "renderer/camera.h"
 #include "renderer/light.h"
 
@@ -138,8 +138,8 @@ DeferredRenderer::DeferredRenderer() {
     }
 
     // Static Meshes
-    m_model = std::make_shared<StaticMesh>("../assets/suzanne.fbx", false);
-    m_cube = std::make_shared<StaticMesh>("../assets/cube.fbx", false);
+    m_model = std::make_shared<Mesh>("../assets/suzanne.fbx", false);
+    m_cube = std::make_shared<Mesh>("../assets/cube.fbx", false);
 
     // Camera
     const auto aspect_ratio = width / height;
