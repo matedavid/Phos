@@ -15,11 +15,17 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
 # Sources and include directories
 target_sources(${PROJECT_NAME} PRIVATE
+        # Core
         src/core/application.cpp
         src/core/window.cpp
         src/core/entry_point.cpp
 
+        # Input
         src/input/input.cpp
+
+        # Managers
+        src/managers/texture_manager.cpp
+        src/managers/shader_manager.cpp
 
         # Renderer
         src/renderer/mesh.cpp
