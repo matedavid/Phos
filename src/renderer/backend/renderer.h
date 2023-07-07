@@ -15,6 +15,9 @@ class Framebuffer;
 class Light;
 class Material;
 
+class TextureManager;
+class ShaderManager;
+
 enum class GraphicsAPI {
     Vulkan,
 };
@@ -103,9 +106,15 @@ class Renderer {
 
     static const RendererConfig& config() { return m_config; }
 
+    static const std::unique_ptr<TextureManager>& texture_manager() { return m_texture_manager; }
+    static const std::unique_ptr<ShaderManager>& shader_manager() { return m_shader_manager; }
+
   private:
     static std::shared_ptr<INativeRenderer> m_native_renderer;
     static RendererConfig m_config;
+
+    static std::unique_ptr<TextureManager> m_texture_manager;
+    static std::unique_ptr<ShaderManager> m_shader_manager;
 };
 
 } // namespace Phos

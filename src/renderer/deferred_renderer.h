@@ -45,7 +45,8 @@ class DeferredRenderer {
     // Geometry pass
     std::shared_ptr<Texture> m_position_texture;
     std::shared_ptr<Texture> m_normal_texture;
-    std::shared_ptr<Texture> m_color_specular_texture;
+    std::shared_ptr<Texture> m_albedo_texture;
+    std::shared_ptr<Texture> m_metallic_roughness_ao_texture;
 
     std::shared_ptr<Framebuffer> m_geometry_framebuffer;
 
@@ -61,10 +62,6 @@ class DeferredRenderer {
 
     // Flat color pipeline
     std::shared_ptr<GraphicsPipeline> m_flat_color_pipeline;
-
-    // Material test pipeline
-    std::shared_ptr<GraphicsPipeline> m_material_test_pipeline;
-    std::shared_ptr<Material> m_material;
 
     // Models
     std::shared_ptr<Mesh> m_model;

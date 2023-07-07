@@ -26,16 +26,6 @@ std::shared_ptr<Texture> TextureManager::get_white_texture() const {
     return m_white_texture;
 }
 
-std::unique_ptr<TextureManager> TextureManager::m_instance = nullptr;
-
-const std::unique_ptr<TextureManager>& TextureManager::instance() {
-    if (m_instance == nullptr) {
-        m_instance = std::make_unique<TextureManager>();
-    }
-
-    return m_instance;
-}
-
 std::size_t TextureManager::hash_from_string(const std::string& str) {
     auto hasher = std::hash<std::string>();
     return hasher(str);

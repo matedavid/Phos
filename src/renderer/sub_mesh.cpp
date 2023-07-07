@@ -3,6 +3,8 @@
 #include "managers/texture_manager.h"
 #include "managers/shader_manager.h"
 
+#include "renderer/backend/renderer.h"
+
 #include "renderer/backend/buffers.h"
 #include "renderer/backend/material.h"
 #include "renderer/backend/texture.h"
@@ -69,14 +71,14 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
 
     auto definition = Material::Definition{};
     definition.name = "PBR Deferred";
-    definition.shader = ShaderManager::instance()->get_builtin_shader("PBR.Geometry.Deferred");
+    definition.shader = Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred");
 
     // Albedo texture
     aiString albedo_path;
     if (mat->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &albedo_path) == aiReturn_SUCCESS) {
         const std::string path = directory + std::string(albedo_path.C_Str());
 
-        const auto texture = TextureManager::instance()->acquire(path);
+        const auto texture = Renderer::texture_manager()->acquire(path);
         definition.textures.insert(std::make_pair("uAlbedoMap", texture));
     }
 
@@ -85,7 +87,7 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
     if (mat->GetTexture(AI_MATKEY_METALLIC_TEXTURE, &metallic_path) == aiReturn_SUCCESS) {
         const std::string path = directory + std::string(metallic_path.C_Str());
 
-        const auto texture = TextureManager::instance()->acquire(path);
+        const auto texture = Renderer::texture_manager()->acquire(path);
         definition.textures.insert(std::make_pair("uMetallicMap", texture));
     }
 
@@ -94,7 +96,7 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
     if (mat->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &roughness_path) == aiReturn_SUCCESS) {
         const std::string path = directory + std::string(roughness_path.C_Str());
 
-        const auto texture = TextureManager::instance()->acquire(path);
+        const auto texture = Renderer::texture_manager()->acquire(path);
         definition.textures.insert(std::make_pair("uRoughnessMap", texture));
     }
 
@@ -103,7 +105,7 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
     if (mat->GetTexture(aiTextureType_LIGHTMAP, 0, &ao_path) == aiReturn_SUCCESS) {
         const std::string path = directory + std::string(ao_path.C_Str());
 
-        const auto texture = TextureManager::instance()->acquire(path);
+        const auto texture = Renderer::texture_manager()->acquire(path);
         definition.textures.insert(std::make_pair("uAOMap", texture));
     }
 
@@ -112,7 +114,7 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
     if (mat->GetTexture(aiTextureType_NORMALS, 0, &normal_path) == aiReturn_SUCCESS) {
         const std::string path = directory + std::string(normal_path.C_Str());
 
-        const auto texture = TextureManager::instance()->acquire(path);
+        const auto texture = Renderer::texture_manager()->acquire(path);
         definition.textures.insert(std::make_pair("uNormalMap", texture));
     }
 

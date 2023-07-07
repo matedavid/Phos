@@ -23,14 +23,4 @@ std::shared_ptr<Shader> ShaderManager::get_builtin_shader(const std::string& nam
     return it->second;
 }
 
-std::unique_ptr<ShaderManager> ShaderManager::m_instance = nullptr;
-
-const std::unique_ptr<ShaderManager>& ShaderManager::instance() {
-    if (m_instance == nullptr) {
-        m_instance = std::make_unique<ShaderManager>();
-    }
-
-    return m_instance;
-}
-
 } // namespace Phos

@@ -1,11 +1,17 @@
 #include "renderer.h"
 
+#include "managers/texture_manager.h"
+#include "managers/shader_manager.h"
+
 #include "renderer/backend/vulkan/vulkan_renderer.h"
 
 namespace Phos {
 
 std::shared_ptr<INativeRenderer> Renderer::m_native_renderer = nullptr;
 RendererConfig Renderer::m_config;
+
+std::unique_ptr<TextureManager> Renderer::m_texture_manager = nullptr;
+std::unique_ptr<ShaderManager> Renderer::m_shader_manager = nullptr;
 
 void Renderer::initialize(const RendererConfig& config) {
     switch (config.graphics_api) {
@@ -17,9 +23,18 @@ void Renderer::initialize(const RendererConfig& config) {
     }
 
     m_config = config;
+
+    // Managers
+    m_texture_manager = std::make_unique<TextureManager>();
+    m_shader_manager = std::make_unique<ShaderManager>();
 }
 
 void Renderer::shutdown() {
+    // Delete managers
+    m_texture_manager.reset();
+    m_shader_manager.reset();
+
+    // Delete native renderer
     m_native_renderer.reset();
 }
 

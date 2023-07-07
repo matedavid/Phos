@@ -8,6 +8,8 @@
 #include "input/events.h"
 #include "input/input.h"
 
+#include "managers/shader_manager.h"
+
 #include "renderer/mesh.h"
 #include "renderer/camera.h"
 #include "renderer/light.h"
@@ -37,7 +39,8 @@ DeferredRenderer::DeferredRenderer() {
     {
         m_position_texture = Texture::create(width, height);
         m_normal_texture = Texture::create(width, height);
-        m_color_specular_texture = Texture::create(width, height);
+        m_albedo_texture = Texture::create(width, height);
+        m_metallic_roughness_ao_texture = Texture::create(width, height);
 
         const Image::Description depth_image_description = {
             .width = width,
@@ -61,8 +64,14 @@ DeferredRenderer::DeferredRenderer() {
             .store_operation = StoreOperation::Store,
             .clear_value = glm::vec3(0.0f),
         };
-        const auto color_specular_attachment = Framebuffer::Attachment{
-            .image = m_color_specular_texture->get_image(),
+        const auto albedo_attachment = Framebuffer::Attachment{
+            .image = m_albedo_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(0.0f),
+        };
+        const auto metallic_roughness_ao_attachment = Framebuffer::Attachment{
+            .image = m_metallic_roughness_ao_texture->get_image(),
             .load_operation = LoadOperation::Clear,
             .store_operation = StoreOperation::Store,
             .clear_value = glm::vec3(0.0f),
@@ -75,12 +84,15 @@ DeferredRenderer::DeferredRenderer() {
         };
 
         m_geometry_framebuffer = Framebuffer::create(Framebuffer::Description{
-            .attachments = {position_attachment, normal_attachment, color_specular_attachment, depth_attachment},
+            .attachments = {position_attachment,
+                            normal_attachment,
+                            albedo_attachment,
+                            metallic_roughness_ao_attachment,
+                            depth_attachment},
         });
 
         m_geometry_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-            .shader =
-                Shader::create("../assets/shaders/geometry_vertex.spv", "../assets/shaders/geometry_fragment.spv"),
+            .shader = Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"),
             .target_framebuffer = m_geometry_framebuffer,
         });
 
@@ -93,14 +105,14 @@ DeferredRenderer::DeferredRenderer() {
     // Lighting pass
     {
         m_lighting_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-            .shader =
-                Shader::create("../assets/shaders/lighting_vertex.spv", "../assets/shaders/lighting_fragment.spv"),
+            .shader = Renderer::shader_manager()->get_builtin_shader("PBR.Lighting.Deferred"),
             .target_framebuffer = Renderer::presentation_framebuffer(),
         });
 
         m_lighting_pipeline->add_input("uPositionMap", m_position_texture);
         m_lighting_pipeline->add_input("uNormalMap", m_normal_texture);
-        m_lighting_pipeline->add_input("uColorSpecularMap", m_color_specular_texture);
+        m_lighting_pipeline->add_input("uAlbedoMap", m_albedo_texture);
+        m_lighting_pipeline->add_input("uMetallicRoughnessAOMap", m_metallic_roughness_ao_texture);
         PS_ASSERT(m_geometry_pipeline->bake(), "Failed to bake Lighting Pipeline")
 
         m_lighting_pass = RenderPass::create(RenderPass::Description{
@@ -109,6 +121,7 @@ DeferredRenderer::DeferredRenderer() {
         });
     }
 
+    /*
     // Flat color pass
     {
         m_flat_color_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
@@ -117,29 +130,11 @@ DeferredRenderer::DeferredRenderer() {
             .target_framebuffer = m_geometry_framebuffer,
         });
     }
-
-    // Material test
-    {
-        auto shader =
-            Shader::create("../assets/shaders/material_vertex.spv", "../assets/shaders/material_fragment.spv");
-        m_material_test_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-            .shader = shader,
-            .target_framebuffer = Renderer::presentation_framebuffer(),
-        });
-
-        std::unordered_map<std::string, std::shared_ptr<Texture>> textures;
-        textures.insert(std::make_pair("uTexture", Texture::create("../assets/texture2.png")));
-
-        m_material = Material::create(Material::Definition{
-            .shader = shader,
-            .name = "Simple Material",
-            .textures = textures,
-        });
-    }
+     */
 
     // Static Meshes
-    m_model = std::make_shared<Mesh>("../assets/suzanne.fbx", false);
-    m_cube = std::make_shared<Mesh>("../assets/cube.fbx", false);
+    m_model = std::make_shared<Mesh>("../assets/john_117/scene.gltf", false);
+    // m_cube = std::make_shared<Mesh>("../assets/cube.fbx", false);
 
     // Camera
     const auto aspect_ratio = width / height;
@@ -168,7 +163,6 @@ void DeferredRenderer::update() {
 
     Renderer::begin_frame(frame_info);
 
-    /*
     m_command_buffer->record([&]() {
         // Geometry pass
         // =============
@@ -181,13 +175,13 @@ void DeferredRenderer::update() {
 
             auto constants = ModelInfoPushConstant{
                 .model = glm::mat4(1.0f),
-                .color = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f),
+                .color = glm::vec4(1.0f),
             };
 
             Renderer::bind_push_constant(m_command_buffer, m_geometry_pipeline, constants);
-
             Renderer::submit_static_mesh(m_command_buffer, m_model);
 
+            /*
             // Draw lights
             Renderer::bind_graphics_pipeline(m_command_buffer, m_flat_color_pipeline);
 
@@ -208,6 +202,7 @@ void DeferredRenderer::update() {
 
                 Renderer::submit_static_mesh(m_command_buffer, m_cube);
             }
+             */
 
             Renderer::end_render_pass(m_command_buffer, m_geometry_pass);
         }
@@ -223,23 +218,6 @@ void DeferredRenderer::update() {
 
             Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
         }
-    });
-     */
-
-    m_command_buffer->record([&]() {
-        Renderer::begin_render_pass(m_command_buffer, m_lighting_pass, true);
-
-        Renderer::bind_graphics_pipeline(m_command_buffer, m_material_test_pipeline);
-
-        const ModelInfoPushConstant constants = {
-            .model = glm::mat4{1.0f},
-            .color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-        };
-
-        Renderer::bind_push_constant(m_command_buffer, m_flat_color_pipeline, constants);
-        Renderer::submit_static_mesh(m_command_buffer, m_model, m_material);
-
-        Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
     });
 
     // Submit command buffer
