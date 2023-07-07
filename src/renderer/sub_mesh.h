@@ -13,6 +13,7 @@ namespace Phos {
 // Forward declarations
 class VertexBuffer;
 class IndexBuffer;
+class Material;
 
 class SubMesh {
   public:
@@ -23,11 +24,12 @@ class SubMesh {
         glm::vec3 tangent;
     };
 
-    explicit SubMesh(const aiMesh* mesh);
+    explicit SubMesh(const aiMesh* mesh, const aiScene* scene, const std::string& directory);
     ~SubMesh() = default;
 
     [[nodiscard]] const std::shared_ptr<VertexBuffer>& get_vertex_buffer() const { return m_vertex_buffer; }
     [[nodiscard]] const std::shared_ptr<IndexBuffer>& get_index_buffer() const { return m_index_buffer; }
+    [[nodiscard]] const std::shared_ptr<Material>& get_material() const { return m_material; }
 
   private:
     std::shared_ptr<VertexBuffer> m_vertex_buffer;
@@ -36,6 +38,9 @@ class SubMesh {
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
 
+    std::shared_ptr<Material> m_material;
+
+    void setup_material(const aiMesh* mesh, const aiScene* scene, const std::string& directory);
     void setup_mesh();
 };
 

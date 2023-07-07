@@ -142,6 +142,10 @@ void VulkanShader::retrieve_vertex_input_info(const SpvReflectShaderModule& modu
     m_binding_description->binding = 0;
     m_binding_description->inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
+    std::ranges::sort(non_builtin_variables, [](SpvReflectInterfaceVariable* a, SpvReflectInterfaceVariable* b) {
+        return a->location < b->location;
+    });
+
     uint32_t stride = 0;
     for (const auto* input_var : non_builtin_variables) {
         const auto format = static_cast<VkFormat>(input_var->format);

@@ -38,8 +38,7 @@ class INativeRenderer {
     virtual void wait_idle() = 0;
 
     virtual void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                    const std::shared_ptr<Mesh>& mesh,
-                                    const std::shared_ptr<Material>& material) = 0;
+                                    const std::shared_ptr<Mesh>& mesh) = 0;
 
     virtual void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
                                         const std::shared_ptr<GraphicsPipeline>& pipeline) = 0;
@@ -74,8 +73,7 @@ class Renderer {
     static void end_frame();
 
     static void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                   const std::shared_ptr<Mesh>& mesh,
-                                   const std::shared_ptr<Material>& material);
+                                   const std::shared_ptr<Mesh>& mesh);
 
     static void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
                                        const std::shared_ptr<GraphicsPipeline>& pipeline);

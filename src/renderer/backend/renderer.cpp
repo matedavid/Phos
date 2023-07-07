@@ -36,9 +36,8 @@ void Renderer::end_frame() {
 }
 
 void Renderer::submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                  const std::shared_ptr<Mesh>& mesh,
-                                  const std::shared_ptr<Material>& material) {
-    m_native_renderer->submit_static_mesh(command_buffer, mesh, material);
+                                  const std::shared_ptr<Mesh>& mesh) {
+    m_native_renderer->submit_static_mesh(command_buffer, mesh);
 }
 
 void Renderer::bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,

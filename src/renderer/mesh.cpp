@@ -25,7 +25,7 @@ Mesh::Mesh(const std::string& path, bool flip_uvs) {
 void Mesh::process_node_r(aiNode* node, const aiScene* scene) {
     for (uint32_t i = 0; i < node->mNumMeshes; ++i) {
         const aiMesh* m = scene->mMeshes[node->mMeshes[i]];
-        m_meshes.push_back(std::make_unique<SubMesh>(m));
+        m_meshes.push_back(std::make_unique<SubMesh>(m, scene, m_directory));
     }
 
     for (uint32_t i = 0; i < node->mNumChildren; ++i) {

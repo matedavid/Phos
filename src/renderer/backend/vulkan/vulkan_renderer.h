@@ -39,8 +39,7 @@ class VulkanRenderer : public INativeRenderer {
                             const void* data) override;
 
     void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
-                            const std::shared_ptr<Mesh>& mesh,
-                            const std::shared_ptr<Material>& material) override;
+                            const std::shared_ptr<Mesh>& mesh) override;
 
     void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                            const std::shared_ptr<RenderPass>& render_pass,
