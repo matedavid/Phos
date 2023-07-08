@@ -20,12 +20,21 @@ namespace Phos {
 class VulkanDevice;
 class VulkanDescriptorLayoutCache;
 
+struct VulkanUniformBufferMember {
+    std::string name;
+    uint32_t size;
+    uint32_t offset;
+};
+
 struct VulkanDescriptorInfo {
     std::string name;
     VkDescriptorType type;
     VkShaderStageFlags stage;
     uint32_t set;
     uint32_t binding;
+    uint32_t size;
+
+    std::vector<VulkanUniformBufferMember> members;
 };
 
 class VulkanShader : public Shader {

@@ -12,16 +12,14 @@ class Texture;
 
 class Material {
   public:
-    struct Definition {
-        std::shared_ptr<Shader> shader;
-        std::string name;
-
-        std::unordered_map<std::string, std::shared_ptr<Texture>> textures;
-    };
-
     virtual ~Material() = default;
 
-    static std::shared_ptr<Material> create(const Definition& definition);
+    static std::shared_ptr<Material> create(const std::shared_ptr<Shader>& shader, const std::string& name);
+
+    virtual void set(const std::string& name, glm::vec3 data) = 0;
+    virtual void set(const std::string& name, std::shared_ptr<Texture> texture) = 0;
+
+    virtual bool bake() = 0;
 };
 
 } // namespace Phos

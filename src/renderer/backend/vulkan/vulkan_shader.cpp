@@ -216,6 +216,18 @@ void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& v
                 descriptor_info.stage = stage;
                 descriptor_info.set = set_binding->set;
                 descriptor_info.binding = set_binding->binding;
+                descriptor_info.size = set_binding->block.size;
+
+                for (uint32_t j = 0; j < set_binding->block.member_count; ++j) {
+                    const auto mem = set_binding->block.members[j];
+
+                    const VulkanUniformBufferMember member = {
+                        .name = mem.name,
+                        .size = mem.size,
+                        .offset = mem.offset,
+                    };
+                    descriptor_info.members.push_back(member);
+                }
 
                 m_descriptor_info.insert({descriptor_info.name, descriptor_info});
             }

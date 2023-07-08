@@ -69,9 +69,8 @@ void SubMesh::setup_mesh() {
 void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std::string& directory) {
     const aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
 
-    auto definition = Material::Definition{};
-    definition.name = "PBR Deferred";
-    definition.shader = Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred");
+    m_material =
+        Material::create(Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "PBR Deferred");
 
     // Albedo texture
     aiString albedo_path;
@@ -79,7 +78,7 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
         const std::string path = directory + std::string(albedo_path.C_Str());
 
         const auto texture = Renderer::texture_manager()->acquire(path);
-        definition.textures.insert(std::make_pair("uAlbedoMap", texture));
+        m_material->set("uAlbedoMap", texture);
     }
 
     // Metallic texture
@@ -88,7 +87,7 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
         const std::string path = directory + std::string(metallic_path.C_Str());
 
         const auto texture = Renderer::texture_manager()->acquire(path);
-        definition.textures.insert(std::make_pair("uMetallicMap", texture));
+        m_material->set("uMetallicMap", texture);
     }
 
     // Roughness texture
@@ -97,7 +96,7 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
         const std::string path = directory + std::string(roughness_path.C_Str());
 
         const auto texture = Renderer::texture_manager()->acquire(path);
-        definition.textures.insert(std::make_pair("uRoughnessMap", texture));
+        m_material->set("uRoughnessMap", texture);
     }
 
     // AO texture
@@ -106,7 +105,7 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
         const std::string path = directory + std::string(ao_path.C_Str());
 
         const auto texture = Renderer::texture_manager()->acquire(path);
-        definition.textures.insert(std::make_pair("uAOMap", texture));
+        m_material->set("uAOMap", texture);
     }
 
     // Normal texture
@@ -115,10 +114,10 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
         const std::string path = directory + std::string(normal_path.C_Str());
 
         const auto texture = Renderer::texture_manager()->acquire(path);
-        definition.textures.insert(std::make_pair("uNormalMap", texture));
+        m_material->set("uNormalMap", texture);
     }
 
-    m_material = Material::create(definition);
+    PS_ASSERT(m_material->bake(), "Failed to build Material for sub_mesh")
 }
 
 } // namespace Phos

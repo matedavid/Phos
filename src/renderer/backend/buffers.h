@@ -51,6 +51,7 @@ class UniformBuffer {
     }
 
     virtual void set_data(const void* data) = 0;
+    virtual void set_data(const void* data, uint32_t size, uint32_t offset_bytes) = 0;
 
     [[nodiscard]] virtual uint32_t size() const = 0;
 };

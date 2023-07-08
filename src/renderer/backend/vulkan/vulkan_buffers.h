@@ -93,6 +93,7 @@ class VulkanUniformBuffer : public UniformBuffer {
     }
 
     void set_data(const void* data) override;
+    void set_data(const void* data, uint32_t size, uint32_t offset_bytes) override;
 
     [[nodiscard]] uint32_t size() const override { return m_size; }
     [[nodiscard]] VkBuffer handle() const { return m_buffer->handle(); }
