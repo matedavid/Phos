@@ -12,7 +12,8 @@ class Image {
     };
 
     enum class Format {
-        B8G8R8_SRGB,
+        B8G8R8A8_SRGB,
+        R8G8B8A8_SRGB,
         D32_SFLOAT
     };
 
@@ -20,7 +21,7 @@ class Image {
         uint32_t width{};
         uint32_t height{};
         Type type = Type::Image2D;
-        Format format = Format::B8G8R8_SRGB;
+        Format format = Format::B8G8R8A8_SRGB;
 
         bool transfer = false;   // Will the image be used for transfer operations
         bool attachment = false; // Will the image be used as an attachment of a Framebuffer

@@ -196,7 +196,7 @@ void VulkanSwapchain::retrieve_swapchain_images() {
             .height = m_swapchain_info.extent.height,
             .type = VulkanImage::Type::Image2D,
             // TODO: Hardcoded at the moment, but should be: m_swapchain_info.surface_format.format
-            .format = VulkanImage::Format::B8G8R8_SRGB,
+            .format = VulkanImage::Format::B8G8R8A8_SRGB,
         };
         m_images.push_back(std::make_shared<VulkanImage>(description, image));
     }

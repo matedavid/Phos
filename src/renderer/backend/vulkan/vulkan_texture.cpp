@@ -36,7 +36,7 @@ VulkanTexture::VulkanTexture(const std::string& path) {
         .width = static_cast<uint32_t>(width),
         .height = static_cast<uint32_t>(height),
         .type = VulkanImage::Type::Image2D,
-        .format = VulkanImage::Format::B8G8R8_SRGB,
+        .format = VulkanImage::Format::R8G8B8A8_SRGB,
         .transfer = true,
     };
     m_image = std::make_shared<VulkanImage>(description);
@@ -78,7 +78,7 @@ VulkanTexture::VulkanTexture(uint32_t width, uint32_t height) {
         .width = width,
         .height = height,
         .type = VulkanImage::Type::Image2D,
-        .format = VulkanImage::Format::B8G8R8_SRGB,
+        .format = VulkanImage::Format::B8G8R8A8_SRGB,
         .attachment = true,
     };
     m_image = std::make_shared<VulkanImage>(description);

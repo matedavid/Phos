@@ -134,8 +134,10 @@ VkImageType VulkanImage::get_image_type(Type type) {
 VkFormat VulkanImage::get_image_format(Format format) {
     switch (format) {
     default:
-    case Format::B8G8R8_SRGB:
+    case Format::B8G8R8A8_SRGB:
         return VK_FORMAT_B8G8R8A8_SRGB;
+    case Format::R8G8B8A8_SRGB:
+        return VK_FORMAT_R8G8B8A8_SRGB;
     case Format::D32_SFLOAT:
         return VK_FORMAT_D32_SFLOAT;
     }
