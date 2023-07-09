@@ -23,6 +23,7 @@ class VulkanMaterial : public Material {
     ~VulkanMaterial() override = default;
 
     void set(const std::string& name, glm::vec3 data) override;
+    void set(const std::string& name, glm::vec4 data) override;
     void set(const std::string& name, std::shared_ptr<Texture> texture) override;
 
     bool bake() override;
@@ -40,6 +41,8 @@ class VulkanMaterial : public Material {
 
     VkDescriptorSet m_set{VK_NULL_HANDLE};
     std::shared_ptr<VulkanDescriptorAllocator> m_allocator;
+
+    std::optional<VulkanUniformBufferMember> find_uniform_buffer_member(const std::string& name);
 };
 
 } // namespace Phos

@@ -17,6 +17,7 @@ class Material {
     static std::shared_ptr<Material> create(const std::shared_ptr<Shader>& shader, const std::string& name);
 
     virtual void set(const std::string& name, glm::vec3 data) = 0;
+    virtual void set(const std::string& name, glm::vec4 data) = 0;
     virtual void set(const std::string& name, std::shared_ptr<Texture> texture) = 0;
 
     virtual bool bake() = 0;

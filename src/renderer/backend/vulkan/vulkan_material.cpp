@@ -47,31 +47,43 @@ VulkanMaterial::VulkanMaterial(const std::shared_ptr<Shader>& shader, std::strin
 }
 
 void VulkanMaterial::set(const std::string& name, glm::vec3 data) {
-    const auto data_size = 16;
+    const auto data_size = sizeof(glm::vec3);
 
-    for (const auto& [_, info] : m_name_to_descriptor_info) {
-        if (info.type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-            continue;
-
-        auto member = std::ranges::find_if(info.members, [&](const VulkanUniformBufferMember& mem) {
-            const std::string complete_name = fmt::format("{}.{}", info.name, mem.name);
-            return complete_name == name;
-        });
-
-        if (member == info.members.end())
-            continue;
-
-        if (member->size != data_size) {
-            PS_ERROR("Size of data with name {} does not match with input data ({}, {})", name, member->size, data_size)
-            return;
-        }
-
-        const auto& d = m_uniform_buffers[info.name];
-        d->set_data(&data, member->size, member->offset);
+    const auto member = find_uniform_buffer_member(name);
+    if (!member.has_value()) {
+        PS_ERROR("Could not find descriptor with name: {}", name)
         return;
     }
 
-    PS_ERROR("Could not find descriptor with name: {}", name)
+    if (member->size != data_size) {
+        PS_ERROR("Size of data with name {} does not match with input data ({}, {})", name, member->size, data_size);
+        return;
+    }
+
+    const std::string ubo_name = name.substr(0, name.find('.'));
+
+    const auto& d = m_uniform_buffers[ubo_name];
+    d->set_data(&data, member->size, member->offset);
+}
+
+void VulkanMaterial::set(const std::string& name, glm::vec4 data) {
+    const auto data_size = sizeof(glm::vec4);
+
+    const auto member = find_uniform_buffer_member(name);
+    if (!member.has_value()) {
+        PS_ERROR("Could not find descriptor with name: {}", name)
+        return;
+    }
+
+    if (member->size != data_size) {
+        PS_ERROR("Size of data with name {} does not match with input data ({}, {})", name, member->size, data_size);
+        return;
+    }
+
+    const std::string ubo_name = name.substr(0, name.find('.'));
+
+    const auto& d = m_uniform_buffers[ubo_name];
+    d->set_data(&data, member->size, member->offset);
 }
 
 void VulkanMaterial::set(const std::string& name, std::shared_ptr<Texture> texture) {
@@ -138,6 +150,23 @@ void VulkanMaterial::bind(const std::shared_ptr<VulkanCommandBuffer>& command_bu
                             &m_set,
                             0,
                             nullptr);
+}
+
+std::optional<VulkanUniformBufferMember> VulkanMaterial::find_uniform_buffer_member(const std::string& name) {
+    for (const auto& [_, info] : m_name_to_descriptor_info) {
+        if (info.type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+            continue;
+
+        auto member = std::ranges::find_if(info.members, [&](const VulkanUniformBufferMember& mem) {
+            const std::string complete_name = fmt::format("{}.{}", info.name, mem.name);
+            return complete_name == name;
+        });
+
+        if (member != info.members.end())
+            return *member;
+    }
+
+    return {};
 }
 
 } // namespace Phos
