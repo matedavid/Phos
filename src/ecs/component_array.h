@@ -35,7 +35,7 @@ class ComponentArray : public IComponentArray {
 
     void remove_data(std::size_t entity_id) {
         if (!m_entity_to_idx.contains(entity_id)) {
-            PS_ERROR("Entity {} does not have component", entity_id)
+            PS_ERROR("Entity {} does not have component {}", entity_id, m_name)
             return;
         }
 
@@ -55,7 +55,7 @@ class ComponentArray : public IComponentArray {
 
     T& get_data(std::size_t entity_id) {
         auto it = m_entity_to_idx.find(entity_id);
-        PS_ASSERT(it != m_entity_to_idx.end(), "Entity {} does not have component", entity_id)
+        PS_ASSERT(it != m_entity_to_idx.end(), "Entity {} does not have the component {}", entity_id, m_name);
 
         return m_components[it->second];
     }
@@ -68,6 +68,8 @@ class ComponentArray : public IComponentArray {
   private:
     std::array<T, MAX_NUM_ENTITIES> m_components;
     uint32_t m_size = 0;
+
+    std::string m_name = typeid(T).name();
 
     std::unordered_map<std::size_t, uint32_t> m_entity_to_idx;
     std::unordered_map<uint32_t, std::size_t> m_idx_to_entity;

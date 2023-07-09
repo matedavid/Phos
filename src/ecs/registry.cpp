@@ -29,8 +29,7 @@ void Registry::destroy_entity(const std::shared_ptr<Entity>& entity) {
     const auto id = entity->id();
     m_available_ids.push(id);
 
-    // TODO: Remove components
-
+    m_component_manager->entity_destroyed(id);
     m_entities[id] = nullptr;
 }
 
