@@ -1,0 +1,36 @@
+#pragma once
+
+#include "core.h"
+
+#include "ecs/registry.h"
+
+namespace Phos {
+
+class Entity {
+  public:
+    Entity(std::size_t id, Registry* registry) : m_id(id), m_registry(registry) {}
+    ~Entity() = default;
+
+    template <typename T, class... Types>
+    void add_component(Types... args) {
+        m_registry->add_component<T>(m_id, args...);
+    }
+
+    template <typename T>
+    void remove_component() {
+        m_registry->remove_component<T>(m_id);
+    }
+
+    template <typename T>
+    T& get_component() {
+        return m_registry->get_component<T>(m_id);
+    }
+
+    [[nodiscard]] std::size_t id() const { return m_id; }
+
+  private:
+    std::size_t m_id;
+    Registry* m_registry;
+};
+
+} // namespace Phos
