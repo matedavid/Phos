@@ -8,7 +8,8 @@ class Image {
   public:
     enum class Type {
         Image2D,
-        Image3D
+        Image3D,
+        Cubemap
     };
 
     enum class Format {
@@ -22,6 +23,7 @@ class Image {
         uint32_t height{};
         Type type = Type::Image2D;
         Format format = Format::B8G8R8A8_SRGB;
+        uint32_t num_layers = 1;
 
         bool transfer = false;   // Will the image be used for transfer operations
         bool attachment = false; // Will the image be used as an attachment of a Framebuffer

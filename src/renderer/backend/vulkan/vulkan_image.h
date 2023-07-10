@@ -17,9 +17,9 @@ class VulkanImage : public Image {
 
     void transition_layout(VkImageLayout old_layout, VkImageLayout new_layout) const;
 
-    [[nodiscard]] uint32_t width() const override { return m_width; }
-    [[nodiscard]] uint32_t height() const override { return m_height; }
-    [[nodiscard]] Format format() const override { return m_format; }
+    [[nodiscard]] uint32_t width() const override { return m_description.width; }
+    [[nodiscard]] uint32_t height() const override { return m_description.height; }
+    [[nodiscard]] Format format() const override { return m_description.format; }
 
     [[nodiscard]] VkImage handle() const { return m_image; }
     [[nodiscard]] VkImageView view() const { return m_image_view; }
@@ -37,8 +37,7 @@ class VulkanImage : public Image {
 
     VkImageView m_image_view{VK_NULL_HANDLE};
 
-    uint32_t m_width, m_height;
-    Format m_format;
+    Description m_description;
 
     bool m_created_resources = true;
 
