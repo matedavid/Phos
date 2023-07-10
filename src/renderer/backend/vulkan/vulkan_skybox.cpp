@@ -29,6 +29,10 @@ VulkanSkybox::VulkanSkybox(const Sides& sides, const std::string& directory) {
     init(directory_sides);
 }
 
+VulkanSkybox::~VulkanSkybox() {
+    vkDestroySampler(VulkanContext::device->handle(), m_sampler, nullptr);
+}
+
 void VulkanSkybox::init(const Sides& sides) {
     int32_t width, height;
 

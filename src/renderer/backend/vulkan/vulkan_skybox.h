@@ -13,7 +13,7 @@ class VulkanSkybox : public Skybox {
   public:
     explicit VulkanSkybox(const Sides& sides);
     explicit VulkanSkybox(const Sides& sides, const std::string& directory);
-    ~VulkanSkybox() override = default;
+    ~VulkanSkybox() override;
 
     [[nodiscard]] VkImageView view() const;
     [[nodiscard]] VkSampler sampler() const;
