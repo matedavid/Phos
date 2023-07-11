@@ -58,7 +58,7 @@ ForwardRenderer::ForwardRenderer() {
     m_skybox = Cubemap::create(faces, "../assets/skybox/");
 
     m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-        .shader = Renderer::shader_manager()->get_builtin_shader("Cubemap"),
+        .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
         .target_framebuffer = Renderer::presentation_framebuffer(),
 
         .front_face = FrontFace::Clockwise,
@@ -72,7 +72,7 @@ ForwardRenderer::ForwardRenderer() {
     m_model = std::make_shared<Mesh>("../assets/john_117/scene.gltf", false);
     m_cube = std::make_shared<Mesh>("../assets/cube.fbx", false);
 
-    m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Cubemap"), "SkyboxMaterial");
+    m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
     m_cube_material->bake();
 
     for (auto& submesh : m_cube->get_sub_meshes())
