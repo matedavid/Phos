@@ -6,19 +6,19 @@ namespace Phos {
 
 class Skybox {
   public:
-    struct Sides {
+    struct Faces {
+        std::string right;
+        std::string left;
+        std::string top;
+        std::string bottom;
         std::string front;
         std::string back;
-        std::string up;
-        std::string down;
-        std::string left;
-        std::string right;
     };
 
     virtual ~Skybox() = default;
 
-    static std::shared_ptr<Skybox> create(const Sides& sides);
-    static std::shared_ptr<Skybox> create(const Sides& sides, const std::string& directory);
+    static std::shared_ptr<Skybox> create(const Faces& faces);
+    static std::shared_ptr<Skybox> create(const Faces& faces, const std::string& directory);
 };
 
 } // namespace Phos

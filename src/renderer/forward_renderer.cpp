@@ -47,7 +47,7 @@ ForwardRenderer::ForwardRenderer() {
         .target_framebuffer = Renderer::presentation_framebuffer(),
     });
 
-    const auto faces = Skybox::Sides{
+    const auto faces = Skybox::Faces{
         .front = "front.jpg",
         .back = "back.jpg",
         .up = "top.jpg",

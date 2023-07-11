@@ -7,19 +7,19 @@
 
 namespace Phos {
 
-std::shared_ptr<Skybox> Skybox::create(const Sides& sides) {
+std::shared_ptr<Skybox> Skybox::create(const Faces& faces) {
     switch (Renderer::graphics_api()) {
     case GraphicsAPI::Vulkan:
-        return std::dynamic_pointer_cast<Skybox>(std::make_shared<VulkanSkybox>(sides));
+        return std::dynamic_pointer_cast<Skybox>(std::make_shared<VulkanSkybox>(faces));
     default:
         PS_FAIL("Vulkan is the only supported api")
     }
 }
 
-std::shared_ptr<Skybox> Skybox::create(const Sides& sides, const std::string& directory) {
+std::shared_ptr<Skybox> Skybox::create(const Faces& faces, const std::string& directory) {
     switch (Renderer::graphics_api()) {
     case GraphicsAPI::Vulkan:
-        return std::dynamic_pointer_cast<Skybox>(std::make_shared<VulkanSkybox>(sides, directory));
+        return std::dynamic_pointer_cast<Skybox>(std::make_shared<VulkanSkybox>(faces, directory));
     default:
         PS_FAIL("Vulkan is the only supported api")
     }

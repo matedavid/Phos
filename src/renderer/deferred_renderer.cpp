@@ -143,13 +143,13 @@ DeferredRenderer::DeferredRenderer() {
 
     // Skybox pass
     {
-        const auto faces = Skybox::Sides{
+        const auto faces = Skybox::Faces{
+            .right = "right.jpg",
+            .left = "left.jpg",
+            .top = "top.jpg",
+            .bottom = "bottom.jpg",
             .front = "front.jpg",
             .back = "back.jpg",
-            .up = "top.jpg",
-            .down = "bottom.jpg",
-            .left = "left.jpg",
-            .right = "right.jpg",
         };
         m_skybox = Skybox::create(faces, "../assets/skybox/");
 

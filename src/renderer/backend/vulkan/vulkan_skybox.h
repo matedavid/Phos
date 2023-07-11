@@ -11,8 +11,8 @@ class VulkanImage;
 
 class VulkanSkybox : public Skybox {
   public:
-    explicit VulkanSkybox(const Sides& sides);
-    explicit VulkanSkybox(const Sides& sides, const std::string& directory);
+    explicit VulkanSkybox(const Faces& faces);
+    explicit VulkanSkybox(const Faces& faces, const std::string& directory);
     ~VulkanSkybox() override;
 
     [[nodiscard]] VkImageView view() const;
@@ -22,8 +22,8 @@ class VulkanSkybox : public Skybox {
     std::unique_ptr<VulkanImage> m_image;
     VkSampler m_sampler{VK_NULL_HANDLE};
 
-    void init(const Sides& sides);
-    void load_side(const std::string& path, std::vector<char>& data, int32_t& width, int32_t& height);
+    void init(const Faces& faces);
+    void load_face(const std::string& path, std::vector<char>& data, int32_t& width, int32_t& height);
 };
 
 } // namespace Phos
