@@ -15,7 +15,7 @@ VulkanTexture::VulkanTexture(const std::string& path) {
     stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 
     if (!pixels) {
-        PS_ERROR("Failed to load image: {}", path)
+        PS_ERROR("Failed to load image: {}", path);
         return;
     }
 
@@ -112,7 +112,7 @@ VulkanTexture::VulkanTexture(const std::vector<char>& data, uint32_t width, uint
     const auto image_size = width * height * 4;
 
     if (image_size != data.size())
-        PS_WARNING("Size of data is not the same as the provided image size (width * height * 4)")
+        PS_WARNING("Size of data is not the same as the provided image size (width * height * 4)");
 
     const auto staging_buffer = VulkanBuffer{
         image_size,

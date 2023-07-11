@@ -51,7 +51,7 @@ void VulkanMaterial::set(const std::string& name, glm::vec3 data) {
 
     const auto member = find_uniform_buffer_member(name);
     if (!member.has_value()) {
-        PS_ERROR("Could not find descriptor with name: {}", name)
+        PS_ERROR("Could not find descriptor with name: {}", name);
         return;
     }
 
@@ -71,7 +71,7 @@ void VulkanMaterial::set(const std::string& name, glm::vec4 data) {
 
     const auto member = find_uniform_buffer_member(name);
     if (!member.has_value()) {
-        PS_ERROR("Could not find descriptor with name: {}", name)
+        PS_ERROR("Could not find descriptor with name: {}", name);
         return;
     }
 
@@ -88,7 +88,7 @@ void VulkanMaterial::set(const std::string& name, glm::vec4 data) {
 
 void VulkanMaterial::set(const std::string& name, std::shared_ptr<Texture> texture) {
     if (!m_textures.contains(name)) {
-        PS_ERROR("Material {} does not contain texture with name: {}", m_name, name)
+        PS_ERROR("Material {} does not contain texture with name: {}", m_name, name);
         return;
     }
 
