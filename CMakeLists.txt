@@ -34,6 +34,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/light.cpp
 
         src/renderer/deferred_renderer.cpp
+        # src/renderer/forward_renderer.cpp
 
         # Renderer Backend
         src/renderer/backend/renderer.cpp

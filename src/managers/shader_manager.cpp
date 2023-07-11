@@ -16,6 +16,11 @@ ShaderManager::ShaderManager() {
     m_builtin_shaders.insert(std::make_pair("PBR.Geometry.Deferred", pbr_geometry_deferred));
     m_builtin_shaders.insert(std::make_pair("PBR.Lighting.Deferred", pbr_lighting_deferred));
 
+    // PBR Forward Shaders
+    const auto pbr_forward = Shader::create(SHADER_PATH("PBR.Forward.Vert.spv"), SHADER_PATH("PBR.Forward.Frag.spv"));
+
+    m_builtin_shaders.insert(std::make_pair("PBR.Forward", pbr_forward));
+
     // Base Shaders
     const auto skybox = Shader::create(SHADER_PATH("Skybox.Vert.spv"), SHADER_PATH("Skybox.Frag.spv"));
     const auto blending = Shader::create(SHADER_PATH("Blending.Vert.spv"), SHADER_PATH("Blending.Frag.spv"));
