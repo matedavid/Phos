@@ -7,7 +7,7 @@
 namespace Phos {
 
 TextureManager::TextureManager() {
-    // TODO: Create white texture
+    m_white_texture = Texture::white(1, 1);
 }
 
 std::shared_ptr<Texture> TextureManager::acquire(const std::string& path) {

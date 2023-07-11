@@ -6,6 +6,7 @@
 namespace Phos {
 
 #define PS_INFO(...) spdlog::info(__VA_ARGS__);
+#define PS_WARNING(...) spdlog::warn(__VA_ARGS__);
 #define PS_ERROR(...) spdlog::error(__VA_ARGS__);
 
 #define PS_ASSERT(condition, ...) \
