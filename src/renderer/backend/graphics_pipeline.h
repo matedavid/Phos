@@ -10,7 +10,7 @@ class Framebuffer;
 class CommandBuffer;
 class UniformBuffer;
 class Texture;
-class Skybox;
+class Cubemap;
 
 enum class FrontFace {
     Clockwise,
@@ -44,7 +44,7 @@ class GraphicsPipeline {
 
     virtual void add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) = 0;
     virtual void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) = 0;
-    virtual void add_input(std::string_view name, const std::shared_ptr<Skybox>& skybox) = 0;
+    virtual void add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) = 0;
 };
 
 } // namespace Phos

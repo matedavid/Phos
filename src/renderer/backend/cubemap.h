@@ -4,7 +4,7 @@
 
 namespace Phos {
 
-class Skybox {
+class Cubemap {
   public:
     struct Faces {
         std::string right;
@@ -15,10 +15,10 @@ class Skybox {
         std::string back;
     };
 
-    virtual ~Skybox() = default;
+    virtual ~Cubemap() = default;
 
-    static std::shared_ptr<Skybox> create(const Faces& faces);
-    static std::shared_ptr<Skybox> create(const Faces& faces, const std::string& directory);
+    static std::shared_ptr<Cubemap> create(const Faces& faces);
+    static std::shared_ptr<Cubemap> create(const Faces& faces, const std::string& directory);
 };
 
 } // namespace Phos

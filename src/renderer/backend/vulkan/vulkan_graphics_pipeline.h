@@ -26,7 +26,7 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
 
     void add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) override;
     void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) override;
-    void add_input(std::string_view name, const std::shared_ptr<Skybox>& skybox) override;
+    void add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) override;
 
     [[nodiscard]] VkPipeline handle() const { return m_pipeline; }
     [[nodiscard]] VkPipelineLayout layout() const;

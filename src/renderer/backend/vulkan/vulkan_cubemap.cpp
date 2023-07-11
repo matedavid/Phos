@@ -1,4 +1,4 @@
-#include "vulkan_skybox.h"
+#include "vulkan_cubemap.h"
 
 #include <filesystem>
 #include <stb_image.h>
@@ -10,14 +10,14 @@
 
 namespace Phos {
 
-VulkanSkybox::VulkanSkybox(const Faces& sides) {
+VulkanCubemap::VulkanCubemap(const Faces& sides) {
     init(sides);
 }
 
-VulkanSkybox::VulkanSkybox(const Faces& faces, const std::string& directory) {
+VulkanCubemap::VulkanCubemap(const Faces& faces, const std::string& directory) {
     const auto dir = std::filesystem::path(directory);
 
-    const auto directory_sides = Skybox::Faces{
+    const auto directory_sides = Cubemap::Faces{
         .right = dir / faces.right,
         .left = dir / faces.left,
         .top = dir / faces.top,
@@ -29,11 +29,11 @@ VulkanSkybox::VulkanSkybox(const Faces& faces, const std::string& directory) {
     init(directory_sides);
 }
 
-VulkanSkybox::~VulkanSkybox() {
+VulkanCubemap::~VulkanCubemap() {
     vkDestroySampler(VulkanContext::device->handle(), m_sampler, nullptr);
 }
 
-void VulkanSkybox::init(const Faces& faces) {
+void VulkanCubemap::init(const Faces& faces) {
     int32_t width, height;
 
     // Order from:
@@ -105,7 +105,7 @@ void VulkanSkybox::init(const Faces& faces) {
     VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler))
 }
 
-void VulkanSkybox::load_face(const std::string& path, std::vector<char>& data, int32_t& width, int32_t& height) {
+void VulkanCubemap::load_face(const std::string& path, std::vector<char>& data, int32_t& width, int32_t& height) {
     int32_t channels;
     stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 
@@ -117,11 +117,11 @@ void VulkanSkybox::load_face(const std::string& path, std::vector<char>& data, i
     stbi_image_free(pixels);
 }
 
-VkImageView VulkanSkybox::view() const {
+VkImageView VulkanCubemap::view() const {
     return m_image->view();
 }
 
-VkSampler VulkanSkybox::sampler() const {
+VkSampler VulkanCubemap::sampler() const {
     return m_sampler;
 }
 

@@ -2,7 +2,6 @@
 
 #include <ranges>
 
-#include "renderer/backend/vulkan/vulkan_device.h"
 #include "renderer/backend/vulkan/vulkan_shader.h"
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_context.h"
@@ -11,7 +10,7 @@
 #include "renderer/backend/vulkan/vulkan_image.h"
 #include "renderer/backend/vulkan/vulkan_texture.h"
 #include "renderer/backend/vulkan/vulkan_descriptors.h"
-#include "renderer/backend/vulkan/vulkan_skybox.h"
+#include "renderer/backend/vulkan/vulkan_cubemap.h"
 
 namespace Phos {
 
@@ -221,8 +220,8 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
     m_image_descriptor_info.emplace_back(info.value(), descriptor);
 }
 
-void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_ptr<Skybox>& skybox) {
-    const auto native_skybox = std::dynamic_pointer_cast<VulkanSkybox>(skybox);
+void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) {
+    const auto native_cubemap = std::dynamic_pointer_cast<VulkanCubemap>(cubemap);
 
     const auto info = m_shader->descriptor_info(name);
     PS_ASSERT(info.has_value() && info->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -230,8 +229,8 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
               name)
 
     VkDescriptorImageInfo descriptor{};
-    descriptor.imageView = native_skybox->view();
-    descriptor.sampler = native_skybox->sampler();
+    descriptor.imageView = native_cubemap->view();
+    descriptor.sampler = native_cubemap->sampler();
     descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     m_image_descriptor_info.emplace_back(info.value(), descriptor);

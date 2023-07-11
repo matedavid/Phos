@@ -24,7 +24,7 @@
 #include "renderer/backend/render_pass.h"
 #include "renderer/backend/buffers.h"
 #include "renderer/backend/material.h"
-#include "renderer/backend/skybox.h"
+#include "renderer/backend/cubemap.h"
 
 namespace Phos {
 
@@ -47,36 +47,36 @@ ForwardRenderer::ForwardRenderer() {
         .target_framebuffer = Renderer::presentation_framebuffer(),
     });
 
-    const auto faces = Skybox::Faces{
+    const auto faces = Cubemap::Faces{
+        .right = "right.jpg",
+        .left = "left.jpg",
+        .top = "top.jpg",
+        .bottom = "bottom.jpg",
         .front = "front.jpg",
         .back = "back.jpg",
-        .up = "top.jpg",
-        .down = "bottom.jpg",
-        .left = "left.jpg",
-        .right = "right.jpg",
     };
-    m_skybox = Skybox::create(faces, "../assets/skybox/");
+    m_skybox = Cubemap::create(faces, "../assets/skybox/");
 
     m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-        .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
+        .shader = Renderer::shader_manager()->get_builtin_shader("Cubemap"),
         .target_framebuffer = Renderer::presentation_framebuffer(),
 
-        .counter_clockwise = false,
+        .front_face = FrontFace::Clockwise,
         .depth_compare_op = DepthCompareOp::LessEq,
     });
 
     m_skybox_pipeline->add_input("uSkybox", m_skybox);
-    PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Skybox Pipeline")
+    PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
 
     // Models
     m_model = std::make_shared<Mesh>("../assets/john_117/scene.gltf", false);
     m_cube = std::make_shared<Mesh>("../assets/cube.fbx", false);
 
-    m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
+    m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Cubemap"), "SkyboxMaterial");
     m_cube_material->bake();
 
     for (auto& submesh : m_cube->get_sub_meshes())
-        submesh->m_material = m_cube_material;
+        submesh->set_material(m_cube_material);
 
     // Camera
     const auto aspect_ratio = width / height;
@@ -118,7 +118,7 @@ void ForwardRenderer::update() {
         Renderer::bind_push_constant(m_command_buffer, m_pbr_pipeline, constants);
         Renderer::submit_static_mesh(m_command_buffer, m_model);
 
-        // Skybox
+        // Cubemap
         Renderer::bind_graphics_pipeline(m_command_buffer, m_skybox_pipeline);
 
         glm::mat4 model{1.0f};

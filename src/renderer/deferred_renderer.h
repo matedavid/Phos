@@ -18,7 +18,7 @@ class IndexBuffer;
 class UniformBuffer;
 class Mesh;
 class Material;
-class Skybox;
+class Cubemap;
 class Camera;
 class Event;
 
@@ -64,8 +64,8 @@ class DeferredRenderer {
     std::shared_ptr<GraphicsPipeline> m_lighting_pipeline;
     std::shared_ptr<RenderPass> m_lighting_pass;
 
-    // Skybox pipeline
-    std::shared_ptr<Skybox> m_skybox;
+    // Cubemap pipeline
+    std::shared_ptr<Cubemap> m_skybox;
     std::shared_ptr<GraphicsPipeline> m_skybox_pipeline;
 
     // Blending pass

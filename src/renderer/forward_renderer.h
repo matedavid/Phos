@@ -16,7 +16,7 @@ class VertexBuffer;
 class IndexBuffer;
 class UniformBuffer;
 class Mesh;
-class Skybox;
+class Cubemap;
 class Material;
 class Camera;
 class Event;
@@ -47,7 +47,7 @@ class ForwardRenderer {
     std::shared_ptr<GraphicsPipeline> m_pbr_pipeline;
 
     std::shared_ptr<GraphicsPipeline> m_skybox_pipeline;
-    std::shared_ptr<Skybox> m_skybox;
+    std::shared_ptr<Cubemap> m_skybox;
 
     // Models
     std::shared_ptr<Mesh> m_model;
