@@ -84,7 +84,7 @@ void VulkanBuffer::copy_to_image(const VulkanImage& image) const {
             region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             region.imageSubresource.mipLevel = 0;
             region.imageSubresource.baseArrayLayer = 0;
-            region.imageSubresource.layerCount = 1;
+            region.imageSubresource.layerCount = image.num_layers();
 
             region.imageOffset = {0, 0, 0};
             region.imageExtent = {image.width(), image.height(), 1};

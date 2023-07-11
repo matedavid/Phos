@@ -20,6 +20,7 @@ class VulkanImage : public Image {
     [[nodiscard]] uint32_t width() const override { return m_description.width; }
     [[nodiscard]] uint32_t height() const override { return m_description.height; }
     [[nodiscard]] Format format() const override { return m_description.format; }
+    [[nodiscard]] uint32_t num_layers() const { return m_description.num_layers; }
 
     [[nodiscard]] VkImage handle() const { return m_image; }
     [[nodiscard]] VkImageView view() const { return m_image_view; }
