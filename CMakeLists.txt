@@ -37,6 +37,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/light.cpp
 
         src/renderer/deferred_renderer.cpp
+        # src/renderer/forward_renderer.cpp
 
         # Renderer Backend
         src/renderer/backend/renderer.cpp
@@ -49,6 +50,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/shader.cpp
         src/renderer/backend/graphics_pipeline.cpp
         src/renderer/backend/material.cpp
+        src/renderer/backend/cubemap.cpp
 
         # Vulkan Backend
         src/renderer/backend/vulkan/vulkan_renderer.cpp
@@ -72,6 +74,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_utils.cpp
         src/renderer/backend/vulkan/vulkan_renderer_api.cpp
         src/renderer/backend/vulkan/vulkan_material.cpp
+        src/renderer/backend/vulkan/vulkan_cubemap.cpp
 
         src/main.cpp
         )

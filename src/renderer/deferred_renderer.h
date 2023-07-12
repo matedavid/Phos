@@ -18,6 +18,7 @@ class IndexBuffer;
 class UniformBuffer;
 class Mesh;
 class Material;
+class Cubemap;
 class Camera;
 class Event;
 
@@ -57,11 +58,19 @@ class DeferredRenderer {
     std::shared_ptr<VertexBuffer> m_quad_vertex;
     std::shared_ptr<IndexBuffer> m_quad_index;
 
+    std::shared_ptr<Texture> m_lighting_texture;
+    std::shared_ptr<Framebuffer> m_lighting_framebuffer;
+
     std::shared_ptr<GraphicsPipeline> m_lighting_pipeline;
     std::shared_ptr<RenderPass> m_lighting_pass;
 
-    // Flat color pipeline
-    std::shared_ptr<GraphicsPipeline> m_flat_color_pipeline;
+    // Cubemap pipeline
+    std::shared_ptr<Cubemap> m_skybox;
+    std::shared_ptr<GraphicsPipeline> m_skybox_pipeline;
+
+    // Blending pass
+    std::shared_ptr<RenderPass> m_blending_pass;
+    std::shared_ptr<GraphicsPipeline> m_blending_pipeline;
 
     // Models
     std::shared_ptr<Mesh> m_model;

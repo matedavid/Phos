@@ -15,17 +15,24 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description) : m_descrip
     std::vector<VkAttachmentDescription> attachments;
     std::vector<VkAttachmentReference> attachment_references;
     for (const auto& attachment : description.attachments) {
+        const auto& image = attachment.image;
+
         // Description
         VkAttachmentDescription attachment_description{};
-        attachment_description.format = VulkanImage::get_image_format(attachment.image->format());
+        attachment_description.format = VulkanImage::get_image_format(image->format());
         attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
         attachment_description.loadOp = get_load_op(attachment.load_operation);
         attachment_description.storeOp = get_store_op(attachment.store_operation);
         attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachment_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-        if (VulkanImage::is_depth_format(attachment.image->format())) {
+        // initialLayout
+        attachment_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        if (VulkanImage::is_depth_format(image->format()) && attachment.load_operation == LoadOperation::Load)
+            attachment_description.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        // finalLayout
+        if (VulkanImage::is_depth_format(image->format())) {
             attachment_description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         } else if (attachment.is_presentation) {
             attachment_description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -39,7 +46,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description) : m_descrip
         VkAttachmentReference attachment_reference{};
         attachment_reference.attachment = (uint32_t)attachments.size() - 1;
 
-        if (VulkanImage::is_depth_format(attachment.image->format())) {
+        if (VulkanImage::is_depth_format(image->format())) {
             attachment_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         } else {
             attachment_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;

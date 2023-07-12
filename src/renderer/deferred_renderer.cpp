@@ -24,6 +24,7 @@
 #include "renderer/backend/render_pass.h"
 #include "renderer/backend/buffers.h"
 #include "renderer/backend/material.h"
+#include "renderer/backend/cubemap.h"
 
 namespace Phos {
 
@@ -35,22 +36,22 @@ DeferredRenderer::DeferredRenderer() {
     const auto width = Renderer::config().window->get_width();
     const auto height = Renderer::config().window->get_height();
 
+    const Image::Description depth_image_description = {
+        .width = width,
+        .height = height,
+        .type = Image::Type::Image2D,
+        .format = Image::Format::D32_SFLOAT,
+        .transfer = false,
+        .attachment = true,
+    };
+    const auto depth_image = Image::create(depth_image_description);
+
     // Geometry pass
     {
         m_position_texture = Texture::create(width, height);
         m_normal_texture = Texture::create(width, height);
         m_albedo_texture = Texture::create(width, height);
         m_metallic_roughness_ao_texture = Texture::create(width, height);
-
-        const Image::Description depth_image_description = {
-            .width = width,
-            .height = height,
-            .type = Image::Type::Image2D,
-            .format = Image::Format::D32_SFLOAT,
-            .transfer = false,
-            .attachment = true,
-        };
-        const auto depth_image = Image::create(depth_image_description);
 
         const auto position_attachment = Framebuffer::Attachment{
             .image = m_position_texture->get_image(),
@@ -79,7 +80,7 @@ DeferredRenderer::DeferredRenderer() {
         const auto depth_attachment = Framebuffer::Attachment{
             .image = depth_image,
             .load_operation = LoadOperation::Clear,
-            .store_operation = StoreOperation::DontCare,
+            .store_operation = StoreOperation::Store,
             .clear_value = glm::vec3(1.0f),
         };
 
@@ -104,9 +105,28 @@ DeferredRenderer::DeferredRenderer() {
 
     // Lighting pass
     {
+        m_lighting_texture = Texture::create(width, height);
+
+        const auto lighting_attachment = Framebuffer::Attachment{
+            .image = m_lighting_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(0.0f),
+        };
+
+        const auto depth_attachment = Framebuffer::Attachment{
+            .image = depth_image,
+            .load_operation = LoadOperation::Load,
+            .store_operation = StoreOperation::DontCare,
+            .clear_value = glm::vec3(1.0f),
+        };
+        m_lighting_framebuffer = Framebuffer::create({.attachments = {lighting_attachment, depth_attachment}});
+
         m_lighting_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
             .shader = Renderer::shader_manager()->get_builtin_shader("PBR.Lighting.Deferred"),
-            .target_framebuffer = Renderer::presentation_framebuffer(),
+            .target_framebuffer = m_lighting_framebuffer,
+
+            .depth_write = false,
         });
 
         m_lighting_pipeline->add_input("uPositionMap", m_position_texture);
@@ -117,6 +137,46 @@ DeferredRenderer::DeferredRenderer() {
 
         m_lighting_pass = RenderPass::create(RenderPass::Description{
             .debug_name = "Deferred-Lighting",
+            .target_framebuffer = m_lighting_framebuffer,
+        });
+    }
+
+    // Cubemap pass
+    {
+        const auto faces = Cubemap::Faces{
+            .right = "right.jpg",
+            .left = "left.jpg",
+            .top = "top.jpg",
+            .bottom = "bottom.jpg",
+            .front = "front.jpg",
+            .back = "back.jpg",
+        };
+        m_skybox = Cubemap::create(faces, "../assets/skybox/");
+
+        m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
+            .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
+            .target_framebuffer = Renderer::presentation_framebuffer(),
+
+            .front_face = FrontFace::Clockwise,
+            .depth_compare_op = DepthCompareOp::LessEq,
+        });
+
+        m_skybox_pipeline->add_input("uSkybox", m_skybox);
+        PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
+    }
+
+    // Blending pass
+    {
+        m_blending_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
+            .shader = Renderer::shader_manager()->get_builtin_shader("Blending"),
+            .target_framebuffer = Renderer::presentation_framebuffer(),
+        });
+
+        m_blending_pipeline->add_input("uBlendingTexture", m_lighting_texture);
+        PS_ASSERT(m_blending_pipeline->bake(), "Failed to bake Blending Pipeline")
+
+        m_blending_pass = RenderPass::create(RenderPass::Description{
+            .debug_name = "Blending",
             .presentation_target = true,
         });
     }
@@ -134,7 +194,13 @@ DeferredRenderer::DeferredRenderer() {
 
     // Static Meshes
     m_model = std::make_shared<Mesh>("../assets/john_117/scene.gltf", false);
-    // m_cube = std::make_shared<Mesh>("../assets/cube.fbx", false);
+    m_cube = std::make_shared<Mesh>("../assets/cube.fbx", false);
+
+    const auto cube_mat = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
+    cube_mat->bake();
+
+    for (auto& submesh : m_cube->get_sub_meshes())
+        submesh->set_material(cube_mat);
 
     // Camera
     const auto aspect_ratio = width / height;
@@ -210,13 +276,38 @@ void DeferredRenderer::update() {
         // Lighting pass
         // ==========================
         {
-            Renderer::begin_render_pass(m_command_buffer, m_lighting_pass, true);
+            Renderer::begin_render_pass(m_command_buffer, m_lighting_pass);
 
             // Draw quad
             Renderer::bind_graphics_pipeline(m_command_buffer, m_lighting_pipeline);
             Renderer::draw_screen_quad(m_command_buffer);
 
+            // Draw skybox
+            Renderer::bind_graphics_pipeline(m_command_buffer, m_skybox_pipeline);
+
+            glm::mat4 model{1.0f};
+            model = glm::scale(model, glm::vec3(1.0f));
+
+            const auto constants = ModelInfoPushConstant{
+                .model = model,
+                .color = glm::vec4{1.0f},
+            };
+            Renderer::bind_push_constant(m_command_buffer, m_skybox_pipeline, constants);
+            Renderer::submit_static_mesh(m_command_buffer, m_cube);
+
             Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
+        }
+
+        // Blending pass
+        // ==========================
+        {
+            Renderer::begin_render_pass(m_command_buffer, m_blending_pass, true);
+
+            // Draw quad
+            Renderer::bind_graphics_pipeline(m_command_buffer, m_blending_pipeline);
+            Renderer::draw_screen_quad(m_command_buffer);
+
+            Renderer::end_render_pass(m_command_buffer, m_blending_pass);
         }
     });
 

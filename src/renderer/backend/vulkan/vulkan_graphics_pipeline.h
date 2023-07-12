@@ -26,6 +26,7 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
 
     void add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) override;
     void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) override;
+    void add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) override;
 
     [[nodiscard]] VkPipeline handle() const { return m_pipeline; }
     [[nodiscard]] VkPipelineLayout layout() const;
@@ -42,6 +43,10 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
     std::vector<std::pair<VulkanDescriptorInfo, VkDescriptorImageInfo>> m_image_descriptor_info;
 
     VkDescriptorSet m_set{VK_NULL_HANDLE};
+
+
+    [[nodiscard]] static VkCompareOp get_depth_compare_op(DepthCompareOp op);
+    [[nodiscard]] static VkFrontFace get_rasterization_front_face(FrontFace face);
 };
 
 } // namespace Phos

@@ -6,8 +6,7 @@
 
 namespace Phos {
 
-VulkanImage::VulkanImage(const Description& description)
-      : m_width(description.width), m_height(description.height), m_format(description.format) {
+VulkanImage::VulkanImage(const Description& description) : m_description(description) {
     // Create image
     VkImageCreateInfo image_create_info{};
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -19,12 +18,13 @@ VulkanImage::VulkanImage(const Description& description)
     image_create_info.extent.depth = 1;
 
     image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
+    image_create_info.arrayLayers = description.num_layers;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
+    // Usage
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT; // TODO: Maybe bad as default?
 
     if (description.transfer)
@@ -34,6 +34,10 @@ VulkanImage::VulkanImage(const Description& description)
         image_create_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     else if (description.attachment)
         image_create_info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    // Flags
+    if (description.type == Image::Type::Cubemap)
+        image_create_info.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
     VK_CHECK(vkCreateImage(VulkanContext::device->handle(), &image_create_info, nullptr, &m_image))
 
@@ -59,8 +63,7 @@ VulkanImage::VulkanImage(const Description& description)
     create_image_view(description);
 }
 
-VulkanImage::VulkanImage(const Phos::VulkanImage::Description& description, VkImage image)
-      : m_image(image), m_width(description.width), m_height(description.height), m_format(description.format) {
+VulkanImage::VulkanImage(const Description& description, VkImage image) : m_image(image), m_description(description) {
     create_image_view(description);
     m_created_resources = false;
 }
@@ -87,7 +90,7 @@ void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_
             barrier.subresourceRange.baseMipLevel = 0;
             barrier.subresourceRange.levelCount = 1;
             barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount = 1;
+            barrier.subresourceRange.layerCount = m_description.num_layers;
 
             VkPipelineStageFlags source_stage;
             VkPipelineStageFlags destination_stage;
@@ -121,16 +124,6 @@ void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_
         });
 }
 
-VkImageType VulkanImage::get_image_type(Type type) {
-    switch (type) {
-    default:
-    case Type::Image2D:
-        return VK_IMAGE_TYPE_2D;
-    case Type::Image3D:
-        return VK_IMAGE_TYPE_3D;
-    }
-}
-
 VkFormat VulkanImage::get_image_format(Format format) {
     switch (format) {
     default:
@@ -143,6 +136,18 @@ VkFormat VulkanImage::get_image_format(Format format) {
     }
 }
 
+VkImageType VulkanImage::get_image_type(Type type) {
+    switch (type) {
+    default:
+    case Type::Image2D:
+        return VK_IMAGE_TYPE_2D;
+    case Type::Image3D:
+        return VK_IMAGE_TYPE_3D;
+    case Type::Cubemap:
+        return VK_IMAGE_TYPE_2D;
+    }
+}
+
 VkImageViewType VulkanImage::get_image_view_type(Type type) {
     switch (type) {
     default:
@@ -150,6 +155,8 @@ VkImageViewType VulkanImage::get_image_view_type(Type type) {
         return VK_IMAGE_VIEW_TYPE_2D;
     case Type::Image3D:
         return VK_IMAGE_VIEW_TYPE_3D;
+    case Type::Cubemap:
+        return VK_IMAGE_VIEW_TYPE_CUBE;
     }
 }
 
@@ -173,7 +180,7 @@ void VulkanImage::create_image_view(const Description& description) {
     view_create_info.subresourceRange.baseMipLevel = 0;
     view_create_info.subresourceRange.levelCount = 1;
     view_create_info.subresourceRange.baseArrayLayer = 0;
-    view_create_info.subresourceRange.layerCount = 1;
+    view_create_info.subresourceRange.layerCount = m_description.num_layers;
 
     VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &view_create_info, nullptr, &m_image_view))
 }
