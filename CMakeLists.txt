@@ -22,6 +22,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 
         # ECS
         src/ecs/registry.cpp
+        src/ecs/scene.cpp
 
         # Input
         src/input/input.cpp

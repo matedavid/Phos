@@ -8,8 +8,12 @@ namespace Phos {
 
 class Entity {
   public:
+    Entity() = default;
     Entity(std::size_t id, Registry* registry) : m_id(id), m_registry(registry) {}
     ~Entity() = default;
+
+    Entity(const Entity& entity) = default;
+    Entity& operator=(const Entity& entity) = default;
 
     template <typename T, class... Types>
     void add_component(Types... args) {

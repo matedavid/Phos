@@ -15,7 +15,7 @@ class ComponentManager {
         const std::string type_name = typeid(T).name();
 
         if (m_component_arrays.contains(type_name)) {
-            PS_ERROR("Component {} is already registered", type_name)
+            PS_ERROR("Component {} is already registered", type_name);
             return;
         }
 
@@ -29,7 +29,7 @@ class ComponentManager {
     }
 
     template <typename T>
-    T& get_component(std::size_t entity_id) {
+    [[nodiscard]] T& get_component(std::size_t entity_id) {
         return get_component_array<T>()->get_data(entity_id);
     }
 
@@ -41,6 +41,11 @@ class ComponentManager {
     template <typename T>
     void remove_component(std::size_t entity_id) {
         get_component_array<T>()->remove_data(entity_id);
+    }
+
+    template <typename T>
+    [[nodiscard]] std::vector<std::size_t> get_entities_with_component() {
+        return get_component_array<T>()->get_entities();
     }
 
     void entity_destroyed(std::size_t entity_id) {

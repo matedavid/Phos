@@ -10,22 +10,13 @@
 
 namespace Phos {
 
-// Forward declarations
-class Entity;
-
 class Registry {
   public:
     Registry();
     ~Registry() = default;
 
-    std::shared_ptr<Entity> create_entity();
-    void destroy_entity(const std::shared_ptr<Entity>& entity);
-
-  private:
-    std::queue<std::size_t> m_available_ids;
-    std::array<std::shared_ptr<Entity>, MAX_NUM_ENTITIES> m_entities;
-
-    std::unique_ptr<ComponentManager> m_component_manager;
+    std::size_t create();
+    void destroy(std::size_t entity);
 
     template <typename T, class... Types>
     void add_component(std::size_t entity_id, Types... args) {
@@ -46,7 +37,14 @@ class Registry {
         return m_component_manager->get_component<T>(entity_id);
     }
 
-    friend class Entity;
+    template <typename T>
+    [[nodiscard]] std::vector<std::size_t> view() {
+        return m_component_manager->get_entities_with_component<T>();
+    }
+
+  private:
+    std::queue<std::size_t> m_available_ids;
+    std::unique_ptr<ComponentManager> m_component_manager;
 };
 
 } // namespace Phos

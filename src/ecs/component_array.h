@@ -4,9 +4,6 @@
 
 namespace Phos {
 
-// Forward declarations
-class Entity;
-
 class IComponentArray {
   public:
     virtual ~IComponentArray() = default;
@@ -21,7 +18,7 @@ class ComponentArray : public IComponentArray {
 
     void insert_data(std::size_t entity_id, T component) {
         if (m_entity_to_idx.contains(entity_id)) {
-            PS_ERROR("Component added to entity {} more than once", entity_id)
+            PS_ERROR("Component added to entity {} more than once", entity_id);
             return;
         }
 
@@ -35,7 +32,7 @@ class ComponentArray : public IComponentArray {
 
     void remove_data(std::size_t entity_id) {
         if (!m_entity_to_idx.contains(entity_id)) {
-            PS_ERROR("Entity {} does not have component {}", entity_id, m_name)
+            PS_ERROR("Entity {} does not have component {}", entity_id, m_name);
             return;
         }
 
@@ -58,6 +55,16 @@ class ComponentArray : public IComponentArray {
         PS_ASSERT(it != m_entity_to_idx.end(), "Entity {} does not have the component {}", entity_id, m_name);
 
         return m_components[it->second];
+    }
+
+    [[nodiscard]] std::vector<std::size_t> get_entities() {
+        std::vector<std::size_t> entities;
+        entities.reserve(m_entity_to_idx.size());
+
+        for (const auto& [entity, _] : m_entity_to_idx)
+            entities.push_back(entity);
+
+        return entities;
     }
 
     void entity_destroyed(std::size_t entity_id) override {
