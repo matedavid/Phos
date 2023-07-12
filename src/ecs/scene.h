@@ -4,6 +4,7 @@
 
 #include "ecs/registry.h"
 #include "ecs/entity.h"
+#include "ecs/components.h"
 
 namespace Phos {
 

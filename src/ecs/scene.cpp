@@ -7,10 +7,11 @@ Scene::Scene(std::string name) : m_name(std::move(name)) {
 }
 
 Entity Scene::create_entity() {
-    const Entity entity = Entity(m_registry->create(), m_registry.get());
+    Entity entity = Entity(m_registry->create(), m_registry.get());
     m_id_to_entity[entity.id()] = entity;
 
-    // TODO: Add default components
+    // Default components
+    entity.add_component<TransformComponent>();
 
     return entity;
 }
