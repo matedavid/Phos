@@ -20,9 +20,9 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/core/window.cpp
         src/core/entry_point.cpp
 
-        # ECS
-        src/ecs/registry.cpp
-        src/ecs/scene.cpp
+        # Scene
+        src/scene/registry.cpp
+        src/scene/scene.cpp
 
         # Input
         src/input/input.cpp

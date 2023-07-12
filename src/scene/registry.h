@@ -6,7 +6,7 @@
 #include <queue>
 #include <memory>
 
-#include "ecs/component_manager.h"
+#include "scene/component_manager.h"
 
 namespace Phos {
 

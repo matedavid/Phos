@@ -4,7 +4,7 @@
 
 #include <unordered_map>
 
-#include "ecs/component_array.h"
+#include "scene/component_array.h"
 
 namespace Phos {
 

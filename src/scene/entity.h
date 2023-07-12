@@ -2,7 +2,7 @@
 
 #include "core.h"
 
-#include "ecs/registry.h"
+#include "scene/registry.h"
 
 namespace Phos {
 

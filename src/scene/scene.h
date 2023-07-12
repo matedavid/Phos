@@ -2,9 +2,9 @@
 
 #include "core.h"
 
-#include "ecs/registry.h"
-#include "ecs/entity.h"
-#include "ecs/components.h"
+#include "scene/registry.h"
+#include "scene/entity.h"
+#include "scene/components.h"
 
 namespace Phos {
 
