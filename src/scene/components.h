@@ -16,7 +16,7 @@ struct LightComponent {
         Directional,
     };
 
-    Type light_type;
+    Type light_type = Type::Point;
 
     float radius = 10.0f; // Only Point lights
     glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};

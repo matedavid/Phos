@@ -15,9 +15,9 @@ class Entity {
     Entity(const Entity& entity) = default;
     Entity& operator=(const Entity& entity) = default;
 
-    template <typename T, class... Types>
-    void add_component(Types... args) {
-        m_registry->add_component<T>(m_id, args...);
+    template <typename T>
+    void add_component(T args = {}) {
+        m_registry->add_component<T>(m_id, args);
     }
 
     template <typename T>
@@ -26,7 +26,7 @@ class Entity {
     }
 
     template <typename T>
-    T& get_component() {
+    T& get_component() const {
         return m_registry->get_component<T>(m_id);
     }
 

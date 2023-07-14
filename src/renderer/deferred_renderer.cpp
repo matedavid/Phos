@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+#include <utility>
 
 #include "core/window.h"
 
@@ -9,6 +11,8 @@
 #include "input/input.h"
 
 #include "managers/shader_manager.h"
+
+#include "scene/scene.h"
 
 #include "renderer/mesh.h"
 #include "renderer/camera.h"
@@ -28,7 +32,7 @@
 
 namespace Phos {
 
-DeferredRenderer::DeferredRenderer() {
+DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::move(scene)) {
     Renderer::config().window->add_event_callback_func([&](Event& event) { on_event(event); });
 
     m_command_buffer = CommandBuffer::create();
@@ -212,19 +216,15 @@ DeferredRenderer::~DeferredRenderer() {
     Renderer::wait_idle();
 }
 
-void DeferredRenderer::update() {
-    update_light_info();
+void DeferredRenderer::set_scene(std::shared_ptr<Scene> scene) {
+    (void)scene;
+    PS_FAIL("Unimplemented")
+}
 
+void DeferredRenderer::render() {
     const FrameInformation frame_info = {
         .camera = m_camera,
-        .lights =
-            {
-                std::make_shared<PointLight>(m_light_info.positions[0], m_light_info.colors[0]),
-                std::make_shared<PointLight>(m_light_info.positions[1], m_light_info.colors[1]),
-                std::make_shared<PointLight>(m_light_info.positions[2], m_light_info.colors[2]),
-                std::make_shared<PointLight>(m_light_info.positions[3], m_light_info.colors[3]),
-                std::make_shared<PointLight>(m_light_info.positions[4], m_light_info.colors[4]),
-            },
+        .lights = get_light_info(),
     };
 
     Renderer::begin_frame(frame_info);
@@ -317,23 +317,29 @@ void DeferredRenderer::update() {
     Renderer::end_frame();
 }
 
-void DeferredRenderer::update_light_info() {
-    m_light_info.count = 5;
+std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
+    const auto light_entities = m_scene->get_entities_with<LightComponent>();
 
-    m_light_info.positions[0] = glm::vec4(0.0f, 0.0f, 2.0f, 0.0f);
-    m_light_info.colors[0] = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    std::vector<std::shared_ptr<Light>> lights;
+    for (const auto& entity : light_entities) {
+        const auto transform = entity.get_component<TransformComponent>();
+        const auto light_component = entity.get_component<LightComponent>();
 
-    m_light_info.positions[1] = glm::vec4(2.0f, 0.0f, 0.0f, 0.0f);
-    m_light_info.colors[1] = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+        if (light_component.light_type == LightComponent::Type::Point) {
+            auto light = std::make_shared<PointLight>(transform.position, light_component.color);
+            lights.push_back(light);
+        } else if (light_component.light_type == LightComponent::Type::Directional) {
+            auto direction = glm::vec3(0.0f, 0.0f, 1.0f); // Z+
+            direction = glm::rotate(direction, transform.rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+            direction = glm::rotate(direction, transform.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+            direction = glm::rotate(direction, transform.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
 
-    m_light_info.positions[2] = glm::vec4(-2.0f, 1.0f, 0.0f, 0.0f);
-    m_light_info.colors[2] = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+            auto light = std::make_shared<DirectionalLight>(direction, light_component.color);
+            lights.push_back(light);
+        }
+    }
 
-    m_light_info.positions[3] = glm::vec4(-1.0f, -1.0f, -1.0f, 0.0f);
-    m_light_info.colors[3] = glm::vec4(0.2f, 0.5f, 0.3f, 1.0f);
-
-    m_light_info.positions[4] = glm::vec4(-1.0f, -2.0f, 1.0f, 0.0);
-    m_light_info.colors[4] = glm::vec4(0.1f, 0.2f, 0.3f, 1.0f);
+    return lights;
 }
 
 void DeferredRenderer::on_event(Event& event) {

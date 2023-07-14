@@ -18,12 +18,11 @@ class Registry {
     std::size_t create();
     void destroy(std::size_t entity);
 
-    template <typename T, class... Types>
-    void add_component(std::size_t entity_id, Types... args) {
+    template <typename T>
+    void add_component(std::size_t entity_id, T component) {
         if (!m_component_manager->contains_component<T>())
             m_component_manager->register_component<T>();
 
-        const auto component = T{args...};
         m_component_manager->add_component(entity_id, component);
     }
 
@@ -33,7 +32,7 @@ class Registry {
     }
 
     template <typename T>
-    T& get_component(std::size_t entity_id) {
+    T& get_component(std::size_t entity_id) const {
         return m_component_manager->get_component<T>(entity_id);
     }
 

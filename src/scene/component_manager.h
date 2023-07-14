@@ -29,7 +29,7 @@ class ComponentManager {
     }
 
     template <typename T>
-    [[nodiscard]] T& get_component(std::size_t entity_id) {
+    [[nodiscard]] T& get_component(std::size_t entity_id) const {
         return get_component_array<T>()->get_data(entity_id);
     }
 
@@ -58,11 +58,11 @@ class ComponentManager {
     std::unordered_map<std::string, std::shared_ptr<IComponentArray>> m_component_arrays;
 
     template <typename T>
-    std::shared_ptr<ComponentArray<T>> get_component_array() {
+    std::shared_ptr<ComponentArray<T>> get_component_array() const {
         const std::string type_name = typeid(T).name();
 
         PS_ASSERT(m_component_arrays.contains(type_name), "Component {} is not registered", type_name)
-        return std::static_pointer_cast<ComponentArray<T>>(m_component_arrays[type_name]);
+        return std::static_pointer_cast<ComponentArray<T>>(m_component_arrays.find(type_name)->second);
     }
 };
 
