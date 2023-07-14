@@ -8,6 +8,9 @@
 
 namespace Phos {
 
+// Forward declarations
+class Camera;
+
 class Scene {
   public:
     explicit Scene(std::string name);
@@ -16,13 +19,18 @@ class Scene {
     Entity create_entity();
     void destroy_entity(Entity entity);
 
+    // TODO: Camera should be entity with CameraComponent or something similar, but for the moment setting camera
+    // directly in the scene
+    void set_camera(std::shared_ptr<Camera> camera) { m_camera = std::move(camera); }
+    [[nodiscard]] std::shared_ptr<Camera> get_camera() const { return m_camera; }
+
     template <typename... Components>
     std::vector<Entity> get_entities_with() {
         std::vector<std::size_t> ids = m_registry->view<Components...>();
 
-        std::vector<Entity> entities;
-        for (const auto id : ids)
-            entities.push_back(m_id_to_entity[id]);
+        std::vector<Entity> entities(ids.size());
+        for (uint32_t i = 0; i < ids.size(); ++i)
+            entities[i] = m_id_to_entity[ids[i]];
 
         return entities;
     }
@@ -30,6 +38,8 @@ class Scene {
   private:
     std::string m_name;
     std::unique_ptr<Registry> m_registry;
+
+    std::shared_ptr<Camera> m_camera;
 
     std::unordered_map<std::size_t, Entity> m_id_to_entity;
 };

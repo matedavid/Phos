@@ -22,7 +22,6 @@ class Mesh;
 class Material;
 class Light;
 class Cubemap;
-class Camera;
 class Event;
 
 struct ModelInfoPushConstant {
@@ -76,13 +75,7 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<Mesh> m_model;
     std::shared_ptr<Mesh> m_cube;
 
-    // Frame information
-    std::shared_ptr<Camera> m_camera;
-    glm::vec2 m_mouse_pos{};
-
-    std::vector<std::shared_ptr<Light>> get_light_info() const;
-
-    void on_event(Event& event);
+    [[nodiscard]] std::vector<std::shared_ptr<Light>> get_light_info() const;
 };
 
 } // namespace Phos

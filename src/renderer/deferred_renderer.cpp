@@ -1,14 +1,9 @@
 #include "deferred_renderer.h"
 
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
-#include <utility>
 
 #include "core/window.h"
-
-#include "input/events.h"
-#include "input/input.h"
 
 #include "managers/shader_manager.h"
 
@@ -33,8 +28,6 @@
 namespace Phos {
 
 DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::move(scene)) {
-    Renderer::config().window->add_event_callback_func([&](Event& event) { on_event(event); });
-
     m_command_buffer = CommandBuffer::create();
 
     const auto width = Renderer::config().window->get_width();
@@ -205,11 +198,6 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::
 
     for (auto& submesh : m_cube->get_sub_meshes())
         submesh->set_material(cube_mat);
-
-    // Camera
-    const auto aspect_ratio = width / height;
-    m_camera = std::make_shared<PerspectiveCamera>(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
-    m_camera->set_position({0.0f, 0.0f, 4.0f});
 }
 
 DeferredRenderer::~DeferredRenderer() {
@@ -223,7 +211,7 @@ void DeferredRenderer::set_scene(std::shared_ptr<Scene> scene) {
 
 void DeferredRenderer::render() {
     const FrameInformation frame_info = {
-        .camera = m_camera,
+        .camera = m_scene->get_camera(),
         .lights = get_light_info(),
     };
 
@@ -340,52 +328,6 @@ std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
     }
 
     return lights;
-}
-
-void DeferredRenderer::on_event(Event& event) {
-    if (event.get_type() == EventType::MouseMoved) {
-        auto mouse_moved = dynamic_cast<MouseMovedEvent&>(event);
-
-        double x = mouse_moved.get_xpos();
-        double y = mouse_moved.get_ypos();
-
-        if (Input::is_mouse_button_pressed(MouseButton::Left)) {
-            float x_rotation = 0.0f;
-            float y_rotation = 0.0f;
-
-            if (x > m_mouse_pos.x) {
-                x_rotation -= 0.03f;
-            } else if (x < m_mouse_pos.x) {
-                x_rotation += 0.03f;
-            }
-
-            if (y > m_mouse_pos.y) {
-                y_rotation += 0.03f;
-            } else if (y < m_mouse_pos.y) {
-                y_rotation -= 0.03f;
-            }
-
-            m_camera->rotate({x_rotation, y_rotation});
-        }
-
-        m_mouse_pos = glm::vec2(x, y);
-    } else if (event.get_type() == EventType::KeyPressed) {
-        auto key_pressed = dynamic_cast<KeyPressedEvent&>(event);
-
-        glm::vec3 new_pos = m_camera->non_rotated_position();
-
-        if (key_pressed.get_key() == Key::W) {
-            new_pos.z -= 1;
-        } else if (key_pressed.get_key() == Key::S) {
-            new_pos.z += 1;
-        } else if (key_pressed.get_key() == Key::A) {
-            new_pos.x -= 1;
-        } else if (key_pressed.get_key() == Key::D) {
-            new_pos.x += 1;
-        }
-
-        m_camera->set_position(new_pos);
-    }
 }
 
 } // namespace Phos
