@@ -45,6 +45,10 @@ class Scene {
 
     std::unordered_map<std::size_t, Entity> m_id_to_entity;
     std::unordered_map<UUID, Entity> m_uuid_to_entity;
+
+    friend class Entity;
 };
 
 } // namespace Phos
+
+#include "scene/entity.inl"
