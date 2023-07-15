@@ -19,6 +19,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/core/application.cpp
         src/core/window.cpp
         src/core/entry_point.cpp
+        src/core/uuid.cpp
 
         # Scene
         src/scene/registry.cpp

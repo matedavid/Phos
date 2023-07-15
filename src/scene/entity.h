@@ -2,7 +2,10 @@
 
 #include "core.h"
 
+#include "core/uuid.h"
+
 #include "scene/registry.h"
+#include "scene/components.h"
 
 namespace Phos {
 
@@ -26,10 +29,11 @@ class Entity {
     }
 
     template <typename T>
-    T& get_component() const {
+    [[nodiscard]] T& get_component() const {
         return m_registry->get_component<T>(m_id);
     }
 
+    [[nodiscard]] UUID uuid() const { return get_component<UUIDComponent>().uuid; }
     [[nodiscard]] std::size_t id() const { return m_id; }
 
   private:

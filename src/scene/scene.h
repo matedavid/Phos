@@ -24,8 +24,10 @@ class Scene {
     void set_camera(std::shared_ptr<Camera> camera) { m_camera = std::move(camera); }
     [[nodiscard]] std::shared_ptr<Camera> get_camera() const { return m_camera; }
 
+    [[nodiscard]] Entity get_entity_with_uuid(const UUID& uuid);
+
     template <typename... Components>
-    std::vector<Entity> get_entities_with() {
+    [[nodiscard]] std::vector<Entity> get_entities_with() {
         std::vector<std::size_t> ids = m_registry->view<Components...>();
 
         std::vector<Entity> entities(ids.size());
@@ -42,6 +44,7 @@ class Scene {
     std::shared_ptr<Camera> m_camera;
 
     std::unordered_map<std::size_t, Entity> m_id_to_entity;
+    std::unordered_map<UUID, Entity> m_uuid_to_entity;
 };
 
 } // namespace Phos

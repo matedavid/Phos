@@ -1,8 +1,20 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <optional>
+
+#include "core/uuid.h"
 
 namespace Phos {
+
+struct UUIDComponent {
+    UUID uuid;
+};
+
+struct RelationshipComponent {
+    std::optional<UUID> parent;
+    std::vector<UUID> children;
+};
 
 struct TransformComponent {
     glm::vec3 position{};
