@@ -14,7 +14,7 @@ class Entity;
 class Scene {
   public:
     explicit Scene(std::string name);
-    ~Scene() = default;
+    ~Scene();
 
     Entity create_entity();
     void destroy_entity(Entity entity);

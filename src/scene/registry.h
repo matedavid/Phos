@@ -41,6 +41,8 @@ class Registry {
         return m_component_manager->get_entities_with_component<T>();
     }
 
+    [[nodiscard]] uint32_t number_entities() const { return MAX_NUM_ENTITIES - (uint32_t)m_available_ids.size(); }
+
   private:
     std::queue<std::size_t> m_available_ids;
     std::unique_ptr<ComponentManager> m_component_manager;

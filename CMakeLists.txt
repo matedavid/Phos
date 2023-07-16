@@ -123,8 +123,17 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/spirv-reflect)
 target_link_libraries(${PROJECT_NAME} PRIVATE spirv-reflect-static)
 
 # Catch 2
-#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/Catch2)
-#
-#add_executable(tests
-#        tests/scene/registry_tests.cpp
-#        )
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/Catch2)
+
+add_executable(tests)
+
+target_sources(tests PRIVATE
+        src/scene/registry.cpp
+
+        tests/scene/registry_tests.cpp
+        )
+
+target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(tests PRIVATE spdlog::spdlog)
+
+target_include_directories(tests PUBLIC src/)

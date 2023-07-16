@@ -8,6 +8,12 @@ Scene::Scene(std::string name) : m_name(std::move(name)) {
     m_registry = std::make_unique<Registry>();
 }
 
+Scene::~Scene() {
+    for (auto& [_, entity] : m_id_to_entity) {
+        delete entity;
+    }
+}
+
 Entity Scene::create_entity() {
     auto* entity = new Entity(m_registry->create(), this);
     m_id_to_entity[entity->id()] = entity;
@@ -26,9 +32,11 @@ void Scene::destroy_entity(Entity entity) {
     m_registry->destroy(entity.id());
 
     auto* e = m_id_to_entity[entity.id()];
-    delete e;
 
     m_id_to_entity.erase(entity.id());
+    m_uuid_to_entity.erase(entity.uuid());
+
+    delete e;
 }
 
 Entity Scene::get_entity_with_uuid(const UUID& uuid) {
