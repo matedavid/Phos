@@ -3,13 +3,13 @@
 #include "core.h"
 
 #include "scene/registry.h"
-#include "scene/entity.h"
 #include "scene/components.h"
 
 namespace Phos {
 
 // Forward declarations
 class Camera;
+class Entity;
 
 class Scene {
   public:
@@ -30,9 +30,11 @@ class Scene {
     [[nodiscard]] std::vector<Entity> get_entities_with() {
         std::vector<std::size_t> ids = m_registry->view<Components...>();
 
-        std::vector<Entity> entities(ids.size());
-        for (uint32_t i = 0; i < ids.size(); ++i)
-            entities[i] = m_id_to_entity[ids[i]];
+        std::vector<Entity> entities;
+        entities.reserve(ids.size());
+
+        for (const auto& id : ids)
+            entities.push_back(*m_id_to_entity[id]);
 
         return entities;
     }
@@ -43,12 +45,10 @@ class Scene {
 
     std::shared_ptr<Camera> m_camera;
 
-    std::unordered_map<std::size_t, Entity> m_id_to_entity;
-    std::unordered_map<UUID, Entity> m_uuid_to_entity;
+    std::unordered_map<std::size_t, Entity*> m_id_to_entity;
+    std::unordered_map<UUID, Entity*> m_uuid_to_entity;
 
     friend class Entity;
 };
 
 } // namespace Phos
-
-#include "scene/entity.inl"

@@ -8,6 +8,7 @@
 #include "managers/shader_manager.h"
 
 #include "scene/scene.h"
+#include "scene/entity.h"
 
 #include "renderer/mesh.h"
 #include "renderer/camera.h"

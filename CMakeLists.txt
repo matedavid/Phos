@@ -121,3 +121,10 @@ set(SPIRV_REFLECT_STATIC_LIB ON CACHE BOOL "" FORCE)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/spirv-reflect)
 target_link_libraries(${PROJECT_NAME} PRIVATE spirv-reflect-static)
+
+# Catch 2
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/Catch2)
+#
+#add_executable(tests
+#        tests/scene/registry_tests.cpp
+#        )
