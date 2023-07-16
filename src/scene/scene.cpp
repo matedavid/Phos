@@ -29,12 +29,12 @@ Entity Scene::create_entity() {
 }
 
 void Scene::destroy_entity(Entity entity) {
-    m_registry->destroy(entity.id());
-
     auto* e = m_id_to_entity[entity.id()];
 
     m_id_to_entity.erase(entity.id());
     m_uuid_to_entity.erase(entity.uuid());
+
+    m_registry->destroy(entity.id());
 
     delete e;
 }

@@ -128,12 +128,16 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/Catch2)
 add_executable(tests)
 
 target_sources(tests PRIVATE
+        tests/scene/registry_tests.cpp
         src/scene/registry.cpp
 
-        tests/scene/registry_tests.cpp
+        tests/scene/scene_tests.cpp
+        src/scene/scene.cpp
+        src/core/uuid.cpp
         )
 
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(tests PRIVATE spdlog::spdlog)
+target_link_libraries(tests PRIVATE glm::glm)
 
 target_include_directories(tests PUBLIC src/)

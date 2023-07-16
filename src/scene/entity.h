@@ -26,6 +26,9 @@ class Entity {
     Entity(const Entity& entity) = default;
     Entity& operator=(const Entity& entity) = default;
 
+    bool operator==(const Entity& entity) const { return uuid() == entity.uuid(); }
+    bool operator!=(const Entity& entity) const { return !(*this == entity); }
+
     template <typename T>
     void add_component(T args = {}) {
         m_scene->m_registry->add_component<T>(m_id, args);
