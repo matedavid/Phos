@@ -19,6 +19,12 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/core/application.cpp
         src/core/window.cpp
         src/core/entry_point.cpp
+        src/core/uuid.cpp
+
+        # Scene
+        src/scene/registry.cpp
+        src/scene/scene.cpp
+        src/scene/model_loader.cpp
 
         # Input
         src/input/input.cpp
@@ -29,7 +35,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 
         # Renderer
         src/renderer/mesh.cpp
-        src/renderer/sub_mesh.cpp
         src/renderer/camera.cpp
         src/renderer/light.cpp
 
@@ -116,3 +121,23 @@ set(SPIRV_REFLECT_STATIC_LIB ON CACHE BOOL "" FORCE)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/spirv-reflect)
 target_link_libraries(${PROJECT_NAME} PRIVATE spirv-reflect-static)
+
+# Catch 2
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/Catch2)
+
+add_executable(tests)
+
+target_sources(tests PRIVATE
+        tests/scene/registry_tests.cpp
+        src/scene/registry.cpp
+
+        tests/scene/scene_tests.cpp
+        src/scene/scene.cpp
+        src/core/uuid.cpp
+        )
+
+target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(tests PRIVATE spdlog::spdlog)
+target_link_libraries(tests PRIVATE glm::glm)
+
+target_include_directories(tests PUBLIC src/)

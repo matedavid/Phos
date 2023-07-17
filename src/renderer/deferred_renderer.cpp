@@ -1,14 +1,15 @@
 #include "deferred_renderer.h"
 
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 #include "core/window.h"
 
-#include "input/events.h"
-#include "input/input.h"
-
 #include "managers/shader_manager.h"
+
+#include "scene/scene.h"
+#include "scene/entity.h"
+#include "scene/model_loader.h"
 
 #include "renderer/mesh.h"
 #include "renderer/camera.h"
@@ -28,9 +29,7 @@
 
 namespace Phos {
 
-DeferredRenderer::DeferredRenderer() {
-    Renderer::config().window->add_event_callback_func([&](Event& event) { on_event(event); });
-
+DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::move(scene)) {
     m_command_buffer = CommandBuffer::create();
 
     const auto width = Renderer::config().window->get_width();
@@ -192,39 +191,35 @@ DeferredRenderer::DeferredRenderer() {
     }
      */
 
-    // Static Meshes
-    m_model = std::make_shared<Mesh>("../assets/john_117/scene.gltf", false);
-    m_cube = std::make_shared<Mesh>("../assets/cube.fbx", false);
+    // Create cube
+    // TODO: UGGGLYYYYYY, but temporal
+    {
+        const auto parent_entity = ModelLoader::load_into_scene("../assets/cube.fbx", m_scene);
+        const auto cube_entity =
+            m_scene->get_entity_with_uuid(parent_entity.get_component<RelationshipComponent>().children[0]);
 
-    const auto cube_mat = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
-    cube_mat->bake();
+        m_cube_mesh = cube_entity.get_component<MeshRendererComponent>().mesh;
+        m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
+        m_cube_material->bake();
 
-    for (auto& submesh : m_cube->get_sub_meshes())
-        submesh->set_material(cube_mat);
-
-    // Camera
-    const auto aspect_ratio = width / height;
-    m_camera = std::make_shared<PerspectiveCamera>(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
-    m_camera->set_position({0.0f, 0.0f, 4.0f});
+        m_scene->destroy_entity(cube_entity);
+        m_scene->destroy_entity(parent_entity);
+    }
 }
 
 DeferredRenderer::~DeferredRenderer() {
     Renderer::wait_idle();
 }
 
-void DeferredRenderer::update() {
-    update_light_info();
+void DeferredRenderer::set_scene(std::shared_ptr<Scene> scene) {
+    (void)scene;
+    PS_FAIL("Unimplemented")
+}
 
+void DeferredRenderer::render() {
     const FrameInformation frame_info = {
-        .camera = m_camera,
-        .lights =
-            {
-                std::make_shared<PointLight>(m_light_info.positions[0], m_light_info.colors[0]),
-                std::make_shared<PointLight>(m_light_info.positions[1], m_light_info.colors[1]),
-                std::make_shared<PointLight>(m_light_info.positions[2], m_light_info.colors[2]),
-                std::make_shared<PointLight>(m_light_info.positions[3], m_light_info.colors[3]),
-                std::make_shared<PointLight>(m_light_info.positions[4], m_light_info.colors[4]),
-            },
+        .camera = m_scene->get_camera(),
+        .lights = get_light_info(),
     };
 
     Renderer::begin_frame(frame_info);
@@ -233,19 +228,29 @@ void DeferredRenderer::update() {
         // Geometry pass
         // =============
         {
-            // m_geometry_pass->begin(m_command_buffer);
             Renderer::begin_render_pass(m_command_buffer, m_geometry_pass);
 
             // Draw model
             Renderer::bind_graphics_pipeline(m_command_buffer, m_geometry_pipeline);
 
-            auto constants = ModelInfoPushConstant{
-                .model = glm::mat4(1.0f),
-                .color = glm::vec4(1.0f),
-            };
+            const auto entities = m_scene->get_entities_with<MeshRendererComponent>();
+            for (const auto& entity : entities) {
+                const auto& mr_component = entity.get_component<MeshRendererComponent>();
+                const auto& transform = entity.get_component<TransformComponent>();
 
-            Renderer::bind_push_constant(m_command_buffer, m_geometry_pipeline, constants);
-            Renderer::submit_static_mesh(m_command_buffer, m_model);
+                glm::mat4 model{1.0f};
+                model = glm::translate(model, transform.position);
+                // TODO: model rotate in every axis
+                model = glm::scale(model, transform.scale);
+
+                auto constants = ModelInfoPushConstant{
+                    .model = model,
+                    .color = glm::vec4(1.0f),
+                };
+
+                Renderer::bind_push_constant(m_command_buffer, m_geometry_pipeline, constants);
+                Renderer::submit_static_mesh(m_command_buffer, mr_component.mesh, mr_component.material);
+            }
 
             /*
             // Draw lights
@@ -293,7 +298,7 @@ void DeferredRenderer::update() {
                 .color = glm::vec4{1.0f},
             };
             Renderer::bind_push_constant(m_command_buffer, m_skybox_pipeline, constants);
-            Renderer::submit_static_mesh(m_command_buffer, m_cube);
+            Renderer::submit_static_mesh(m_command_buffer, m_cube_mesh, m_cube_material);
 
             Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
         }
@@ -317,69 +322,29 @@ void DeferredRenderer::update() {
     Renderer::end_frame();
 }
 
-void DeferredRenderer::update_light_info() {
-    m_light_info.count = 5;
+std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
+    const auto light_entities = m_scene->get_entities_with<LightComponent>();
 
-    m_light_info.positions[0] = glm::vec4(0.0f, 0.0f, 2.0f, 0.0f);
-    m_light_info.colors[0] = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    std::vector<std::shared_ptr<Light>> lights;
+    for (const auto& entity : light_entities) {
+        const auto transform = entity.get_component<TransformComponent>();
+        const auto light_component = entity.get_component<LightComponent>();
 
-    m_light_info.positions[1] = glm::vec4(2.0f, 0.0f, 0.0f, 0.0f);
-    m_light_info.colors[1] = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+        if (light_component.light_type == LightComponent::Type::Point) {
+            auto light = std::make_shared<PointLight>(transform.position, light_component.color);
+            lights.push_back(light);
+        } else if (light_component.light_type == LightComponent::Type::Directional) {
+            auto direction = glm::vec3(0.0f, 0.0f, 1.0f); // Z+
+            direction = glm::rotate(direction, transform.rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+            direction = glm::rotate(direction, transform.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+            direction = glm::rotate(direction, transform.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
 
-    m_light_info.positions[2] = glm::vec4(-2.0f, 1.0f, 0.0f, 0.0f);
-    m_light_info.colors[2] = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-
-    m_light_info.positions[3] = glm::vec4(-1.0f, -1.0f, -1.0f, 0.0f);
-    m_light_info.colors[3] = glm::vec4(0.2f, 0.5f, 0.3f, 1.0f);
-
-    m_light_info.positions[4] = glm::vec4(-1.0f, -2.0f, 1.0f, 0.0);
-    m_light_info.colors[4] = glm::vec4(0.1f, 0.2f, 0.3f, 1.0f);
-}
-
-void DeferredRenderer::on_event(Event& event) {
-    if (event.get_type() == EventType::MouseMoved) {
-        auto mouse_moved = dynamic_cast<MouseMovedEvent&>(event);
-
-        double x = mouse_moved.get_xpos();
-        double y = mouse_moved.get_ypos();
-
-        if (Input::is_mouse_button_pressed(MouseButton::Left)) {
-            float x_rotation = 0.0f;
-            float y_rotation = 0.0f;
-
-            if (x > m_mouse_pos.x) {
-                x_rotation -= 0.03f;
-            } else if (x < m_mouse_pos.x) {
-                x_rotation += 0.03f;
-            }
-
-            if (y > m_mouse_pos.y) {
-                y_rotation += 0.03f;
-            } else if (y < m_mouse_pos.y) {
-                y_rotation -= 0.03f;
-            }
-
-            m_camera->rotate({x_rotation, y_rotation});
+            auto light = std::make_shared<DirectionalLight>(direction, light_component.color);
+            lights.push_back(light);
         }
-
-        m_mouse_pos = glm::vec2(x, y);
-    } else if (event.get_type() == EventType::KeyPressed) {
-        auto key_pressed = dynamic_cast<KeyPressedEvent&>(event);
-
-        glm::vec3 new_pos = m_camera->non_rotated_position();
-
-        if (key_pressed.get_key() == Key::W) {
-            new_pos.z -= 1;
-        } else if (key_pressed.get_key() == Key::S) {
-            new_pos.z += 1;
-        } else if (key_pressed.get_key() == Key::A) {
-            new_pos.x -= 1;
-        } else if (key_pressed.get_key() == Key::D) {
-            new_pos.x += 1;
-        }
-
-        m_camera->set_position(new_pos);
     }
+
+    return lights;
 }
 
 } // namespace Phos

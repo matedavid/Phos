@@ -19,4 +19,7 @@ namespace Phos {
     PS_ERROR(__VA_ARGS__); \
     assert(false);
 
+// Constants
+constexpr uint32_t MAX_NUM_ENTITIES = 500;
+
 } // namespace Phos

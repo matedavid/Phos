@@ -5,6 +5,8 @@
 #include <memory>
 #include <glm/glm.hpp>
 
+#include "scene/scene_renderer.h"
+
 namespace Phos {
 
 // Forward declarations
@@ -18,29 +20,26 @@ class IndexBuffer;
 class UniformBuffer;
 class Mesh;
 class Material;
+class Light;
 class Cubemap;
-class Camera;
 class Event;
-
-struct LightsUniformBuffer {
-    glm::vec4 positions[10];
-    glm::vec4 colors[10];
-    uint32_t count;
-};
 
 struct ModelInfoPushConstant {
     glm::mat4 model;
     glm::vec4 color;
 };
 
-class DeferredRenderer {
+class DeferredRenderer : public ISceneRenderer {
   public:
-    DeferredRenderer();
-    ~DeferredRenderer();
+    explicit DeferredRenderer(std::shared_ptr<Scene> scene);
+    ~DeferredRenderer() override;
 
-    void update();
+    void set_scene(std::shared_ptr<Scene> scene) override;
+    void render() override;
 
   private:
+    std::shared_ptr<Scene> m_scene;
+
     std::shared_ptr<CommandBuffer> m_command_buffer;
 
     // Geometry pass
@@ -72,18 +71,11 @@ class DeferredRenderer {
     std::shared_ptr<RenderPass> m_blending_pass;
     std::shared_ptr<GraphicsPipeline> m_blending_pipeline;
 
-    // Models
-    std::shared_ptr<Mesh> m_model;
-    std::shared_ptr<Mesh> m_cube;
+    // Skybox cube
+    std::shared_ptr<Mesh> m_cube_mesh;
+    std::shared_ptr<Material> m_cube_material;
 
-    // Frame information
-    std::shared_ptr<Camera> m_camera;
-    LightsUniformBuffer m_light_info{};
-
-    glm::vec2 m_mouse_pos{};
-
-    void update_light_info();
-    void on_event(Event& event);
+    [[nodiscard]] std::vector<std::shared_ptr<Light>> get_light_info() const;
 };
 
 } // namespace Phos
