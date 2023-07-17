@@ -27,7 +27,7 @@ Entity ModelLoader::load_into_scene(const std::string& path, const std::shared_p
 
     const aiScene* loaded_scene = importer.ReadFile(path, flags);
 
-    if (!scene || loaded_scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
+    if (!loaded_scene || loaded_scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
         PS_ERROR("Error loading model {} with error: {}", path, importer.GetErrorString());
         return {};
     }
@@ -171,6 +171,23 @@ std::shared_ptr<Material> ModelLoader::load_material(const aiMesh* mesh,
     PS_ASSERT(material->bake(), "Failed to build Material for sub_mesh")
 
     return material;
+}
+
+std::shared_ptr<Mesh> ModelLoader::load_single_mesh(const std::string& path) {
+    Assimp::Importer importer;
+
+    uint32_t flags =
+        aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
+
+    const aiScene* scene = importer.ReadFile(path, flags);
+
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
+        PS_ERROR("Error loading model {} with error: {}", path, importer.GetErrorString());
+        return {};
+    }
+
+    const auto* mesh = scene->mMeshes[scene->mRootNode->mMeshes[0]];
+    return load_mesh(mesh);
 }
 
 } // namespace Phos

@@ -6,13 +6,16 @@
 
 #include "input/input.h"
 
+#include "managers/shader_manager.h"
+
 #include "scene/scene.h"
 #include "scene/entity.h"
 #include "scene/model_loader.h"
 
 #include "renderer/camera.h"
 #include "renderer/deferred_renderer.h"
-// #include "renderer/forward_renderer.h"
+#include "renderer/backend/material.h"
+#include "renderer/backend/renderer.h"
 
 constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 960;
@@ -34,25 +37,45 @@ class SandboxLayer : public Phos::Layer {
         // Create scene
         //
         {
+            const auto light_mesh = Phos::ModelLoader::load_single_mesh("../assets/cube.fbx");
+            const auto light_material = Phos::Material::create(
+                Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Light");
+            light_material->bake();
+
             auto light1 = m_scene->create_entity();
             light1.get_component<Phos::TransformComponent>().position = glm::vec3(0.0f, 0.0f, 2.0f);
+            light1.get_component<Phos::TransformComponent>().scale = glm::vec3(0.25f);
             light1.add_component<Phos::LightComponent>({
                 .light_type = Phos::LightComponent::Type::Point,
                 .color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f),
             });
+            light1.add_component<Phos::MeshRendererComponent>({
+                .mesh = light_mesh,
+                .material = light_material,
+            });
 
             auto light2 = m_scene->create_entity();
             light2.get_component<Phos::TransformComponent>().position = glm::vec3(2.0f, 0.0f, 0.0f);
+            light2.get_component<Phos::TransformComponent>().scale = glm::vec3(0.25f);
             light2.add_component<Phos::LightComponent>({
                 .light_type = Phos::LightComponent::Type::Point,
                 .color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f),
             });
+            light2.add_component<Phos::MeshRendererComponent>({
+                .mesh = light_mesh,
+                .material = light_material,
+            });
 
             auto light3 = m_scene->create_entity();
-            light3.get_component<Phos::TransformComponent>().position = glm::vec3(-2.0f, 1.0f, 0.0f);
+            light3.get_component<Phos::TransformComponent>().position = glm::vec3(-2.0f, 3.0f, 0.0f);
+            light3.get_component<Phos::TransformComponent>().scale = glm::vec3(0.25f);
             light3.add_component<Phos::LightComponent>({
                 .light_type = Phos::LightComponent::Type::Point,
                 .color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f),
+            });
+            light3.add_component<Phos::MeshRendererComponent>({
+                .mesh = light_mesh,
+                .material = light_material,
             });
         }
 

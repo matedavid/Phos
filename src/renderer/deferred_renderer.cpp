@@ -192,19 +192,9 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::
      */
 
     // Create cube
-    // TODO: UGGGLYYYYYY, but temporal
-    {
-        const auto parent_entity = ModelLoader::load_into_scene("../assets/cube.fbx", m_scene);
-        const auto cube_entity =
-            m_scene->get_entity_with_uuid(parent_entity.get_component<RelationshipComponent>().children[0]);
-
-        m_cube_mesh = cube_entity.get_component<MeshRendererComponent>().mesh;
-        m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
-        m_cube_material->bake();
-
-        m_scene->destroy_entity(cube_entity);
-        m_scene->destroy_entity(parent_entity);
-    }
+    m_cube_mesh = ModelLoader::load_single_mesh("../assets/cube.fbx");
+    m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
+    m_cube_material->bake();
 }
 
 DeferredRenderer::~DeferredRenderer() {
@@ -251,29 +241,6 @@ void DeferredRenderer::render() {
                 Renderer::bind_push_constant(m_command_buffer, m_geometry_pipeline, constants);
                 Renderer::submit_static_mesh(m_command_buffer, mr_component.mesh, mr_component.material);
             }
-
-            /*
-            // Draw lights
-            Renderer::bind_graphics_pipeline(m_command_buffer, m_flat_color_pipeline);
-
-            for (uint32_t i = 0; i < m_light_info.count; ++i) {
-                const glm::vec3 position = glm::vec3(m_light_info.positions[i]);
-                const glm::vec4 color = m_light_info.colors[i];
-
-                glm::mat4 model{1.0f};
-                model = glm::translate(model, position);
-                model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
-
-                constants = {
-                    .model = model,
-                    .color = color,
-                };
-
-                Renderer::bind_push_constant(m_command_buffer, m_flat_color_pipeline, constants);
-
-                Renderer::submit_static_mesh(m_command_buffer, m_cube);
-            }
-             */
 
             Renderer::end_render_pass(m_command_buffer, m_geometry_pass);
         }

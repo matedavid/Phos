@@ -22,6 +22,8 @@ class ModelLoader {
 
     static Entity load_into_scene(const std::string& path, const std::shared_ptr<Scene>& scene, bool flip_uvs = false);
 
+    [[nodiscard]] static std::shared_ptr<Mesh> load_single_mesh(const std::string& path);
+
   private:
     static void process_node_r(const aiNode* node,
                                const aiScene* loaded_scene,
