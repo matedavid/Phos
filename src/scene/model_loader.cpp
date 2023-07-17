@@ -1,20 +1,75 @@
-#include "sub_mesh.h"
+#include "model_loader.h"
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
+#include "scene/scene.h"
+#include "scene/entity.h"
 
 #include "managers/texture_manager.h"
 #include "managers/shader_manager.h"
 
+#include "renderer/mesh.h"
 #include "renderer/backend/renderer.h"
-
-#include "renderer/backend/buffers.h"
 #include "renderer/backend/material.h"
-#include "renderer/backend/texture.h"
 
 namespace Phos {
 
-SubMesh::SubMesh(const aiMesh* mesh, const aiScene* scene, const std::string& directory) {
+Entity ModelLoader::load_into_scene(const std::string& path, const std::shared_ptr<Scene>& scene, bool flip_uvs) {
+    Assimp::Importer importer;
+
+    uint32_t flags =
+        aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
+
+    if (flip_uvs)
+        flags |= aiProcess_FlipUVs;
+
+    const aiScene* loaded_scene = importer.ReadFile(path, flags);
+
+    if (!scene || loaded_scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
+        PS_ERROR("Error loading model {} with error: {}", path, importer.GetErrorString());
+        return {};
+    }
+
+    auto parent_entity = scene->create_entity();
+
+    const auto directory = path.substr(0, path.find_last_of('/')) + "/";
+    process_node_r(loaded_scene->mRootNode, loaded_scene, scene, directory, parent_entity);
+
+    return parent_entity;
+}
+
+void ModelLoader::process_node_r(const aiNode* node,
+                                 const aiScene* loaded_scene,
+                                 const std::shared_ptr<Scene>& scene,
+                                 const std::string& directory,
+                                 Entity parent_entity) {
+    for (uint32_t i = 0; i < node->mNumMeshes; ++i) {
+        const aiMesh* m = loaded_scene->mMeshes[node->mMeshes[i]];
+
+        Entity child = scene->create_entity();
+        child.set_parent(parent_entity);
+
+        const auto mesh = load_mesh(m);
+        const auto material = load_material(m, loaded_scene, directory);
+
+        child.add_component<MeshRendererComponent>({.mesh = mesh, .material = material});
+    }
+
+    // TODO: Removed temporarily:
+    //    for (uint32_t i = 0; i < node->mNumChildren; ++i) {
+    //        process_node_r(node->mChildren[i], scene);
+    //    }
+}
+
+std::shared_ptr<Mesh> ModelLoader::load_mesh(const aiMesh* mesh) {
+    std::vector<Mesh::Vertex> vertices;
+    std::vector<uint32_t> indices;
+
     // Vertices
     for (uint32_t i = 0; i < mesh->mNumVertices; ++i) {
-        Vertex vertex{};
+        Mesh::Vertex vertex{};
 
         // Position
         const auto& vs = mesh->mVertices[i];
@@ -45,7 +100,7 @@ SubMesh::SubMesh(const aiMesh* mesh, const aiScene* scene, const std::string& di
             vertex.tangent.z = ts.z;
         }
 
-        m_vertices.push_back(vertex);
+        vertices.push_back(vertex);
     }
 
     // Indices
@@ -53,23 +108,19 @@ SubMesh::SubMesh(const aiMesh* mesh, const aiScene* scene, const std::string& di
         const aiFace& face = mesh->mFaces[i];
 
         for (uint32_t index = 0; index < face.mNumIndices; ++index) {
-            m_indices.push_back(face.mIndices[index]);
+            indices.push_back(face.mIndices[index]);
         }
     }
 
-    setup_mesh();
-    setup_material(mesh, scene, directory);
+    return std::make_shared<Mesh>(vertices, indices);
 }
 
-void SubMesh::setup_mesh() {
-    m_vertex_buffer = VertexBuffer::create(m_vertices);
-    m_index_buffer = IndexBuffer::create(m_indices);
-}
-
-void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std::string& directory) {
+std::shared_ptr<Material> ModelLoader::load_material(const aiMesh* mesh,
+                                                     const aiScene* scene,
+                                                     const std::string& directory) {
     const aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
 
-    m_material =
+    auto material =
         Material::create(Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "PBR Deferred");
 
     // Albedo texture
@@ -78,7 +129,7 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
         const std::string path = directory + std::string(albedo_path.C_Str());
 
         const auto texture = Renderer::texture_manager()->acquire(path);
-        m_material->set("uAlbedoMap", texture);
+        material->set("uAlbedoMap", texture);
     }
 
     // Metallic texture
@@ -87,7 +138,7 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
         const std::string path = directory + std::string(metallic_path.C_Str());
 
         const auto texture = Renderer::texture_manager()->acquire(path);
-        m_material->set("uMetallicMap", texture);
+        material->set("uMetallicMap", texture);
     }
 
     // Roughness texture
@@ -96,7 +147,7 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
         const std::string path = directory + std::string(roughness_path.C_Str());
 
         const auto texture = Renderer::texture_manager()->acquire(path);
-        m_material->set("uRoughnessMap", texture);
+        material->set("uRoughnessMap", texture);
     }
 
     // AO texture
@@ -105,7 +156,7 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
         const std::string path = directory + std::string(ao_path.C_Str());
 
         const auto texture = Renderer::texture_manager()->acquire(path);
-        m_material->set("uAOMap", texture);
+        material->set("uAOMap", texture);
     }
 
     // Normal texture
@@ -114,10 +165,12 @@ void SubMesh::setup_material(const aiMesh* mesh, const aiScene* scene, const std
         const std::string path = directory + std::string(normal_path.C_Str());
 
         const auto texture = Renderer::texture_manager()->acquire(path);
-        m_material->set("uNormalMap", texture);
+        material->set("uNormalMap", texture);
     }
 
-    PS_ASSERT(m_material->bake(), "Failed to build Material for sub_mesh")
+    PS_ASSERT(material->bake(), "Failed to build Material for sub_mesh")
+
+    return material;
 }
 
 } // namespace Phos

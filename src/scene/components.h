@@ -7,6 +7,10 @@
 
 namespace Phos {
 
+// Forward declarations
+class Mesh;
+class Material;
+
 struct UUIDComponent {
     UUID uuid;
 };
@@ -32,6 +36,11 @@ struct LightComponent {
 
     float radius = 10.0f; // Only Point lights
     glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
+};
+
+struct MeshRendererComponent {
+    std::shared_ptr<Mesh> mesh;
+    std::shared_ptr<Material> material;
 };
 
 } // namespace Phos

@@ -170,18 +170,17 @@ void VulkanRenderer::end_frame() {
 }
 
 void VulkanRenderer::submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                        const std::shared_ptr<Mesh>& mesh) {
+                                        const std::shared_ptr<Mesh>& mesh,
+                                        const std::shared_ptr<Material>& material) {
     const auto& native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
 
-    for (const auto& sub : mesh->get_sub_meshes()) {
-        const auto& native_vertex_buffer = std::dynamic_pointer_cast<VulkanVertexBuffer>(sub->get_vertex_buffer());
-        const auto& native_index_buffer = std::dynamic_pointer_cast<VulkanIndexBuffer>(sub->get_index_buffer());
-        const auto& native_material = std::dynamic_pointer_cast<VulkanMaterial>(sub->get_material());
+    const auto& native_vertex = std::dynamic_pointer_cast<VulkanVertexBuffer>(mesh->vertex_buffer());
+    const auto& native_index = std::dynamic_pointer_cast<VulkanIndexBuffer>(mesh->index_buffer());
 
-        native_material->bind(native_command_buffer);
+    const auto& native_material = std::dynamic_pointer_cast<VulkanMaterial>(material);
+    native_material->bind(native_command_buffer);
 
-        VulkanRendererAPI::draw_indexed(native_command_buffer, native_vertex_buffer, native_index_buffer);
-    }
+    VulkanRendererAPI::draw_indexed(native_command_buffer, native_vertex, native_index);
 }
 
 void VulkanRenderer::bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,

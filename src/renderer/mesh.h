@@ -2,28 +2,32 @@
 
 #include "core.h"
 
-#include <vector>
-
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
-#include "renderer/sub_mesh.h"
+#include <glm/glm.hpp>
 
 namespace Phos {
 
+// Forward declarations
+class VertexBuffer;
+class IndexBuffer;
+
 class Mesh {
   public:
-    explicit Mesh(const std::string& path, bool flip_uvs = false);
+    struct Vertex {
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec2 texture_coordinates;
+        glm::vec3 tangent;
+    };
+
+    Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
     ~Mesh() = default;
 
-    [[nodiscard]] const std::vector<std::unique_ptr<SubMesh>>& get_sub_meshes() const { return m_meshes; }
+    [[nodiscard]] const std::shared_ptr<VertexBuffer> vertex_buffer() const { return m_vertex_buffer; }
+    [[nodiscard]] const std::shared_ptr<IndexBuffer> index_buffer() const { return m_index_buffer; }
 
   private:
-    std::vector<std::unique_ptr<SubMesh>> m_meshes;
-    std::string m_directory;
-
-    void process_node_r(aiNode* node, const aiScene* scene);
+    std::shared_ptr<VertexBuffer> m_vertex_buffer{};
+    std::shared_ptr<IndexBuffer> m_index_buffer{};
 };
 
 } // namespace Phos

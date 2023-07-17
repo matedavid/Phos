@@ -9,6 +9,7 @@
 
 #include "scene/scene.h"
 #include "scene/entity.h"
+#include "scene/model_loader.h"
 
 #include "renderer/mesh.h"
 #include "renderer/camera.h"
@@ -190,15 +191,20 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::
     }
      */
 
-    // Static Meshes
-    m_model = std::make_shared<Mesh>("../assets/john_117/scene.gltf", false);
-    m_cube = std::make_shared<Mesh>("../assets/cube.fbx", false);
+    // Create cube
+    // TODO: UGGGLYYYYYY, but temporal
+    {
+        const auto parent_entity = ModelLoader::load_into_scene("../assets/cube.fbx", m_scene);
+        const auto cube_entity =
+            m_scene->get_entity_with_uuid(parent_entity.get_component<RelationshipComponent>().children[0]);
 
-    const auto cube_mat = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
-    cube_mat->bake();
+        m_cube_mesh = cube_entity.get_component<MeshRendererComponent>().mesh;
+        m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
+        m_cube_material->bake();
 
-    for (auto& submesh : m_cube->get_sub_meshes())
-        submesh->set_material(cube_mat);
+        m_scene->destroy_entity(cube_entity);
+        m_scene->destroy_entity(parent_entity);
+    }
 }
 
 DeferredRenderer::~DeferredRenderer() {
@@ -222,19 +228,29 @@ void DeferredRenderer::render() {
         // Geometry pass
         // =============
         {
-            // m_geometry_pass->begin(m_command_buffer);
             Renderer::begin_render_pass(m_command_buffer, m_geometry_pass);
 
             // Draw model
             Renderer::bind_graphics_pipeline(m_command_buffer, m_geometry_pipeline);
 
-            auto constants = ModelInfoPushConstant{
-                .model = glm::mat4(1.0f),
-                .color = glm::vec4(1.0f),
-            };
+            const auto entities = m_scene->get_entities_with<MeshRendererComponent>();
+            for (const auto& entity : entities) {
+                const auto& mr_component = entity.get_component<MeshRendererComponent>();
+                const auto& transform = entity.get_component<TransformComponent>();
 
-            Renderer::bind_push_constant(m_command_buffer, m_geometry_pipeline, constants);
-            Renderer::submit_static_mesh(m_command_buffer, m_model);
+                glm::mat4 model{1.0f};
+                model = glm::translate(model, transform.position);
+                // TODO: model rotate in every axis
+                model = glm::scale(model, transform.scale);
+
+                auto constants = ModelInfoPushConstant{
+                    .model = model,
+                    .color = glm::vec4(1.0f),
+                };
+
+                Renderer::bind_push_constant(m_command_buffer, m_geometry_pipeline, constants);
+                Renderer::submit_static_mesh(m_command_buffer, mr_component.mesh, mr_component.material);
+            }
 
             /*
             // Draw lights
@@ -282,7 +298,7 @@ void DeferredRenderer::render() {
                 .color = glm::vec4{1.0f},
             };
             Renderer::bind_push_constant(m_command_buffer, m_skybox_pipeline, constants);
-            Renderer::submit_static_mesh(m_command_buffer, m_cube);
+            Renderer::submit_static_mesh(m_command_buffer, m_cube_mesh, m_cube_material);
 
             Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
         }

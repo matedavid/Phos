@@ -71,9 +71,9 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<RenderPass> m_blending_pass;
     std::shared_ptr<GraphicsPipeline> m_blending_pipeline;
 
-    // Models
-    std::shared_ptr<Mesh> m_model;
-    std::shared_ptr<Mesh> m_cube;
+    // Skybox cube
+    std::shared_ptr<Mesh> m_cube_mesh;
+    std::shared_ptr<Material> m_cube_material;
 
     [[nodiscard]] std::vector<std::shared_ptr<Light>> get_light_info() const;
 };

@@ -24,6 +24,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         # Scene
         src/scene/registry.cpp
         src/scene/scene.cpp
+        src/scene/model_loader.cpp
 
         # Input
         src/input/input.cpp
@@ -34,7 +35,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 
         # Renderer
         src/renderer/mesh.cpp
-        src/renderer/sub_mesh.cpp
         src/renderer/camera.cpp
         src/renderer/light.cpp
 
