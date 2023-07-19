@@ -21,6 +21,9 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/core/entry_point.cpp
         src/core/uuid.cpp
 
+        # Asset
+        src/asset/asset_loader.cpp
+
         # Scene
         src/scene/registry.cpp
         src/scene/scene.cpp
@@ -122,9 +125,21 @@ set(SPIRV_REFLECT_STATIC_LIB ON CACHE BOOL "" FORCE)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/spirv-reflect)
 target_link_libraries(${PROJECT_NAME} PRIVATE spirv-reflect-static)
 
+# yaml-cpp
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "disable yaml tests")
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "disable yaml tools")
+set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "disable yaml contrib")
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/yaml-cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE yaml-cpp)
+
+
 # Catch 2
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/Catch2)
 
+#
+# Tests
+#
 add_executable(tests)
 
 target_sources(tests PRIVATE

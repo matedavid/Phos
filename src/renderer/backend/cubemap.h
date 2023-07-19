@@ -2,9 +2,11 @@
 
 #include "core.h"
 
+#include "asset/asset.h"
+
 namespace Phos {
 
-class Cubemap {
+class Cubemap : public IAsset {
   public:
     struct Faces {
         std::string right;
@@ -16,6 +18,8 @@ class Cubemap {
     };
 
     virtual ~Cubemap() = default;
+
+    [[nodiscard]] AssetType asset_type() override { return AssetType::Cubemap; }
 
     static std::shared_ptr<Cubemap> create(const Faces& faces);
     static std::shared_ptr<Cubemap> create(const Faces& faces, const std::string& directory);
