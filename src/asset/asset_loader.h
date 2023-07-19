@@ -13,16 +13,19 @@ namespace Phos {
 
 // Forward declarations
 class IAssetParser;
+class AssetManager;
 
 class AssetLoader {
   public:
-    AssetLoader();
+    explicit AssetLoader(AssetManager* manager);
     ~AssetLoader() = default;
 
-    std::shared_ptr<IAsset> load(const std::string& path);
+    [[nodiscard]] UUID get_id(const std::string& path) const;
+    [[nodiscard]] std::shared_ptr<IAsset> load(const std::string& path) const;
 
   private:
     std::vector<std::unique_ptr<IAssetParser>> m_parsers;
+    AssetManager* m_manager;
 };
 
 //
@@ -34,7 +37,9 @@ class IAssetParser {
     virtual ~IAssetParser() = default;
 
     virtual AssetType type() = 0;
-    virtual std::shared_ptr<IAsset> parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) = 0;
+    virtual std::shared_ptr<IAsset> parse(const YAML::Node& node,
+                                          [[maybe_unused]] const std::string& path,
+                                          [[maybe_unused]] AssetManager* manager) = 0;
 };
 
 class TextureParser : public IAssetParser {
@@ -42,7 +47,7 @@ class TextureParser : public IAssetParser {
     TextureParser() = default;
 
     [[nodiscard]] AssetType type() override { return AssetType::Texture; }
-    std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
+    std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path, AssetManager* manager) override;
 };
 
 class CubemapParser : public IAssetParser {
@@ -50,7 +55,15 @@ class CubemapParser : public IAssetParser {
     CubemapParser() = default;
 
     [[nodiscard]] AssetType type() override { return AssetType::Cubemap; }
-    std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
+    std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path, AssetManager* manager) override;
+};
+
+class MaterialParser : public IAssetParser {
+  public:
+    MaterialParser() = default;
+
+    [[nodiscard]] AssetType type() override { return AssetType::Material; }
+    std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path, AssetManager* manager) override;
 };
 
 } // namespace Phos

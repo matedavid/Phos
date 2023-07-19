@@ -23,6 +23,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 
         # Asset
         src/asset/asset_loader.cpp
+        src/asset/asset_pack.cpp
 
         # Scene
         src/scene/registry.cpp
