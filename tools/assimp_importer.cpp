@@ -160,6 +160,36 @@ AssetInformation load_material(const aiMaterial* mat) {
     return {.id = id, .output = out.c_str()};
 }
 
+void process_model_node_r(YAML::Emitter& out,
+                          const aiNode* node,
+                          const aiScene* scene,
+                          const std::vector<AssetInformation>& info_meshes,
+                          const std::vector<AssetInformation>& info_materials) {
+    emit_yaml(out, "node");
+    out << YAML::BeginMap;
+
+    if (node->mNumMeshes) {
+        const auto mesh = scene->mMeshes[node->mMeshes[0]];
+        const auto material_idx = mesh->mMaterialIndex;
+
+        emit_yaml(out, "mesh", info_meshes[node->mMeshes[0]].id);
+        emit_yaml(out, "material", info_materials[material_idx].id);
+    }
+
+    if (node->mNumChildren) {
+        emit_yaml(out, "children");
+        out << YAML::BeginMap;
+
+        for (std::size_t i = 0; i < node->mNumChildren; ++i) {
+            process_model_node_r(out, node->mChildren[i], scene, info_meshes, info_materials);
+        }
+
+        out << YAML::EndMap;
+    }
+
+    out << YAML::EndMap;
+}
+
 int main(int argc, const char* argv[]) {
     if (argc < 2) {
         std::cout << "Usage:\t./AssimpImporter <model_path>\n";
@@ -224,6 +254,21 @@ int main(int argc, const char* argv[]) {
         std::ofstream file(material_path);
         file << info.output;
     }
+
+    // Create model information
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+
+    emit_yaml(out, "assetType", "model");
+    emit_yaml(out, "id", uuid());
+
+    process_model_node_r(out, scene->mRootNode, scene, info_meshes, info_materials);
+
+    out << YAML::EndMap;
+
+    const auto model_psa_path = s_output_folder / (path.filename().string() + ".psa");
+    std::ofstream file(model_psa_path);
+    file << out.c_str();
 
     return 0;
 }
