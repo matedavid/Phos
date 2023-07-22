@@ -10,9 +10,13 @@
 
 #include "scene/scene.h"
 #include "scene/entity.h"
-#include "scene/model_loader.h"
+// #include "scene/model_loader.h"
+
+#include "asset/asset_manager.h"
+#include "asset/model_asset.h"
 
 #include "renderer/camera.h"
+#include "renderer/mesh.h"
 #include "renderer/deferred_renderer.h"
 #include "renderer/backend/material.h"
 #include "renderer/backend/renderer.h"
@@ -26,6 +30,9 @@ class SandboxLayer : public Phos::Layer {
         m_scene = std::make_shared<Phos::Scene>("Sandbox Scene");
         m_scene_renderer = std::make_shared<Phos::DeferredRenderer>(m_scene);
 
+        const auto pack = std::make_shared<Phos::AssetPack>("../assets/asset_pack.psap");
+        m_asset_manager = std::make_shared<Phos::AssetManager>(pack);
+
         // Camera
         const auto aspect_ratio = WIDTH / HEIGHT;
         m_camera = std::make_shared<Phos::PerspectiveCamera>(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
@@ -37,7 +44,8 @@ class SandboxLayer : public Phos::Layer {
         // Create scene
         //
         {
-            const auto light_mesh = Phos::ModelLoader::load_single_mesh("../assets/cube.fbx");
+            // const auto light_mesh = Phos::ModelLoader::load_single_mesh("../assets/cube.fbx");
+            const auto light_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/cube/cube_mesh.psa");
             const auto light_material = Phos::Material::create(
                 Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Light");
             light_material->bake();
@@ -82,7 +90,10 @@ class SandboxLayer : public Phos::Layer {
         //
         // Load model
         //
-        Phos::ModelLoader::load_into_scene("../assets/john_117/scene.gltf", m_scene);
+        const auto model = m_asset_manager->load<Phos::ModelAsset>("../assets/models/john_117_imported/scene.gltf.psa");
+        model->import_into_scene(m_scene);
+
+        // Phos::ModelLoader::load_into_scene("../assets/john_117/scene.gltf", m_scene);
     }
     ~SandboxLayer() override = default;
 
@@ -133,6 +144,7 @@ class SandboxLayer : public Phos::Layer {
   private:
     std::shared_ptr<Phos::Scene> m_scene;
     std::shared_ptr<Phos::ISceneRenderer> m_scene_renderer;
+    std::shared_ptr<Phos::AssetManager> m_asset_manager;
 
     std::shared_ptr<Phos::Camera> m_camera;
     glm::vec2 m_mouse_pos{};

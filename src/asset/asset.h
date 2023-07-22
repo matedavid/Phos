@@ -13,6 +13,8 @@ enum class AssetType {
     Cubemap,
     Shader,
     Material,
+    Mesh,
+    Model,
 };
 
 class IAsset {

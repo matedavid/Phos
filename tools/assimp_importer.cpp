@@ -16,6 +16,7 @@ constexpr uint32_t import_flags = aiProcess_Triangulate | aiProcess_CalcTangentS
 
 std::filesystem::path s_output_folder;
 std::filesystem::path s_containing_folder;
+std::filesystem::path s_new_model_path;
 
 uint64_t uuid() {
     static std::random_device s_random_device;
@@ -57,12 +58,14 @@ uint64_t get_texture(const std::string& path) {
 
     emit_yaml(out, "assetType", "texture");
     emit_yaml(out, "id", id);
-    emit_yaml(out, "path", output_path);
+    emit_yaml(out, "path", output_path.filename());
 
     out << YAML::EndMap;
 
-    std::ofstream file(std::string(output_path) + ".psm");
+    std::ofstream file(std::string(output_path) + ".psa");
     file << out.c_str();
+
+    s_texture_to_id[path] = id;
 
     return id;
 }
@@ -72,7 +75,7 @@ struct AssetInformation {
     std::string output;
 };
 
-AssetInformation load_mesh(const std::size_t idx, const std::filesystem::path& model_path) {
+AssetInformation load_mesh(const std::size_t idx) {
     const uint64_t id = uuid();
 
     YAML::Emitter out;
@@ -81,7 +84,7 @@ AssetInformation load_mesh(const std::size_t idx, const std::filesystem::path& m
 
     emit_yaml(out, "assetType", "mesh");
     emit_yaml(out, "id", id);
-    emit_yaml(out, "path", model_path);
+    emit_yaml(out, "path", s_new_model_path);
     emit_yaml(out, "index", idx);
 
     out << YAML::EndMap;
@@ -164,8 +167,10 @@ void process_model_node_r(YAML::Emitter& out,
                           const aiNode* node,
                           const aiScene* scene,
                           const std::vector<AssetInformation>& info_meshes,
-                          const std::vector<AssetInformation>& info_materials) {
-    emit_yaml(out, "node");
+                          const std::vector<AssetInformation>& info_materials,
+                          int child_number) {
+    const std::string node_name = "node_" + std::to_string(child_number);
+    emit_yaml(out, node_name);
     out << YAML::BeginMap;
 
     if (node->mNumMeshes) {
@@ -181,7 +186,7 @@ void process_model_node_r(YAML::Emitter& out,
         out << YAML::BeginMap;
 
         for (std::size_t i = 0; i < node->mNumChildren; ++i) {
-            process_model_node_r(out, node->mChildren[i], scene, info_meshes, info_materials);
+            process_model_node_r(out, node->mChildren[i], scene, info_meshes, info_materials, i);
         }
 
         out << YAML::EndMap;
@@ -215,6 +220,17 @@ int main(int argc, const char* argv[]) {
         return 1;
     }
 
+    s_new_model_path = path.filename();
+
+    if (!exists(s_new_model_path))
+        std::filesystem::copy(path, s_output_folder / s_new_model_path);
+
+    if (path.extension() == "gltf") {
+        const auto original_bin_file = path.parent_path() / (path.stem().string() + ".bin");
+        const auto dest_bin_file = s_output_folder / (path.stem().string() + ".bin");
+        std::filesystem::copy(original_bin_file, dest_bin_file);
+    }
+
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path.c_str(), import_flags);
 
@@ -230,7 +246,7 @@ int main(int argc, const char* argv[]) {
     // Load meshes
     std::vector<AssetInformation> info_meshes;
     for (std::size_t i = 0; i < scene->mNumMeshes; ++i) {
-        const auto info = load_mesh(i, path);
+        const auto info = load_mesh(i);
         info_meshes.push_back(info);
 
         // const auto mesh_name = std::string(scene->mMeshes[i]->mName.C_Str());
@@ -262,7 +278,7 @@ int main(int argc, const char* argv[]) {
     emit_yaml(out, "assetType", "model");
     emit_yaml(out, "id", uuid());
 
-    process_model_node_r(out, scene->mRootNode, scene, info_meshes, info_materials);
+    process_model_node_r(out, scene->mRootNode, scene, info_meshes, info_materials, 0);
 
     out << YAML::EndMap;
 

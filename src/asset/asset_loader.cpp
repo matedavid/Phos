@@ -4,12 +4,18 @@
 #include <ranges>
 #include <filesystem>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 #include "managers/shader_manager.h"
 
 #include "asset/asset_manager.h"
+#include "asset/model_asset.h"
 
 #include "renderer/backend/renderer.h"
 
+#include "renderer/mesh.h"
 #include "renderer/backend/texture.h"
 #include "renderer/backend/cubemap.h"
 #include "renderer/backend/material.h"
@@ -25,6 +31,10 @@ static AssetType string_to_asset_type(const std::string& str) {
         return AssetType::Shader;
     else if (str == "material")
         return AssetType::Material;
+    else if (str == "mesh")
+        return AssetType::Mesh;
+    else if (str == "model")
+        return AssetType::Model;
 
     PS_FAIL("Not valid asset type")
 }
@@ -36,6 +46,8 @@ AssetLoader::AssetLoader(AssetManager* manager) : m_manager(manager) {
     REGISTER_PARSER(TextureParser);
     REGISTER_PARSER(CubemapParser);
     REGISTER_PARSER(MaterialParser);
+    REGISTER_PARSER(MeshParser);
+    REGISTER_PARSER(ModelParser);
 }
 
 UUID AssetLoader::get_id(const std::string& path) const {
@@ -103,9 +115,17 @@ std::shared_ptr<IAsset> CubemapParser::parse(const YAML::Node& node, [[maybe_unu
 //
 
 std::shared_ptr<IAsset> MaterialParser::parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) {
-    const auto name = node["name"].as<std::string>();
+    const auto material_name = node["name"].as<std::string>();
 
-    auto material = Material::create(Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), name);
+    std::shared_ptr<Material> material;
+
+    const auto shader_node = node["shader"];
+    if (shader_node["type"].as<std::string>() == "builtin") {
+        const auto shader_name = shader_node["name"].as<std::string>();
+        material = Material::create(Renderer::shader_manager()->get_builtin_shader(shader_name), material_name);
+    } else {
+        PS_FAIL("At the moment, only builtin shaders supported")
+    }
 
     const auto properties_node = node["properties"];
     for (const auto it : properties_node) {
@@ -127,6 +147,8 @@ std::shared_ptr<IAsset> MaterialParser::parse(const YAML::Node& node, [[maybe_un
             PS_WARNING("Property type '{}' is not valid", property_type);
         }
     }
+
+    PS_ASSERT(material->bake(), "Could not bake material")
 
     return material;
 }
@@ -163,6 +185,119 @@ std::vector<float> MaterialParser::split_string(const std::string& str) const {
         data.push_back(std::stof(value));
 
     return data;
+}
+
+//
+// MeshParser
+//
+
+std::shared_ptr<IAsset> MeshParser::parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) {
+    const auto model_path = node["path"].as<std::string>();
+    const auto index = node["index"].as<uint32_t>();
+
+    const auto containing_folder = std::filesystem::path(path).parent_path();
+    const auto real_model_path = containing_folder / model_path;
+
+    constexpr uint32_t import_flags = aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes;
+
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(real_model_path.c_str(), import_flags);
+
+    if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
+        PS_FAIL("Failed to open file: {}\n", real_model_path.string())
+    }
+
+    const auto mesh = scene->mMeshes[index];
+
+    std::vector<Mesh::Vertex> vertices;
+    std::vector<uint32_t> indices;
+
+    // Vertices
+    for (uint32_t i = 0; i < mesh->mNumVertices; ++i) {
+        Mesh::Vertex vertex{};
+
+        // Position
+        const auto& vs = mesh->mVertices[i];
+        vertex.position.x = vs.x;
+        vertex.position.y = vs.y;
+        vertex.position.z = vs.z;
+
+        // Normals
+        if (mesh->HasNormals()) {
+            const auto& ns = mesh->mNormals[i];
+            vertex.normal.x = ns.x;
+            vertex.normal.y = ns.y;
+            vertex.normal.z = ns.z;
+        }
+
+        // Texture coordinates
+        if (mesh->HasTextureCoords(0)) {
+            const auto& tc = mesh->mTextureCoords[0][i];
+            vertex.texture_coordinates.x = tc.x;
+            vertex.texture_coordinates.y = 1.0f - tc.y;
+        }
+
+        // Tangents
+        if (mesh->HasTangentsAndBitangents()) {
+            const auto ts = mesh->mTangents[i];
+            vertex.tangent.x = ts.x;
+            vertex.tangent.y = ts.y;
+            vertex.tangent.z = ts.z;
+        }
+
+        vertices.push_back(vertex);
+    }
+
+    // Indices
+    for (uint32_t i = 0; i < mesh->mNumFaces; ++i) {
+        const aiFace& face = mesh->mFaces[i];
+
+        for (uint32_t idx = 0; idx < face.mNumIndices; ++idx) {
+            indices.push_back(face.mIndices[idx]);
+        }
+    }
+
+    return std::make_shared<Mesh>(vertices, indices);
+}
+
+//
+// ModelParser
+//
+
+std::shared_ptr<IAsset> ModelParser::parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) {
+    const auto& parent_node = node["node_0"];
+    auto* node_parent = parse_node_r(parent_node);
+
+    return std::make_shared<ModelAsset>(node_parent);
+}
+
+ModelAsset::Node* ModelParser::parse_node_r(const YAML::Node& node) const {
+    auto* n = new ModelAsset::Node();
+
+    if (const auto mesh_node = node["mesh"]) {
+        const auto mesh_id = UUID(mesh_node.as<uint64_t>());
+
+        const auto mesh = m_manager->load_by_id<Mesh>(mesh_id);
+        n->mesh = mesh;
+    }
+
+    if (const auto material_node = node["material"]) {
+        const auto material_id = UUID(material_node.as<uint64_t>());
+
+        const auto material = m_manager->load_by_id<Material>(material_id);
+        n->material = material;
+    }
+
+    if (auto children_node = node["children"]) {
+        for (auto child : children_node) {
+            const auto child_node = children_node[child.first];
+
+            auto* c = parse_node_r(child_node);
+            n->children.push_back(c);
+        }
+    }
+
+    return n;
 }
 
 } // namespace Phos
