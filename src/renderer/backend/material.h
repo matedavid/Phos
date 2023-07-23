@@ -4,15 +4,19 @@
 
 #include <glm/glm.hpp>
 
+#include "asset/asset.h"
+
 namespace Phos {
 
 // Forward declarations
 class Shader;
 class Texture;
 
-class Material {
+class Material : public IAsset {
   public:
     virtual ~Material() = default;
+
+    [[nodiscard]] AssetType asset_type() override { return AssetType::Material; }
 
     static std::shared_ptr<Material> create(const std::shared_ptr<Shader>& shader, const std::string& name);
 

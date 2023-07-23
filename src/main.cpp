@@ -10,9 +10,13 @@
 
 #include "scene/scene.h"
 #include "scene/entity.h"
-#include "scene/model_loader.h"
+// #include "scene/model_loader.h"
+
+#include "asset/asset_manager.h"
+#include "asset/model_asset.h"
 
 #include "renderer/camera.h"
+#include "renderer/mesh.h"
 #include "renderer/deferred_renderer.h"
 #include "renderer/backend/material.h"
 #include "renderer/backend/renderer.h"
@@ -26,18 +30,23 @@ class SandboxLayer : public Phos::Layer {
         m_scene = std::make_shared<Phos::Scene>("Sandbox Scene");
         m_scene_renderer = std::make_shared<Phos::DeferredRenderer>(m_scene);
 
+        const auto pack = std::make_shared<Phos::AssetPack>("../assets/asset_pack.psap");
+        m_asset_manager = std::make_shared<Phos::AssetManager>(pack);
+
         // Camera
         const auto aspect_ratio = WIDTH / HEIGHT;
         m_camera = std::make_shared<Phos::PerspectiveCamera>(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
-        m_camera->set_position({0.0f, 0.0f, 4.0f});
+        m_camera->set_position({0.0f, 3.0f, 15.0f});
+        m_camera->rotate(glm::vec2(0.0f, glm::radians(30.0f)));
 
         m_scene->set_camera(m_camera);
+
+        const auto cube_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/cube/cube_mesh.psa");
 
         //
         // Create scene
         //
         {
-            const auto light_mesh = Phos::ModelLoader::load_single_mesh("../assets/cube.fbx");
             const auto light_material = Phos::Material::create(
                 Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Light");
             light_material->bake();
@@ -50,7 +59,7 @@ class SandboxLayer : public Phos::Layer {
                 .color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f),
             });
             light1.add_component<Phos::MeshRendererComponent>({
-                .mesh = light_mesh,
+                .mesh = cube_mesh,
                 .material = light_material,
             });
 
@@ -62,7 +71,7 @@ class SandboxLayer : public Phos::Layer {
                 .color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f),
             });
             light2.add_component<Phos::MeshRendererComponent>({
-                .mesh = light_mesh,
+                .mesh = cube_mesh,
                 .material = light_material,
             });
 
@@ -74,15 +83,29 @@ class SandboxLayer : public Phos::Layer {
                 .color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f),
             });
             light3.add_component<Phos::MeshRendererComponent>({
-                .mesh = light_mesh,
+                .mesh = cube_mesh,
                 .material = light_material,
             });
         }
 
         //
-        // Load model
+        // Load models
         //
-        Phos::ModelLoader::load_into_scene("../assets/john_117/scene.gltf", m_scene);
+        const auto model = m_asset_manager->load<Phos::ModelAsset>("../assets/models/john_117_imported/scene.gltf.psa");
+        model->import_into_scene(m_scene);
+
+        const auto floor_material = Phos::Material::create(
+            Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Floor material");
+        floor_material->bake();
+
+        auto floor = m_scene->create_entity();
+        floor.add_component<Phos::MeshRendererComponent>({
+            .mesh = cube_mesh,
+            .material = floor_material,
+        });
+        auto& transform = floor.get_component<Phos::TransformComponent>();
+        transform.position = glm::vec3(0.0f, -0.5f, 0.0f);
+        transform.scale = glm::vec3(10.0f, 0.25f, 10.0f);
     }
     ~SandboxLayer() override = default;
 
@@ -133,6 +156,7 @@ class SandboxLayer : public Phos::Layer {
   private:
     std::shared_ptr<Phos::Scene> m_scene;
     std::shared_ptr<Phos::ISceneRenderer> m_scene_renderer;
+    std::shared_ptr<Phos::AssetManager> m_asset_manager;
 
     std::shared_ptr<Phos::Camera> m_camera;
     glm::vec2 m_mouse_pos{};

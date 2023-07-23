@@ -10,6 +10,8 @@ static std::uniform_int_distribution<uint64_t> s_uniform_distribution;
 
 UUID::UUID() : m_uuid(s_uniform_distribution(s_engine)) {}
 
+UUID::UUID(uint64_t uuid) : m_uuid(uuid) {}
+
 bool UUID::operator==(const UUID& other) const {
     return m_uuid == other.m_uuid;
 }

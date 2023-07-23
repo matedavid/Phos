@@ -6,7 +6,8 @@ namespace Phos {
 
 class UUID {
   public:
-    UUID();
+    explicit UUID();
+    explicit UUID(uint64_t id);
     ~UUID() = default;
 
     UUID(const UUID&) = default;

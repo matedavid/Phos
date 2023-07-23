@@ -2,14 +2,18 @@
 
 #include "core.h"
 
+#include "asset/asset.h"
+
 namespace Phos {
 
 // Forward declarations
 class Image;
 
-class Texture {
+class Texture : public IAsset {
   public:
     virtual ~Texture() = default;
+
+    [[nodiscard]] AssetType asset_type() override { return AssetType::Texture; }
 
     static std::shared_ptr<Texture> create(const std::string& path);
     static std::shared_ptr<Texture> create(uint32_t width, uint32_t height);
