@@ -22,6 +22,7 @@ class VulkanMaterial : public Material {
     explicit VulkanMaterial(const std::shared_ptr<Shader>& shader, std::string name);
     ~VulkanMaterial() override = default;
 
+    void set(const std::string& name, float data) override;
     void set(const std::string& name, glm::vec3 data) override;
     void set(const std::string& name, glm::vec4 data) override;
     void set(const std::string& name, std::shared_ptr<Texture> texture) override;

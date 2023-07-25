@@ -19,7 +19,7 @@ layout (location = 2) out mat3 vTBN;
 void main() {
     gl_Position = uCamera.projection * uCamera.view * model * vec4(aPosition, 1.0f);
 
-    vPosition = vec4(aPosition, 1.0f);
+    vPosition = model * vec4(aPosition, 1.0f);
     vTextureCoords = aTextureCoords;
 
     vec3 T = normalize(vec3(model * vec4(aTangent, 0.0f)));

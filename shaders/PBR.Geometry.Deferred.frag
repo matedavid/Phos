@@ -17,6 +17,13 @@ layout (set = 2, binding = 2) uniform sampler2D uRoughnessMap;
 layout (set = 2, binding = 3) uniform sampler2D uAOMap;
 layout (set = 2, binding = 4) uniform sampler2D uNormalMap;
 
+layout (set = 2, binding = 5) uniform PBRMaterialInfo {
+    vec3 albedo;
+    float metallic;
+    float roughness;
+    float ao;
+} uMaterialInfo;
+
 void main() {
     outPosition = vPosition;
 
@@ -25,9 +32,9 @@ void main() {
     normal = normalize(vTBN * normal);
     outNormal.rgb = normal;
 
-    outAlbedo = texture(uAlbedoMap, vTextureCoords);
+    outAlbedo = texture(uAlbedoMap, vTextureCoords) * vec4(uMaterialInfo.albedo, 1.0f);
 
-    outMetallicRoughnessAO.r = texture(uMetallicMap, vTextureCoords).b;
-    outMetallicRoughnessAO.g = texture(uRoughnessMap, vTextureCoords).g;
-    outMetallicRoughnessAO.b = texture(uAOMap, vTextureCoords).r;
+    outMetallicRoughnessAO.r = texture(uMetallicMap, vTextureCoords).b * uMaterialInfo.metallic;
+    outMetallicRoughnessAO.g = texture(uRoughnessMap, vTextureCoords).g * uMaterialInfo.roughness;
+    outMetallicRoughnessAO.b = texture(uAOMap, vTextureCoords).r * uMaterialInfo.ao;
 }

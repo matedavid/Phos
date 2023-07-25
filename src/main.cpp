@@ -36,78 +36,90 @@ class SandboxLayer : public Phos::Layer {
         // Camera
         const auto aspect_ratio = WIDTH / HEIGHT;
         m_camera = std::make_shared<Phos::PerspectiveCamera>(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
-        m_camera->set_position({0.0f, 3.0f, 15.0f});
+        m_camera->set_position({0.0f, 3.0f, 7.0f});
         m_camera->rotate(glm::vec2(0.0f, glm::radians(30.0f)));
 
         m_scene->set_camera(m_camera);
 
-        const auto cube_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/cube/cube_mesh.psa");
+        create_scene();
 
-        //
-        // Create scene
-        //
-        {
-            const auto light_material = Phos::Material::create(
-                Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Light");
-            light_material->bake();
+        fmt::print("Finished setup...\n");
+    }
+    ~SandboxLayer() override = default;
 
-            auto light1 = m_scene->create_entity();
-            light1.get_component<Phos::TransformComponent>().position = glm::vec3(0.0f, 0.0f, 2.0f);
-            light1.get_component<Phos::TransformComponent>().scale = glm::vec3(0.25f);
-            light1.add_component<Phos::LightComponent>({
-                .light_type = Phos::LightComponent::Type::Point,
-                .color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f),
-            });
-            light1.add_component<Phos::MeshRendererComponent>({
-                .mesh = cube_mesh,
-                .material = light_material,
-            });
+    void create_scene() {
+        const auto sphere_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/sphere/sphere.psa");
+        const auto cube_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/cube/cube.psa");
 
-            auto light2 = m_scene->create_entity();
-            light2.get_component<Phos::TransformComponent>().position = glm::vec3(2.0f, 0.0f, 0.0f);
-            light2.get_component<Phos::TransformComponent>().scale = glm::vec3(0.25f);
-            light2.add_component<Phos::LightComponent>({
-                .light_type = Phos::LightComponent::Type::Point,
-                .color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f),
-            });
-            light2.add_component<Phos::MeshRendererComponent>({
-                .mesh = cube_mesh,
-                .material = light_material,
-            });
-
-            auto light3 = m_scene->create_entity();
-            light3.get_component<Phos::TransformComponent>().position = glm::vec3(-2.0f, 3.0f, 0.0f);
-            light3.get_component<Phos::TransformComponent>().scale = glm::vec3(0.25f);
-            light3.add_component<Phos::LightComponent>({
-                .light_type = Phos::LightComponent::Type::Point,
-                .color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f),
-            });
-            light3.add_component<Phos::MeshRendererComponent>({
-                .mesh = cube_mesh,
-                .material = light_material,
-            });
-        }
-
-        //
-        // Load models
-        //
-        const auto model = m_asset_manager->load<Phos::ModelAsset>("../assets/models/john_117_imported/scene.gltf.psa");
-        model->import_into_scene(m_scene);
-
+        // Floor
         const auto floor_material = Phos::Material::create(
-            Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Floor material");
-        floor_material->bake();
+            Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Floor Material");
 
-        auto floor = m_scene->create_entity();
-        floor.add_component<Phos::MeshRendererComponent>({
+        floor_material->set("uMaterialInfo.albedo", glm::vec3(0.8f));
+        floor_material->set("uMaterialInfo.metallic", 0.0f);
+        floor_material->set("uMaterialInfo.roughness", 0.2f);
+
+        PS_ASSERT(floor_material->bake(), "Failed to bake floor material")
+
+        auto floor_entity = m_scene->create_entity();
+        floor_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(10.0f, 0.25, 10.0f);
+        floor_entity.get_component<Phos::TransformComponent>().position = glm::vec3(0.0f, -0.25f, 0.0f);
+        floor_entity.add_component<Phos::MeshRendererComponent>({
             .mesh = cube_mesh,
             .material = floor_material,
         });
-        auto& transform = floor.get_component<Phos::TransformComponent>();
-        transform.position = glm::vec3(0.0f, -0.5f, 0.0f);
-        transform.scale = glm::vec3(10.0f, 0.25f, 10.0f);
+
+        // Spheres
+        const uint32_t number = 4;
+        for (uint32_t metallic_idx = 0; metallic_idx < number; ++metallic_idx) {
+            for (uint32_t roughness_idx = 0; roughness_idx < number; ++roughness_idx) {
+                const auto sphere_material = Phos::Material::create(
+                    Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Sphere Material");
+
+                const float metallic = (float)(metallic_idx + 1) / (float)number;
+                const float roughness = (float)(roughness_idx + 1) / (float)number;
+
+                sphere_material->set("uMaterialInfo.albedo", glm::vec3(0.8f, 0.05f, 0.05f));
+                sphere_material->set("uMaterialInfo.metallic", metallic);
+                sphere_material->set("uMaterialInfo.roughness", roughness);
+
+                PS_ASSERT(sphere_material->bake(), "Failed to bake sphere material {} {}", metallic_idx, roughness_idx)
+
+                auto sphere_entity = m_scene->create_entity();
+                sphere_entity.get_component<Phos::TransformComponent>().position =
+                    glm::vec3(metallic_idx * 2, roughness_idx * 2 + 1, -2.0f);
+                sphere_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(0.75f);
+                sphere_entity.get_component<Phos::TransformComponent>().rotation =
+                    glm::vec3(glm::radians(90.0f), 0.0f, 0.0f);
+                sphere_entity.add_component<Phos::MeshRendererComponent>({
+                    .mesh = sphere_mesh,
+                    .material = sphere_material,
+                });
+            }
+        }
+
+        // Lights
+        const std::vector<glm::vec3> light_positions = {
+            glm::vec3(0.0f, 3.0f, 2.0f),
+            glm::vec3{2.0f, 2.0f, 2.0f},
+        };
+
+        for (const auto& light_pos : light_positions) {
+            auto light_entity = m_scene->create_entity();
+            light_entity.get_component<Phos::TransformComponent>().position = light_pos;
+            light_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(0.15f);
+
+            light_entity.add_component<Phos::LightComponent>({
+                .light_type = Phos::LightComponent::Type::Point,
+                .color = glm::vec4(1.0f),
+            });
+
+            light_entity.add_component<Phos::MeshRendererComponent>({
+                .mesh = cube_mesh,
+                .material = floor_material,
+            });
+        }
     }
-    ~SandboxLayer() override = default;
 
     void on_update([[maybe_unused]] double ts) override { m_scene_renderer->render(); }
 

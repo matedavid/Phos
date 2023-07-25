@@ -230,7 +230,9 @@ void DeferredRenderer::render() {
 
                 glm::mat4 model{1.0f};
                 model = glm::translate(model, transform.position);
-                // TODO: model rotate in every axis
+                model = glm::rotate(model, transform.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+                model = glm::rotate(model, transform.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+                model = glm::rotate(model, transform.rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
                 model = glm::scale(model, transform.scale);
 
                 auto constants = ModelInfoPushConstant{

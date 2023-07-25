@@ -46,6 +46,26 @@ VulkanMaterial::VulkanMaterial(const std::shared_ptr<Shader>& shader, std::strin
     }
 }
 
+void VulkanMaterial::set(const std::string& name, float data) {
+    const auto data_size = sizeof(float);
+
+    const auto member = find_uniform_buffer_member(name);
+    if (!member.has_value()) {
+        PS_ERROR("Could not find descriptor with name: {}", name);
+        return;
+    }
+
+    if (member->size != data_size) {
+        PS_ERROR("Size of data with name {} does not match with input data ({}, {})", name, member->size, data_size);
+        return;
+    }
+
+    const std::string ubo_name = name.substr(0, name.find('.'));
+
+    const auto& d = m_uniform_buffers[ubo_name];
+    d->set_data(&data, member->size, member->offset);
+}
+
 void VulkanMaterial::set(const std::string& name, glm::vec3 data) {
     const auto data_size = sizeof(glm::vec3);
 
