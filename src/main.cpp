@@ -19,6 +19,7 @@
 #include "renderer/deferred_renderer.h"
 #include "renderer/backend/material.h"
 #include "renderer/backend/renderer.h"
+#include "renderer/backend/texture.h"
 
 constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 960;
@@ -54,9 +55,14 @@ class SandboxLayer : public Phos::Layer {
         const auto floor_material = Phos::Material::create(
             Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Floor Material");
 
-        floor_material->set("uMaterialInfo.albedo", glm::vec3(0.8f));
-        floor_material->set("uMaterialInfo.metallic", 0.05f);
-        floor_material->set("uMaterialInfo.roughness", 0.2f);
+        floor_material->set("uAlbedoMap", Phos::Texture::create("../assets/wood_mat/hardwood-brown-planks-albedo.png"));
+        floor_material->set("uMetallicMap",
+                            Phos::Texture::create("../assets/wood_mat/hardwood-brown-planks-metallic.png"));
+        floor_material->set("uRoughnessMap",
+                            Phos::Texture::create("../assets/wood_mat/hardwood-brown-planks-roughness.png"));
+        floor_material->set("uAOMap", Phos::Texture::create("../assets/wood_mat/hardwood-brown-planks-ao.png"));
+        floor_material->set("uNormalMap",
+                            Phos::Texture::create("../assets/wood_mat/hardwood-brown-planks-normal-ogl.png"));
 
         PS_ASSERT(floor_material->bake(), "Failed to bake floor material")
 
