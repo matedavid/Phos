@@ -15,6 +15,7 @@ class Image {
     enum class Format {
         B8G8R8A8_SRGB,
         R8G8B8A8_SRGB,
+        R16G16B16A16_SFLOAT,
         D32_SFLOAT
     };
 

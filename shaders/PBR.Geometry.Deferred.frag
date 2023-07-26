@@ -2,7 +2,7 @@
 
 #include "include/LightInformation.glslh"
 
-layout (location = 0) in vec4 vPosition;
+layout (location = 0) in vec3 vPosition;
 layout (location = 1) in vec2 vTextureCoords;
 layout (location = 2) in mat3 vTBN;
 
@@ -25,7 +25,7 @@ layout (set = 2, binding = 5) uniform PBRMaterialInfo {
 } uMaterialInfo;
 
 void main() {
-    outPosition = vPosition;
+    outPosition = vec4(vPosition, 1.0f);
 
     vec3 normal = texture(uNormalMap, vTextureCoords).rgb;
     normal = normal * 2.0f - 1.0f; // convert from [0,1] to [-1,1]

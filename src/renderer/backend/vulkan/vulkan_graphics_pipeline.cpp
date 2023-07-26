@@ -55,7 +55,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     viewport_create_info.scissorCount = 1;
 
     // Rasterization State
-    // TODO: Make rasterization stage configurable?
     VkPipelineRasterizationStateCreateInfo rasterization_create_info{};
     rasterization_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterization_create_info.depthClampEnable = VK_FALSE;

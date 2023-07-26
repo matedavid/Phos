@@ -47,8 +47,22 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::
 
     // Geometry pass
     {
-        m_position_texture = Texture::create(width, height);
-        m_normal_texture = Texture::create(width, height);
+        m_position_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .attachment = true,
+        }));
+
+        m_normal_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .attachment = true,
+        }));
+
         m_albedo_texture = Texture::create(width, height);
         m_metallic_roughness_ao_texture = Texture::create(width, height);
 

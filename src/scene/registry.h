@@ -41,6 +41,14 @@ class Registry {
         return m_component_manager->get_entities_with_component<T>();
     }
 
+    template<typename T>
+    void register_component() {
+        if (!m_component_manager->contains_component<T>())
+            m_component_manager->register_component<T>();
+        else
+            PS_WARNING("Component {} is already registered", typeid(T).name());
+    }
+
     [[nodiscard]] uint32_t number_entities() const { return MAX_NUM_ENTITIES - (uint32_t)m_available_ids.size(); }
 
   private:

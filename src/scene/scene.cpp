@@ -6,6 +6,12 @@ namespace Phos {
 
 Scene::Scene(std::string name) : m_name(std::move(name)) {
     m_registry = std::make_unique<Registry>();
+
+    // Register default components
+    m_registry->register_component<Phos::TransformComponent>();
+    m_registry->register_component<Phos::UUIDComponent>();
+    m_registry->register_component<Phos::RelationshipComponent>();
+    m_registry->register_component<Phos::LightComponent>();
 }
 
 Scene::~Scene() {

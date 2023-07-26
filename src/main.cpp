@@ -13,7 +13,6 @@
 // #include "scene/model_loader.h"
 
 #include "asset/asset_manager.h"
-#include "asset/model_asset.h"
 
 #include "renderer/camera.h"
 #include "renderer/mesh.h"
@@ -56,7 +55,7 @@ class SandboxLayer : public Phos::Layer {
             Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Floor Material");
 
         floor_material->set("uMaterialInfo.albedo", glm::vec3(0.8f));
-        floor_material->set("uMaterialInfo.metallic", 0.0f);
+        floor_material->set("uMaterialInfo.metallic", 0.05f);
         floor_material->set("uMaterialInfo.roughness", 0.2f);
 
         PS_ASSERT(floor_material->bake(), "Failed to bake floor material")
@@ -100,8 +99,10 @@ class SandboxLayer : public Phos::Layer {
 
         // Lights
         const std::vector<glm::vec3> light_positions = {
-            glm::vec3(0.0f, 3.0f, 2.0f),
-            glm::vec3{2.0f, 2.0f, 2.0f},
+            glm::vec3(2.0f, 3.0f, 1.5f),
+            glm::vec3{4.0f, 2.0f, 1.5f},
+            glm::vec3{5.0f, 6.0f, 1.5f},
+            glm::vec3(5.0f, 1.0f, 1.5f),
         };
 
         for (const auto& light_pos : light_positions) {

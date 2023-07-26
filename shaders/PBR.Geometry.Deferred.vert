@@ -12,14 +12,14 @@ layout (push_constant) uniform ModelInfoPushConstants {
     vec4 color;
 };
 
-layout (location = 0) out vec4 vPosition;
+layout (location = 0) out vec3 vPosition;
 layout (location = 1) out vec2 vTextureCoords;
 layout (location = 2) out mat3 vTBN;
 
 void main() {
     gl_Position = uCamera.projection * uCamera.view * model * vec4(aPosition, 1.0f);
 
-    vPosition = model * vec4(aPosition, 1.0f);
+    vPosition = vec3(model * vec4(aPosition, 1.0f));
     vTextureCoords = aTextureCoords;
 
     vec3 T = normalize(vec3(model * vec4(aTangent, 0.0f)));

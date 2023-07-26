@@ -131,6 +131,8 @@ VkFormat VulkanImage::get_image_format(Format format) {
         return VK_FORMAT_B8G8R8A8_SRGB;
     case Format::R8G8B8A8_SRGB:
         return VK_FORMAT_R8G8B8A8_SRGB;
+    case Format::R16G16B16A16_SFLOAT:
+        return VK_FORMAT_R16G16B16A16_SFLOAT;
     case Format::D32_SFLOAT:
         return VK_FORMAT_D32_SFLOAT;
     }
