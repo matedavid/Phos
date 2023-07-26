@@ -34,7 +34,7 @@ void main() {
 
     outAlbedo = texture(uAlbedoMap, vTextureCoords) * vec4(uMaterialInfo.albedo, 1.0f);
 
-    outMetallicRoughnessAO.r = texture(uMetallicMap, vTextureCoords).b * uMaterialInfo.metallic;
-    outMetallicRoughnessAO.g = texture(uRoughnessMap, vTextureCoords).g * uMaterialInfo.roughness;
+    outMetallicRoughnessAO.r = texture(uMetallicMap, vTextureCoords).r * uMaterialInfo.metallic;
+    outMetallicRoughnessAO.g = texture(uRoughnessMap, vTextureCoords).r * uMaterialInfo.roughness;
     outMetallicRoughnessAO.b = texture(uAOMap, vTextureCoords).r * uMaterialInfo.ao;
 }
