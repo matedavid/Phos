@@ -13,8 +13,23 @@ class Light {
         Directional,
     };
 
+    enum class ShadowType {
+        None,
+        // TODO: Soft shadows not implemented
+        // Soft
+        Hard,
+    };
+
     virtual ~Light() = default;
     [[nodiscard]] virtual Type type() const = 0;
+
+    glm::vec3 position{};
+    glm::vec4 color{};
+    ShadowType shadow_type = ShadowType::None;
+
+  protected:
+    Light() = default;
+    Light(glm::vec3 position, glm::vec4 color);
 };
 
 class PointLight : public Light {
@@ -24,21 +39,17 @@ class PointLight : public Light {
     ~PointLight() override = default;
 
     [[nodiscard]] Type type() const override { return Type::Point; }
-
-    glm::vec3 position{};
-    glm::vec4 color{};
 };
 
 class DirectionalLight : public Light {
   public:
     DirectionalLight() = default;
-    explicit DirectionalLight(glm::vec3 direction, glm::vec4 color);
+    explicit DirectionalLight(glm::vec3 position, glm::vec3 direction, glm::vec4 color);
     ~DirectionalLight() override = default;
 
     [[nodiscard]] Type type() const override { return Type::Directional; }
 
     glm::vec3 direction{};
-    glm::vec4 color{};
 };
 
 } // namespace Phos

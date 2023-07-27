@@ -264,42 +264,51 @@ void DeferredRenderer::render() {
     Renderer::begin_frame(frame_info);
 
     m_command_buffer->record([&]() {
-        glm::mat4 light_space_matrix;
-
         // ShadowMapping pass
         // ==================
         {
             Renderer::begin_render_pass(m_command_buffer, m_shadow_map_pass);
 
-            Renderer::bind_graphics_pipeline(m_command_buffer, m_shadow_map_pipeline);
+            const auto it = std::ranges::find_if(frame_info.lights, [](const std::shared_ptr<Light>& light) {
+                return light->type() == Light::Type::Directional && light->shadow_type != Light::ShadowType::None;
+            });
 
-            // Prepare light space matrix
-            const auto light_view =
-                glm::lookAt(glm::vec3(2.0f, 6.0f, 7.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            const auto light_projection = glm::ortho(-10.0f, 10.0f, 10.0f, -10.0f, 0.01f, 40.0f);
+            if (it != frame_info.lights.end()) {
+                const auto directional_light = std::dynamic_pointer_cast<DirectionalLight>(*it);
 
-            light_space_matrix = light_projection * light_view;
+                Renderer::bind_graphics_pipeline(m_command_buffer, m_shadow_map_pipeline);
 
-            // Render models
-            const auto entities = m_scene->get_entities_with<MeshRendererComponent>();
-            for (const auto& entity : entities) {
-                const auto& mr_component = entity.get_component<MeshRendererComponent>();
-                const auto& transform = entity.get_component<TransformComponent>();
+                // Prepare light space matrix
+                constexpr float znear = 0.01f, zfar = 40.0f;
+                constexpr float size = 10.0f;
+                const auto light_view = glm::lookAt(directional_light->position,
+                                                    directional_light->position + directional_light->direction,
+                                                    glm::vec3(0.0f, 1.0f, 0.0f));
+                const auto light_projection = glm::ortho(-size, size, size, -size, znear, zfar);
 
-                glm::mat4 model{1.0f};
-                model = glm::translate(model, transform.position);
-                model = glm::rotate(model, transform.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-                model = glm::rotate(model, transform.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-                model = glm::rotate(model, transform.rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-                model = glm::scale(model, transform.scale);
+                m_light_space_matrix = light_projection * light_view;
 
-                auto constants = ShadowMappingPushConstants{
-                    .light_space_matrix = light_space_matrix,
-                    .model = model,
-                };
+                // Render models
+                const auto entities = m_scene->get_entities_with<MeshRendererComponent>();
+                for (const auto& entity : entities) {
+                    const auto& mr_component = entity.get_component<MeshRendererComponent>();
+                    const auto& transform = entity.get_component<TransformComponent>();
 
-                Renderer::bind_push_constant(m_command_buffer, m_shadow_map_pipeline, constants);
-                Renderer::submit_static_mesh(m_command_buffer, mr_component.mesh, m_shadow_map_material);
+                    glm::mat4 model{1.0f};
+                    model = glm::translate(model, transform.position);
+                    model = glm::rotate(model, transform.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+                    model = glm::rotate(model, transform.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+                    model = glm::rotate(model, transform.rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+                    model = glm::scale(model, transform.scale);
+
+                    auto constants = ShadowMappingPushConstants{
+                        .light_space_matrix = m_light_space_matrix,
+                        .model = model,
+                    };
+
+                    Renderer::bind_push_constant(m_command_buffer, m_shadow_map_pipeline, constants);
+                    Renderer::submit_static_mesh(m_command_buffer, mr_component.mesh, m_shadow_map_material);
+                }
             }
 
             Renderer::end_render_pass(m_command_buffer, m_shadow_map_pass);
@@ -346,7 +355,7 @@ void DeferredRenderer::render() {
             Renderer::bind_graphics_pipeline(m_command_buffer, m_lighting_pipeline);
 
             auto lighting_constants = ShadowMappingPushConstants{
-                .light_space_matrix = light_space_matrix,
+                .light_space_matrix = m_light_space_matrix,
                 .model = glm::mat4(1.0f),
             };
             Renderer::bind_push_constant(m_command_buffer, m_lighting_pipeline, lighting_constants);
@@ -396,16 +405,19 @@ std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
         const auto transform = entity.get_component<TransformComponent>();
         const auto light_component = entity.get_component<LightComponent>();
 
-        if (light_component.light_type == LightComponent::Type::Point) {
+        if (light_component.light_type == Light::Type::Point) {
             auto light = std::make_shared<PointLight>(transform.position, light_component.color);
             lights.push_back(light);
-        } else if (light_component.light_type == LightComponent::Type::Directional) {
+        } else if (light_component.light_type == Light::Type::Directional) {
             auto direction = glm::vec3(0.0f, 0.0f, 1.0f); // Z+
             direction = glm::rotate(direction, transform.rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
             direction = glm::rotate(direction, transform.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
             direction = glm::rotate(direction, transform.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+            direction = glm::normalize(direction);
 
-            auto light = std::make_shared<DirectionalLight>(direction, light_component.color);
+            auto light = std::make_shared<DirectionalLight>(transform.position, direction, light_component.color);
+            light->shadow_type = light_component.shadow_type;
+
             lights.push_back(light);
         }
     }
