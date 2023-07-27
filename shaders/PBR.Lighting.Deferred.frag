@@ -2,6 +2,7 @@
 
 layout (location = 0) in vec2 vTextureCoords;
 layout (location = 1) in vec3 vCameraPosition;
+layout (location = 2) in mat4 vLightSpaceMatrix;
 
 layout (location = 0) out vec4 outColor;
 
@@ -11,6 +12,7 @@ layout (set = 1, binding = 0) uniform sampler2D uPositionMap;
 layout (set = 1, binding = 1) uniform sampler2D uNormalMap;
 layout (set = 1, binding = 2) uniform sampler2D uAlbedoMap;
 layout (set = 1, binding = 3) uniform sampler2D uMetallicRoughnessAOMap;
+layout (set = 1, binding = 4) uniform sampler2D uShadowMap;
 
 // Constants
 const float PI = 3.14159265359;
@@ -54,6 +56,23 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 
 vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+float ShadowCalculation(vec4 fragPosLightSpace) {
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(uShadowMap, projCoords.xy).r * 0.5 + 0.5;
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+
+    // check whether current frag pos is in shadow
+    float bias = 0.005;
+    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+
+    return shadow;
 }
 
 void main() {
@@ -104,8 +123,10 @@ void main() {
     // Ambient color
     //
 
-    vec3 ambient = vec3(0.03) * albedo * ao;
-    vec3 color = ambient + Lo;
+    float shadow = ShadowCalculation(vLightSpaceMatrix * position);
+
+    vec3 ambient = vec3(0.03) * albedo * ao * (shadow == 1.0 ? vec3(0.04) : vec3(1.0));
+    vec3 color = ambient + (1.0 - shadow) * Lo;
 
     // HDR tonemapping
     color = color / (color + vec3(1.0));

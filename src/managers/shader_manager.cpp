@@ -24,9 +24,11 @@ ShaderManager::ShaderManager() {
     // Base Shaders
     const auto skybox = Shader::create(SHADER_PATH("Skybox.Vert.spv"), SHADER_PATH("Skybox.Frag.spv"));
     const auto blending = Shader::create(SHADER_PATH("Blending.Vert.spv"), SHADER_PATH("Blending.Frag.spv"));
+    const auto shadow_map = Shader::create(SHADER_PATH("ShadowMap.Vert.spv"), SHADER_PATH("ShadowMap.Frag.spv"));
 
     m_builtin_shaders.insert(std::make_pair("Skybox", skybox));
     m_builtin_shaders.insert(std::make_pair("Blending", blending));
+    m_builtin_shaders.insert(std::make_pair("ShadowMap", shadow_map));
 }
 
 std::shared_ptr<Shader> ShaderManager::get_builtin_shader(const std::string& name) const {

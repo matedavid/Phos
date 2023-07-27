@@ -12,3 +12,6 @@ glslc Skybox.frag -o build/Skybox.Frag.spv
 
 glslc Blending.vert -o build/Blending.Vert.spv
 glslc Blending.frag -o build/Blending.Frag.spv
+
+glslc ShadowMap.vert -o build/ShadowMap.Vert.spv
+glslc ShadowMap.frag -o build/ShadowMap.Frag.spv

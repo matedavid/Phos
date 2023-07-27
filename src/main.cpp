@@ -66,6 +66,10 @@ class SandboxLayer : public Phos::Layer {
 
         PS_ASSERT(floor_material->bake(), "Failed to bake floor material")
 
+        const auto light_material = Phos::Material::create(
+            Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Light Material");
+        PS_ASSERT(light_material->bake(), "Failed to bake light material")
+
         auto floor_entity = m_scene->create_entity();
         floor_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(10.0f, 0.25, 10.0f);
         floor_entity.get_component<Phos::TransformComponent>().position = glm::vec3(0.0f, -0.25f, 0.0f);
@@ -123,7 +127,7 @@ class SandboxLayer : public Phos::Layer {
 
             light_entity.add_component<Phos::MeshRendererComponent>({
                 .mesh = cube_mesh,
-                .material = floor_material,
+                .material = light_material,
             });
         }
     }

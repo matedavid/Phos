@@ -45,6 +45,46 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::
     };
     const auto depth_image = Image::create(depth_image_description);
 
+    // Shadow mapping pass
+    {
+        m_shadow_map_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::D32_SFLOAT,
+            .transfer = false,
+            .attachment = true,
+        }));
+
+        const auto shadow_depth_attachment = Framebuffer::Attachment{
+            .image = m_shadow_map_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(1.0f),
+
+            .input_depth = true,
+        };
+
+        m_shadow_map_framebuffer = Framebuffer::create({
+            .attachments = {shadow_depth_attachment},
+        });
+
+        m_shadow_map_pipeline = GraphicsPipeline::create({
+            .shader = Renderer::shader_manager()->get_builtin_shader("ShadowMap"),
+            .target_framebuffer = m_shadow_map_framebuffer,
+            .depth_write = true,
+        });
+
+        m_shadow_map_pass = RenderPass::create({
+            .debug_name = "Shadow Mapping pass",
+            .target_framebuffer = m_shadow_map_framebuffer,
+        });
+
+        m_shadow_map_material =
+            Material::create(Renderer::shader_manager()->get_builtin_shader("ShadowMap"), "ShadowMap Material");
+        PS_ASSERT(m_shadow_map_material->bake(), "Failed to bake Shadow Map material")
+    }
+
     // Geometry pass
     {
         m_position_texture = Texture::create(Image::create({
@@ -146,6 +186,7 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::
         m_lighting_pipeline->add_input("uNormalMap", m_normal_texture);
         m_lighting_pipeline->add_input("uAlbedoMap", m_albedo_texture);
         m_lighting_pipeline->add_input("uMetallicRoughnessAOMap", m_metallic_roughness_ao_texture);
+        m_lighting_pipeline->add_input("uShadowMap", m_shadow_map_texture);
         PS_ASSERT(m_geometry_pipeline->bake(), "Failed to bake Lighting Pipeline")
 
         m_lighting_pass = RenderPass::create(RenderPass::Description{
@@ -194,17 +235,6 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::
         });
     }
 
-    /*
-    // Flat color pass
-    {
-        m_flat_color_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-            .shader =
-                Shader::create("../assets/shaders/flat_color_vertex.spv", "../assets/shaders/flat_color_fragment.spv"),
-            .target_framebuffer = m_geometry_framebuffer,
-        });
-    }
-     */
-
     // Create cube
     m_cube_mesh = ModelLoader::load_single_mesh("../assets/cube.fbx");
     m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
@@ -220,6 +250,11 @@ void DeferredRenderer::set_scene(std::shared_ptr<Scene> scene) {
     PS_FAIL("Unimplemented")
 }
 
+struct ShadowMappingPushConstants {
+    glm::mat4 light_space_matrix;
+    glm::mat4 model;
+};
+
 void DeferredRenderer::render() {
     const FrameInformation frame_info = {
         .camera = m_scene->get_camera(),
@@ -229,6 +264,47 @@ void DeferredRenderer::render() {
     Renderer::begin_frame(frame_info);
 
     m_command_buffer->record([&]() {
+        glm::mat4 light_space_matrix;
+
+        // ShadowMapping pass
+        // ==================
+        {
+            Renderer::begin_render_pass(m_command_buffer, m_shadow_map_pass);
+
+            Renderer::bind_graphics_pipeline(m_command_buffer, m_shadow_map_pipeline);
+
+            // Prepare light space matrix
+            const auto light_view =
+                glm::lookAt(glm::vec3(2.0f, 6.0f, 7.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            const auto light_projection = glm::ortho(-10.0f, 10.0f, 10.0f, -10.0f, 0.01f, 40.0f);
+
+            light_space_matrix = light_projection * light_view;
+
+            // Render models
+            const auto entities = m_scene->get_entities_with<MeshRendererComponent>();
+            for (const auto& entity : entities) {
+                const auto& mr_component = entity.get_component<MeshRendererComponent>();
+                const auto& transform = entity.get_component<TransformComponent>();
+
+                glm::mat4 model{1.0f};
+                model = glm::translate(model, transform.position);
+                model = glm::rotate(model, transform.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+                model = glm::rotate(model, transform.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+                model = glm::rotate(model, transform.rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+                model = glm::scale(model, transform.scale);
+
+                auto constants = ShadowMappingPushConstants{
+                    .light_space_matrix = light_space_matrix,
+                    .model = model,
+                };
+
+                Renderer::bind_push_constant(m_command_buffer, m_shadow_map_pipeline, constants);
+                Renderer::submit_static_mesh(m_command_buffer, mr_component.mesh, m_shadow_map_material);
+            }
+
+            Renderer::end_render_pass(m_command_buffer, m_shadow_map_pass);
+        }
+
         // Geometry pass
         // =============
         {
@@ -268,6 +344,13 @@ void DeferredRenderer::render() {
 
             // Draw quad
             Renderer::bind_graphics_pipeline(m_command_buffer, m_lighting_pipeline);
+
+            auto lighting_constants = ShadowMappingPushConstants{
+                .light_space_matrix = light_space_matrix,
+                .model = glm::mat4(1.0f),
+            };
+            Renderer::bind_push_constant(m_command_buffer, m_lighting_pipeline, lighting_constants);
+
             Renderer::draw_screen_quad(m_command_buffer);
 
             // Draw skybox
