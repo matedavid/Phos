@@ -31,6 +31,10 @@ class Framebuffer {
         glm::vec3 clear_value;
 
         bool is_presentation = false; // If attachment image will be used for presentation
+
+        // If the result of the depth attachment, after the render pass finishes,
+        // will be used as an input for another graphics pipeline or render pass
+        bool input_depth = false;
     };
 
     struct Description {

@@ -42,6 +42,16 @@ class DeferredRenderer : public ISceneRenderer {
 
     std::shared_ptr<CommandBuffer> m_command_buffer;
 
+    // Shadow mapping pass
+    std::shared_ptr<Texture> m_shadow_map_texture;
+    std::shared_ptr<Framebuffer> m_shadow_map_framebuffer;
+    std::shared_ptr<Material> m_shadow_map_material;
+
+    std::shared_ptr<GraphicsPipeline> m_shadow_map_pipeline;
+    std::shared_ptr<RenderPass> m_shadow_map_pass;
+
+    glm::mat4 m_light_space_matrix{};
+
     // Geometry pass
     std::shared_ptr<Texture> m_position_texture;
     std::shared_ptr<Texture> m_normal_texture;

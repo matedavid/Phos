@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "core/uuid.h"
+#include "renderer/light.h"
 
 namespace Phos {
 
@@ -27,15 +28,12 @@ struct TransformComponent {
 };
 
 struct LightComponent {
-    enum class Type {
-        Point,
-        Directional,
-    };
-
-    Type light_type = Type::Point;
+    Light::Type light_type = Light::Type::Point;
 
     float radius = 10.0f; // Only Point lights
     glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
+
+    Light::ShadowType shadow_type = Light::ShadowType::Hard;
 };
 
 struct MeshRendererComponent {

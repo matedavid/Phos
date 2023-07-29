@@ -32,7 +32,9 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description) : m_descrip
             attachment_description.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         // finalLayout
-        if (VulkanImage::is_depth_format(image->format())) {
+        if (VulkanImage::is_depth_format(image->format()) && attachment.input_depth) {
+            attachment_description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        } else if (VulkanImage::is_depth_format(image->format())) {
             attachment_description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         } else if (attachment.is_presentation) {
             attachment_description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;

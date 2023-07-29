@@ -10,7 +10,6 @@
 
 #include "scene/scene.h"
 #include "scene/entity.h"
-// #include "scene/model_loader.h"
 
 #include "asset/asset_manager.h"
 
@@ -66,6 +65,10 @@ class SandboxLayer : public Phos::Layer {
 
         PS_ASSERT(floor_material->bake(), "Failed to bake floor material")
 
+        const auto light_material = Phos::Material::create(
+            Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Light Material");
+        PS_ASSERT(light_material->bake(), "Failed to bake light material")
+
         auto floor_entity = m_scene->create_entity();
         floor_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(10.0f, 0.25, 10.0f);
         floor_entity.get_component<Phos::TransformComponent>().position = glm::vec3(0.0f, -0.25f, 0.0f);
@@ -111,21 +114,36 @@ class SandboxLayer : public Phos::Layer {
             glm::vec3(5.0f, 1.0f, 1.5f),
         };
 
+        /*
         for (const auto& light_pos : light_positions) {
             auto light_entity = m_scene->create_entity();
             light_entity.get_component<Phos::TransformComponent>().position = light_pos;
             light_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(0.15f);
 
             light_entity.add_component<Phos::LightComponent>({
-                .light_type = Phos::LightComponent::Type::Point,
+                .light_type = Phos::Light::Type::Point,
                 .color = glm::vec4(1.0f),
             });
 
             light_entity.add_component<Phos::MeshRendererComponent>({
                 .mesh = cube_mesh,
-                .material = floor_material,
+                .material = light_material,
             });
         }
+        */
+
+        auto directional_light_entity = m_scene->create_entity();
+        directional_light_entity.get_component<Phos::TransformComponent>().position = glm::vec3(7.0f, 7.0f, -9.0f);
+        directional_light_entity.get_component<Phos::TransformComponent>().rotation =
+            glm::vec3(glm::radians(30.0f), glm::radians(-35.0f), glm::radians(0.0f));
+        directional_light_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(0.15f);
+
+        directional_light_entity.add_component<Phos::LightComponent>({
+            .light_type = Phos::Light::Type::Directional,
+            .color = glm::vec4(1.0f),
+
+            .shadow_type = Phos::Light::ShadowType::Hard,
+        });
     }
 
     void on_update([[maybe_unused]] double ts) override { m_scene_renderer->render(); }

@@ -2,6 +2,7 @@
 
 layout (location = 0) in vec2 vTextureCoords;
 layout (location = 1) in vec3 vCameraPosition;
+layout (location = 2) in mat4 vLightSpaceMatrix;
 
 layout (location = 0) out vec4 outColor;
 
@@ -11,6 +12,7 @@ layout (set = 1, binding = 0) uniform sampler2D uPositionMap;
 layout (set = 1, binding = 1) uniform sampler2D uNormalMap;
 layout (set = 1, binding = 2) uniform sampler2D uAlbedoMap;
 layout (set = 1, binding = 3) uniform sampler2D uMetallicRoughnessAOMap;
+layout (set = 1, binding = 4) uniform sampler2D uShadowMap;
 
 // Constants
 const float PI = 3.14159265359;
@@ -56,6 +58,58 @@ vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+float ShadowCalculation(vec4 fragPosLightSpace) {
+    // Perspective division
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+
+    // Transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+
+    // Get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(uShadowMap, projCoords.xy).r * 0.5 + 0.5;
+
+    // Get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+
+    // Check whether current frag pos is in shadow with given bias
+    float bias = 0.005;
+    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+
+    return shadow;
+}
+
+struct PBRInformation {
+    vec3 position;
+    vec3 N;
+
+    vec3 albedo;
+    float metallic;
+    float roughness;
+    float ao;
+};
+
+vec3 PBRCalculation(PBRInformation info, vec3 V, vec3 L, vec3 F0) {
+    vec3 H = normalize(V + L);
+
+    float NDF = DistributionGGX(info.N, H, info.roughness);
+    float G = GeometrySmith(info.N, V, L, info.roughness);
+    vec3 F = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
+
+    // Cook-Torrence BRDF
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * max(dot(info.N, V), 0.0) * max(dot(info.N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
+    vec3 specular = numerator / denominator;
+
+    vec3 kS = F;
+    // Because energy conservation, the diffuse and specular light can't be above 1.0
+    vec3 kD = vec3(1.0) - kS;
+    // Enforce that metallic sufraces dont refract light
+    kD *= 1.0 - info.metallic;
+
+    float NdotL = max(dot(info.N, L), 0.0);
+    return (kD * info.albedo / PI + specular) * NdotL;
+}
+
 void main() {
     vec4 position = texture(uPositionMap, vTextureCoords);
     vec3 N = texture(uNormalMap, vTextureCoords).rgb;
@@ -65,47 +119,54 @@ void main() {
     float roughness = texture(uMetallicRoughnessAOMap, vTextureCoords).g;
     float ao = texture(uMetallicRoughnessAOMap, vTextureCoords).b;
 
+    PBRInformation info;
+    info.position = position.xyz;
+    info.N = N;
+    info.albedo = albedo;
+    info.metallic = metallic;
+    info.roughness = roughness;
+    info.ao = ao;
+
     vec3 V = normalize(vCameraPosition - position.rgb);
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
 
     vec3 Lo = vec3(0.0);
+
+    //
+    // Points lights
+    //
     for (int i = 0; i < uLightsInfo.numberPointLights; ++i) {
         PointLight light = uLightsInfo.pointLights[i];
 
-        vec3 L = normalize(light.position - position.rgb);
-        vec3 H = normalize(V + L);
+        vec3 L = normalize(light.position - position.xyz);
 
-        float dist = length(light.position - position.rgb);
+        float dist = length(light.position - position.xyz);
         float attenuation = 1.0 / (dist * dist);
         vec3 radiance = (light.color * attenuation).rgb;
 
-        float NDF = DistributionGGX(N, H, roughness);
-        float G = GeometrySmith(N, V, L, roughness);
-        vec3 F = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
+        Lo += PBRCalculation(info, V, L, F0) * radiance;
+    }
 
-        // Cook-Torrence BRDF
-        vec3 numerator = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
-        vec3 specular = numerator / denominator;
+    //
+    // Directional lights
+    //
+    for (int i = 0; i < uLightsInfo.numberDirectionalLights; ++i) {
+        DirectionalLight light = uLightsInfo.directionalLights[i];
 
-        vec3 kS = F;
-        // Because energy conservation, the diffuse and specular light can't be above 1.0
-        vec3 kD = vec3(1.0) - kS;
-        // Enforce that metallic sufraces dont refract light
-        kD *= 1.0 - metallic;
-
-        float NdotL = max(dot(N, L), 0.0);
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+        vec3 L = normalize(-light.direction);
+        Lo += PBRCalculation(info, V, L, F0);
     }
 
     //
     // Ambient color
     //
 
-    vec3 ambient = vec3(0.03) * albedo * ao;
-    vec3 color = ambient + Lo;
+    float shadow = ShadowCalculation(vLightSpaceMatrix * position);
+
+    vec3 ambient = vec3(0.001) * albedo * ao * (shadow == 1.0 ? vec3(0.04) : vec3(1.0));
+    vec3 color = ambient + (1.0 - shadow) * Lo;
 
     // HDR tonemapping
     color = color / (color + vec3(1.0));
