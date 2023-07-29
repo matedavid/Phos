@@ -114,6 +114,7 @@ class SandboxLayer : public Phos::Layer {
             glm::vec3(5.0f, 1.0f, 1.5f),
         };
 
+        /*
         for (const auto& light_pos : light_positions) {
             auto light_entity = m_scene->create_entity();
             light_entity.get_component<Phos::TransformComponent>().position = light_pos;
@@ -129,11 +130,13 @@ class SandboxLayer : public Phos::Layer {
                 .material = light_material,
             });
         }
+        */
 
         auto directional_light_entity = m_scene->create_entity();
-        directional_light_entity.get_component<Phos::TransformComponent>().position = glm::vec3(7.0f, 4.0f, -9.0f);
+        directional_light_entity.get_component<Phos::TransformComponent>().position = glm::vec3(7.0f, 7.0f, -9.0f);
         directional_light_entity.get_component<Phos::TransformComponent>().rotation =
             glm::vec3(glm::radians(30.0f), glm::radians(-35.0f), glm::radians(0.0f));
+        directional_light_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(0.15f);
 
         directional_light_entity.add_component<Phos::LightComponent>({
             .light_type = Phos::Light::Type::Directional,
