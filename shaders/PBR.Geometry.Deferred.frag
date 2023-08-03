@@ -4,7 +4,8 @@
 
 layout (location = 0) in vec3 vPosition;
 layout (location = 1) in vec2 vTextureCoords;
-layout (location = 2) in mat3 vTBN;
+layout (location = 2) in vec3 vNormal;
+layout (location = 3) in mat3 vTBN;
 
 layout (location = 0) out vec4 outPosition;
 layout (location = 1) out vec4 outNormal;
@@ -28,9 +29,14 @@ void main() {
     outPosition = vec4(vPosition, 1.0f);
 
     vec3 normal = texture(uNormalMap, vTextureCoords).rgb;
-    normal = normal * 2.0f - 1.0f; // convert from [0,1] to [-1,1]
-    normal = normalize(vTBN * normal);
-    outNormal.rgb = normal;
+    if (normal == vec3(1.0f)) {
+        outNormal.rgb = vNormal;
+    } else {
+        normal = normal * 2.0f - 1.0f; // convert from [0,1] to [-1,1]
+        normal = normalize(vTBN * normal);
+
+        outNormal.rgb = normal;
+    }
 
     outAlbedo = texture(uAlbedoMap, vTextureCoords) * vec4(uMaterialInfo.albedo, 1.0f);
 

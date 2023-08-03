@@ -41,7 +41,6 @@ class SandboxLayer : public Phos::Layer {
         m_scene->set_camera(m_camera);
 
         create_scene();
-
         fmt::print("Finished setup...\n");
     }
     ~SandboxLayer() override = default;
@@ -70,9 +69,18 @@ class SandboxLayer : public Phos::Layer {
         PS_ASSERT(light_material->bake(), "Failed to bake light material")
 
         auto floor_entity = m_scene->create_entity();
-        floor_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(10.0f, 0.25, 10.0f);
+        floor_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(10.0f, 0.25f, 10.0f);
         floor_entity.get_component<Phos::TransformComponent>().position = glm::vec3(0.0f, -0.25f, 0.0f);
         floor_entity.add_component<Phos::MeshRendererComponent>({
+            .mesh = cube_mesh,
+            .material = floor_material,
+        });
+
+        auto wall_entity = m_scene->create_entity();
+        wall_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(10.0f, 0.25f, 7.0f);
+        wall_entity.get_component<Phos::TransformComponent>().position = glm::vec3(0.0f, 6.5f, -10.0f);
+        wall_entity.get_component<Phos::TransformComponent>().rotation = glm::vec3(glm::radians(90.0f), 0.0f, 0.0f);
+        wall_entity.add_component<Phos::MeshRendererComponent>({
             .mesh = cube_mesh,
             .material = floor_material,
         });
@@ -90,15 +98,16 @@ class SandboxLayer : public Phos::Layer {
                 sphere_material->set("uMaterialInfo.albedo", glm::vec3(0.8f, 0.05f, 0.05f));
                 sphere_material->set("uMaterialInfo.metallic", metallic);
                 sphere_material->set("uMaterialInfo.roughness", roughness);
+                sphere_material->set("uMaterialInfo.ao", 1.0f);
 
                 PS_ASSERT(sphere_material->bake(), "Failed to bake sphere material {} {}", metallic_idx, roughness_idx)
 
                 auto sphere_entity = m_scene->create_entity();
                 sphere_entity.get_component<Phos::TransformComponent>().position =
                     glm::vec3(metallic_idx * 2, roughness_idx * 2 + 1, -2.0f);
-                sphere_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(0.75f);
+                sphere_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(0.6f);
                 sphere_entity.get_component<Phos::TransformComponent>().rotation =
-                    glm::vec3(glm::radians(90.0f), 0.0f, 0.0f);
+                    glm::vec3(glm::radians(0.0f), 0.0f, 0.0f);
                 sphere_entity.add_component<Phos::MeshRendererComponent>({
                     .mesh = sphere_mesh,
                     .material = sphere_material,
@@ -109,12 +118,11 @@ class SandboxLayer : public Phos::Layer {
         // Lights
         const std::vector<glm::vec3> light_positions = {
             glm::vec3(2.0f, 3.0f, 1.5f),
-            glm::vec3{4.0f, 2.0f, 1.5f},
-            glm::vec3{5.0f, 6.0f, 1.5f},
+            glm::vec3(4.0f, 2.0f, 1.5f),
+            glm::vec3(5.0f, 6.0f, 1.5f),
             glm::vec3(5.0f, 1.0f, 1.5f),
         };
 
-        /*
         for (const auto& light_pos : light_positions) {
             auto light_entity = m_scene->create_entity();
             light_entity.get_component<Phos::TransformComponent>().position = light_pos;
@@ -130,13 +138,18 @@ class SandboxLayer : public Phos::Layer {
                 .material = light_material,
             });
         }
-        */
 
+        /*
         auto directional_light_entity = m_scene->create_entity();
-        directional_light_entity.get_component<Phos::TransformComponent>().position = glm::vec3(7.0f, 7.0f, -9.0f);
+        directional_light_entity.get_component<Phos::TransformComponent>().position = glm::vec3(2.0f, 17.0f, 9.0f);
         directional_light_entity.get_component<Phos::TransformComponent>().rotation =
-            glm::vec3(glm::radians(30.0f), glm::radians(-35.0f), glm::radians(0.0f));
+            glm::vec3(glm::radians(40.0f), glm::radians(180.0f), glm::radians(0.0f));
         directional_light_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(0.15f);
+
+        directional_light_entity.add_component<Phos::MeshRendererComponent>({
+            .mesh = cube_mesh,
+            .material = light_material,
+        });
 
         directional_light_entity.add_component<Phos::LightComponent>({
             .light_type = Phos::Light::Type::Directional,
@@ -144,6 +157,7 @@ class SandboxLayer : public Phos::Layer {
 
             .shadow_type = Phos::Light::ShadowType::Hard,
         });
+        */
     }
 
     void on_update([[maybe_unused]] double ts) override { m_scene_renderer->render(); }
