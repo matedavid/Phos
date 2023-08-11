@@ -196,15 +196,15 @@ void VulkanRenderer::bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
-        viewport.width = (float)m_swapchain->get_current_framebuffer()->width();
-        viewport.height = (float)m_swapchain->get_current_framebuffer()->height();
+        viewport.width = (float)native_pipeline->target_framebuffer()->width();
+        viewport.height = (float)native_pipeline->target_framebuffer()->height();
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 
         VkRect2D scissor{};
         scissor.offset = {0, 0};
-        scissor.extent = {m_swapchain->get_current_framebuffer()->width(),
-                          m_swapchain->get_current_framebuffer()->height()};
+        scissor.extent = {native_pipeline->target_framebuffer()->width(),
+                          native_pipeline->target_framebuffer()->height()};
 
         vkCmdSetViewport(native_command_buffer->handle(), 0, 1, &viewport);
         vkCmdSetScissor(native_command_buffer->handle(), 0, 1, &scissor);

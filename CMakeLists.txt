@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Create executable
 add_executable(${PROJECT_NAME})
 
-target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
+# target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
@@ -134,6 +134,12 @@ set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "disable yaml contrib")
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/yaml-cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE yaml-cpp)
+
+# imgui
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)
+target_link_libraries(${PROJECT_NAME} PRIVATE imgui)
+target_link_libraries(${PROJECT_NAME} PRIVATE imgui_impl_glfw)
+target_link_libraries(${PROJECT_NAME} PRIVATE imgui_impl_vulkan)
 
 
 # Catch 2

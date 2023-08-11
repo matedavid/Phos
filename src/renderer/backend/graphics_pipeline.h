@@ -41,6 +41,7 @@ class GraphicsPipeline {
     static std::shared_ptr<GraphicsPipeline> create(const Description& description);
 
     [[nodiscard]] virtual bool bake() = 0;
+    [[nodiscard]] virtual std::shared_ptr<Framebuffer> target_framebuffer() const = 0;
 
     virtual void add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) = 0;
     virtual void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) = 0;
