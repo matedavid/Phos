@@ -21,11 +21,7 @@ namespace Phos {
 VulkanRenderer::VulkanRenderer(const RendererConfig& config) {
     VulkanContext::init(config.window);
 
-    // Swapchain
-    m_swapchain = std::make_shared<VulkanSwapchain>();
-
     m_graphics_queue = VulkanContext::device->get_graphics_queue();
-    m_presentation_queue = VulkanContext::device->get_presentation_queue();
 
     // Synchronization
     VkSemaphoreCreateInfo semaphore_create_info{};
@@ -35,11 +31,7 @@ VulkanRenderer::VulkanRenderer(const RendererConfig& config) {
     fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    VK_CHECK(
-        vkCreateSemaphore(VulkanContext::device->handle(), &semaphore_create_info, nullptr, &image_available_semaphore))
-    VK_CHECK(
-        vkCreateSemaphore(VulkanContext::device->handle(), &semaphore_create_info, nullptr, &render_finished_semaphore))
-    VK_CHECK(vkCreateFence(VulkanContext::device->handle(), &fence_create_info, nullptr, &in_flight_fence))
+    VK_CHECK(vkCreateFence(VulkanContext::device->handle(), &fence_create_info, nullptr, &m_in_flight_fence))
 
     // Frame descriptors
     m_allocator = std::make_shared<VulkanDescriptorAllocator>();
@@ -80,9 +72,8 @@ VulkanRenderer::VulkanRenderer(const RendererConfig& config) {
 VulkanRenderer::~VulkanRenderer() {
     vkDeviceWaitIdle(VulkanContext::device->handle());
 
-    vkDestroySemaphore(VulkanContext::device->handle(), image_available_semaphore, nullptr);
-    vkDestroySemaphore(VulkanContext::device->handle(), render_finished_semaphore, nullptr);
-    vkDestroyFence(VulkanContext::device->handle(), in_flight_fence, nullptr);
+    // Destroy synchronization elements
+    vkDestroyFence(VulkanContext::device->handle(), m_in_flight_fence, nullptr);
 
     // Destroy ubos
     m_camera_ubo.reset();
@@ -95,9 +86,6 @@ VulkanRenderer::~VulkanRenderer() {
     // Destroy descriptor allocator
     m_allocator.reset();
 
-    // Destroy swapchain
-    m_swapchain.reset();
-
     VulkanContext::free();
 }
 
@@ -106,7 +94,8 @@ void VulkanRenderer::wait_idle() {
 }
 
 void VulkanRenderer::begin_frame(const FrameInformation& info) {
-    vkWaitForFences(VulkanContext::device->handle(), 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
+    vkWaitForFences(VulkanContext::device->handle(), 1, &m_in_flight_fence, VK_TRUE, UINT64_MAX);
+    vkResetFences(VulkanContext::device->handle(), 1, &m_in_flight_fence);
 
     //
     // Update frame descriptors
@@ -147,26 +136,20 @@ void VulkanRenderer::begin_frame(const FrameInformation& info) {
     }
 
     m_lights_ubo->update(lights_info);
-
-    //
-    // Acquire next swapchain image
-    //
-    m_swapchain->acquire_next_image(image_available_semaphore, VK_NULL_HANDLE);
-    vkResetFences(VulkanContext::device->handle(), 1, &in_flight_fence);
 }
 
 void VulkanRenderer::end_frame() {
-    const std::vector<VkSemaphore> signal_semaphores = {render_finished_semaphore};
-
-    // Present image
-    const auto result =
-        m_presentation_queue->submitKHR(m_swapchain, m_swapchain->get_current_image_idx(), signal_semaphores);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        m_swapchain->recreate();
-    } else if (result != VK_SUCCESS) {
-        PS_FAIL("Failed to present image")
-    }
+    //    const std::vector<VkSemaphore> wait_semaphores = {render_finished_semaphore};
+    //
+    //    // Present image
+    //    const auto result =
+    //        m_presentation_queue->submitKHR(m_swapchain, m_swapchain->get_current_image_idx(), wait_semaphores);
+    //
+    //    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+    //        m_swapchain->recreate();
+    //    } else if (result != VK_SUCCESS) {
+    //        PS_FAIL("Failed to present image")
+    //    }
 }
 
 void VulkanRenderer::submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
@@ -234,12 +217,8 @@ void VulkanRenderer::bind_push_constant(const std::shared_ptr<CommandBuffer>& co
 }
 
 void VulkanRenderer::begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                       const std::shared_ptr<RenderPass>& render_pass,
-                                       bool presentation_target) {
-    if (presentation_target)
-        render_pass->begin(command_buffer, m_swapchain->get_current_framebuffer());
-    else
-        render_pass->begin(command_buffer);
+                                       const std::shared_ptr<RenderPass>& render_pass) {
+    render_pass->begin(command_buffer);
 }
 
 void VulkanRenderer::end_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
@@ -250,36 +229,23 @@ void VulkanRenderer::end_render_pass(const std::shared_ptr<CommandBuffer>& comma
 void VulkanRenderer::submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer) {
     const auto& native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
 
-    const std::vector<VkPipelineStageFlags> wait_stages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    const std::vector<VkSemaphore> wait_semaphores = {image_available_semaphore};
-    const std::vector<VkSemaphore> signal_semaphores = {render_finished_semaphore};
-
     const std::array<VkCommandBuffer, 1> command_buffers = {native_command_buffer->handle()};
+    const std::vector<VkPipelineStageFlags> wait_stages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
     VkSubmitInfo info{};
     info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    info.waitSemaphoreCount = (uint32_t)wait_semaphores.size();
-    info.pWaitSemaphores = wait_semaphores.data();
-    info.pWaitDstStageMask = wait_stages.data();
     info.commandBufferCount = static_cast<uint32_t>(command_buffers.size());
     info.pCommandBuffers = command_buffers.data();
-    info.signalSemaphoreCount = (uint32_t)signal_semaphores.size();
-    info.pSignalSemaphores = signal_semaphores.data();
+    info.waitSemaphoreCount = 0;
+    info.pWaitDstStageMask = wait_stages.data();
+    info.signalSemaphoreCount = 0;
 
-    m_graphics_queue->submit(info, in_flight_fence);
+    m_graphics_queue->submit(info, m_in_flight_fence);
 }
 
 void VulkanRenderer::draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer) {
     const auto& native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
     VulkanRendererAPI::draw_indexed(native_command_buffer, m_screen_quad_vertex, m_screen_quad_index);
-}
-
-std::shared_ptr<Framebuffer> VulkanRenderer::current_frame_framebuffer() {
-    return m_swapchain->get_current_framebuffer();
-}
-
-std::shared_ptr<Framebuffer> VulkanRenderer::presentation_framebuffer() {
-    return m_swapchain->get_target_framebuffer();
 }
 
 } // namespace Phos

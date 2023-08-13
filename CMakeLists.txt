@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Create executable
 add_executable(${PROJECT_NAME})
 
-# target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
+target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
@@ -58,6 +58,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/graphics_pipeline.cpp
         src/renderer/backend/material.cpp
         src/renderer/backend/cubemap.cpp
+        src/renderer/backend/presenter.cpp
 
         # Vulkan Backend
         src/renderer/backend/vulkan/vulkan_renderer.cpp
@@ -82,9 +83,10 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_renderer_api.cpp
         src/renderer/backend/vulkan/vulkan_material.cpp
         src/renderer/backend/vulkan/vulkan_cubemap.cpp
+        src/renderer/backend/vulkan/vulkan_presenter.cpp
 
         src/main.cpp
-        )
+)
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)
 
@@ -157,7 +159,7 @@ target_sources(tests PRIVATE
         tests/scene/scene_tests.cpp
         src/scene/scene.cpp
         src/core/uuid.cpp
-        )
+)
 
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(tests PRIVATE spdlog::spdlog)

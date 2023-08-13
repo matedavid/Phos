@@ -209,7 +209,7 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::
 
         m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
             .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
-            .target_framebuffer = Renderer::presentation_framebuffer(),
+            .target_framebuffer = m_lighting_framebuffer,
 
             .front_face = FrontFace::Clockwise,
             .depth_compare_op = DepthCompareOp::LessEq,
@@ -217,22 +217,6 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::
 
         m_skybox_pipeline->add_input("uSkybox", m_skybox);
         PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
-    }
-
-    // Blending pass
-    {
-        m_blending_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-            .shader = Renderer::shader_manager()->get_builtin_shader("Blending"),
-            .target_framebuffer = Renderer::presentation_framebuffer(),
-        });
-
-        m_blending_pipeline->add_input("uBlendingTexture", m_lighting_texture);
-        PS_ASSERT(m_blending_pipeline->bake(), "Failed to bake Blending Pipeline")
-
-        m_blending_pass = RenderPass::create(RenderPass::Description{
-            .debug_name = "Blending",
-            .presentation_target = true,
-        });
     }
 
     // Create cube
@@ -377,24 +361,16 @@ void DeferredRenderer::render() {
 
             Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
         }
-
-        // Blending pass
-        // ==========================
-        {
-            Renderer::begin_render_pass(m_command_buffer, m_blending_pass, true);
-
-            // Draw quad
-            Renderer::bind_graphics_pipeline(m_command_buffer, m_blending_pipeline);
-            Renderer::draw_screen_quad(m_command_buffer);
-
-            Renderer::end_render_pass(m_command_buffer, m_blending_pass);
-        }
     });
 
     // Submit command buffer
     Renderer::submit_command_buffer(m_command_buffer);
 
     Renderer::end_frame();
+}
+
+std::shared_ptr<Texture> DeferredRenderer::output_texture() const {
+    return m_lighting_texture;
 }
 
 std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {

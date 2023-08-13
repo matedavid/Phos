@@ -53,8 +53,7 @@ class INativeRenderer {
                                     const void* data) = 0;
 
     virtual void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                   const std::shared_ptr<RenderPass>& render_pass,
-                                   bool presentation_target) = 0;
+                                   const std::shared_ptr<RenderPass>& render_pass) = 0;
 
     virtual void end_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                  const std::shared_ptr<RenderPass>& render_pass) = 0;
@@ -62,9 +61,6 @@ class INativeRenderer {
     virtual void submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer) = 0;
 
     virtual void draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer) = 0;
-
-    virtual std::shared_ptr<Framebuffer> current_frame_framebuffer() = 0;
-    virtual std::shared_ptr<Framebuffer> presentation_framebuffer() = 0;
 };
 
 class Renderer {
@@ -91,8 +87,7 @@ class Renderer {
     }
 
     static void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                  const std::shared_ptr<RenderPass>& render_pass,
-                                  bool presentation_target = false);
+                                  const std::shared_ptr<RenderPass>& render_pass);
 
     static void end_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                 const std::shared_ptr<RenderPass>& render_pass);
@@ -100,9 +95,6 @@ class Renderer {
     static void submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer);
 
     static void draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer);
-
-    static std::shared_ptr<Framebuffer> current_frame_framebuffer();
-    static std::shared_ptr<Framebuffer> presentation_framebuffer();
 
     static GraphicsAPI graphics_api() { return m_config.graphics_api; }
 

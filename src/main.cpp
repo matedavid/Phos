@@ -19,6 +19,7 @@
 #include "renderer/backend/material.h"
 #include "renderer/backend/renderer.h"
 #include "renderer/backend/texture.h"
+#include "renderer/backend/presenter.h"
 
 constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 960;
@@ -28,6 +29,7 @@ class SandboxLayer : public Phos::Layer {
     SandboxLayer() {
         m_scene = std::make_shared<Phos::Scene>("Sandbox Scene");
         m_scene_renderer = std::make_shared<Phos::DeferredRenderer>(m_scene);
+        m_presenter = Phos::Presenter::create(m_scene_renderer, Phos::Application::instance()->get_window());
 
         const auto pack = std::make_shared<Phos::AssetPack>("../assets/asset_pack.psap");
         m_asset_manager = std::make_shared<Phos::AssetManager>(pack);
@@ -160,7 +162,10 @@ class SandboxLayer : public Phos::Layer {
         */
     }
 
-    void on_update([[maybe_unused]] double ts) override { m_scene_renderer->render(); }
+    void on_update([[maybe_unused]] double ts) override {
+        m_scene_renderer->render();
+        m_presenter->present();
+    }
 
     void on_mouse_moved(Phos::MouseMovedEvent& mouse_moved) override {
         double x = mouse_moved.get_xpos();
@@ -206,8 +211,10 @@ class SandboxLayer : public Phos::Layer {
 
   private:
     std::shared_ptr<Phos::Scene> m_scene;
-    std::shared_ptr<Phos::ISceneRenderer> m_scene_renderer;
     std::shared_ptr<Phos::AssetManager> m_asset_manager;
+
+    std::shared_ptr<Phos::ISceneRenderer> m_scene_renderer;
+    std::shared_ptr<Phos::Presenter> m_presenter;
 
     std::shared_ptr<Phos::Camera> m_camera;
     glm::vec2 m_mouse_pos{};

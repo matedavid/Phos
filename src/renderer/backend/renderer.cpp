@@ -62,9 +62,8 @@ void Renderer::bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& comm
 }
 
 void Renderer::begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                 const std::shared_ptr<RenderPass>& render_pass,
-                                 bool presentation_target) {
-    m_native_renderer->begin_render_pass(command_buffer, render_pass, presentation_target);
+                                 const std::shared_ptr<RenderPass>& render_pass) {
+    m_native_renderer->begin_render_pass(command_buffer, render_pass);
 }
 
 void Renderer::end_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
@@ -78,14 +77,6 @@ void Renderer::submit_command_buffer(const std::shared_ptr<CommandBuffer>& comma
 
 void Renderer::draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer) {
     m_native_renderer->draw_screen_quad(command_buffer);
-}
-
-std::shared_ptr<Framebuffer> Renderer::current_frame_framebuffer() {
-    return m_native_renderer->current_frame_framebuffer();
-}
-
-std::shared_ptr<Framebuffer> Renderer::presentation_framebuffer() {
-    return m_native_renderer->presentation_framebuffer();
 }
 
 } // namespace Phos
