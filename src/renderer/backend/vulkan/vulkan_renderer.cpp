@@ -24,9 +24,6 @@ VulkanRenderer::VulkanRenderer(const RendererConfig& config) {
     m_graphics_queue = VulkanContext::device->get_graphics_queue();
 
     // Synchronization
-    VkSemaphoreCreateInfo semaphore_create_info{};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
     VkFenceCreateInfo fence_create_info{};
     fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;

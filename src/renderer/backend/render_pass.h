@@ -12,9 +12,7 @@ class RenderPass {
   public:
     struct Description {
         std::string debug_name;
-
-        bool presentation_target = false; // Is render pass used in presentation pass
-        std::shared_ptr<Framebuffer> target_framebuffer = nullptr;
+        std::shared_ptr<Framebuffer> target_framebuffer;
     };
 
     virtual ~RenderPass() = default;
