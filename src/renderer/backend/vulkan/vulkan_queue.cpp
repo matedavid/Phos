@@ -7,7 +7,7 @@
 
 namespace Phos {
 
-VulkanQueue::VulkanQueue(VkQueue queue) : m_queue(queue) {}
+VulkanQueue::VulkanQueue(VkQueue queue, uint32_t queue_family) : m_queue(queue), m_queue_family(queue_family) {}
 
 void VulkanQueue::submit(VkSubmitInfo info, VkFence fence) {
     VK_CHECK(vkQueueSubmit(m_queue, 1, &info, fence));
