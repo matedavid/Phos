@@ -4,6 +4,7 @@
 #include "core/window.h"
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 
@@ -83,6 +84,7 @@ class EditorLayer : public Phos::Layer {
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable Docking
 
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
@@ -143,11 +145,63 @@ class EditorLayer : public Phos::Layer {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // bool show = true;
-        // ImGui::ShowDemoWindow(&show);
+        const auto viewport = ImGui::GetMainViewport();
 
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+
+        ImGui::SetNextWindowPos(viewport->Pos);
+        ImGui::SetNextWindowSize(viewport->Size);
+        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+        window_flags |= ImGuiWindowFlags_NoBackground;
+
+        static ImGuiID dockspace_id;
+        static bool first_time = true;
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::Begin("DockSpace", nullptr, window_flags);
+        ImGui::PopStyleVar();
+        ImGui::PopStyleVar(2);
+
+        dockspace_id = ImGui::GetID("MyDockSpace");
+        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+
+        if (first_time) {
+            first_time = false;
+
+            ImGui::DockBuilderRemoveNode(dockspace_id); // Clear out existing layout
+            ImGui::DockBuilderAddNode(
+                dockspace_id, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_DockSpace); // Add empty node
+            ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
+
+            auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &dockspace_id);
+            auto dock_id_down = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, nullptr, &dockspace_id);
+
+            // we now dock our windows into the docking node we made above
+            ImGui::DockBuilderDockWindow("Down", dock_id_down);
+            ImGui::DockBuilderDockWindow("Left", dock_id_left);
+            ImGui::DockBuilderDockWindow("Viewport", dockspace_id);
+            ImGui::DockBuilderFinish(dockspace_id);
+        }
+
+        ImGui::End();
+
+        ImGui::Begin("Left");
+        ImGui::Text("Hello, left!");
+        ImGui::End();
+
+        ImGui::Begin("Down");
+        ImGui::Text("Hello, down!");
+        ImGui::End();
+
+        ImGui::Begin("Viewport");
         m_renderer->render();
         ImGui::Image((ImTextureID)m_set, ImVec2(WIDTH, HEIGHT));
+        ImGui::End();
 
         // Rendering
         ImGui::Render();
