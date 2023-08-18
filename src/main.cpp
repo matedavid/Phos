@@ -209,6 +209,13 @@ class SandboxLayer : public Phos::Layer {
         m_camera->set_position(new_pos);
     }
 
+    void on_window_resized(Phos::WindowResizeEvent& window_resized) override {
+        const auto [width, height] = window_resized.get_dimensions();
+
+        m_scene_renderer->window_resized(width, height);
+        m_presenter->window_resized(width, height);
+    }
+
   private:
     std::shared_ptr<Phos::Scene> m_scene;
     std::shared_ptr<Phos::AssetManager> m_asset_manager;

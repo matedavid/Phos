@@ -21,6 +21,7 @@ class VulkanPresenter : public Presenter {
     ~VulkanPresenter() override;
 
     void present() override;
+    void window_resized(uint32_t width, uint32_t height) override;
 
   private:
     std::shared_ptr<ISceneRenderer> m_renderer;
@@ -39,6 +40,8 @@ class VulkanPresenter : public Presenter {
     VkSemaphore m_image_available_semaphore{VK_NULL_HANDLE};
     VkSemaphore m_rendering_finished_semaphore{VK_NULL_HANDLE};
     VkFence m_wait_fence{VK_NULL_HANDLE};
+
+    void init();
 };
 
 } // namespace Phos

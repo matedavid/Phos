@@ -35,6 +35,7 @@ class WindowResizeEvent : public Event {
 
     [[nodiscard]] uint32_t get_width() const { return m_width; }
     [[nodiscard]] uint32_t get_height() const { return m_height; }
+    [[nodiscard]] std::pair<uint32_t, uint32_t> get_dimensions() const { return {m_width, m_height}; }
 
   private:
     uint32_t m_width, m_height;

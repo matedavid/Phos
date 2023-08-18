@@ -23,18 +23,7 @@ VulkanPresenter::VulkanPresenter(std::shared_ptr<ISceneRenderer> renderer, std::
     m_presentation_queue = VulkanContext::device->get_presentation_queue();
     m_command_buffer = std::make_shared<VulkanCommandBuffer>(VulkanQueue::Type::Graphics);
 
-    // Presentation pass
-    m_presentation_pipeline = std::make_shared<VulkanGraphicsPipeline>(GraphicsPipeline::Description{
-        .shader = Renderer::shader_manager()->get_builtin_shader("Blending"),
-        .target_framebuffer = std::dynamic_pointer_cast<Framebuffer>(m_swapchain->get_target_framebuffer()),
-    });
-
-    m_presentation_pipeline->add_input("uBlendingTexture", m_renderer->output_texture());
-
-    m_presentation_pass = std::make_shared<VulkanRenderPass>(RenderPass::Description{
-        .debug_name = "Presentation-Pass",
-        .target_framebuffer = std::dynamic_pointer_cast<Framebuffer>(m_swapchain->get_target_framebuffer()),
-    });
+    init();
 
     // Synchronization
     VkSemaphoreCreateInfo semaphore_create_info{};
@@ -104,6 +93,28 @@ void VulkanPresenter::present() {
     } else if (result != VK_SUCCESS) {
         PS_FAIL("Failed to present image")
     }
+}
+
+void VulkanPresenter::window_resized(uint32_t width, uint32_t height) {
+    Renderer::wait_idle();
+    vkQueueWaitIdle(m_presentation_queue->handle());
+
+    init();
+}
+
+void VulkanPresenter::init() {
+    // Presentation pass
+    m_presentation_pipeline = std::make_shared<VulkanGraphicsPipeline>(GraphicsPipeline::Description{
+        .shader = Renderer::shader_manager()->get_builtin_shader("Blending"),
+        .target_framebuffer = std::dynamic_pointer_cast<Framebuffer>(m_swapchain->get_target_framebuffer()),
+    });
+
+    m_presentation_pipeline->add_input("uBlendingTexture", m_renderer->output_texture());
+
+    m_presentation_pass = std::make_shared<VulkanRenderPass>(RenderPass::Description{
+        .debug_name = "Presentation-Pass",
+        .target_framebuffer = std::dynamic_pointer_cast<Framebuffer>(m_swapchain->get_target_framebuffer()),
+    });
 }
 
 } // namespace Phos

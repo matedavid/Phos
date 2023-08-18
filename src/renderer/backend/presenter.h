@@ -16,6 +16,7 @@ class Presenter {
                                                            const std::shared_ptr<Window>& window);
 
     virtual void present() = 0;
+    virtual void window_resized(uint32_t width, uint32_t height) = 0;
 };
 
 } // namespace Phos
