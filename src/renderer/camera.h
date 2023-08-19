@@ -32,6 +32,13 @@ class PerspectiveCamera : public Camera {
     explicit PerspectiveCamera();
     explicit PerspectiveCamera(float fov, float aspect, float znear, float zfar);
     ~PerspectiveCamera() override = default;
+
+    void set_aspect_ratio(float aspect);
+
+  private:
+    float m_fov, m_aspect, m_znear, m_zfar;
+
+    void recalculate_projection_matrix();
 };
 
 class OrthographicCamera : public Camera {

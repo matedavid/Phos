@@ -34,9 +34,25 @@ PerspectiveCamera::PerspectiveCamera() {
     recalculate_view_matrix();
 }
 
-PerspectiveCamera::PerspectiveCamera(float fov, float aspect, float znear, float zfar) {
-    m_projection = glm::perspective(fov, aspect, znear, zfar);
+PerspectiveCamera::PerspectiveCamera(float fov, float aspect, float znear, float zfar)
+      : m_fov(fov), m_aspect(aspect), m_znear(znear), m_zfar(zfar) {
+    recalculate_projection_matrix();
     recalculate_view_matrix();
+}
+
+void PerspectiveCamera::set_aspect_ratio(float aspect) {
+    m_aspect = aspect;
+
+    float tmp_fov = m_fov;
+    if (aspect < 1.0f) {
+        m_fov = 2.0f * glm::atan(glm::tan(m_fov * 0.5f) / aspect);
+    }
+    recalculate_projection_matrix();
+    m_fov = tmp_fov;
+}
+
+void PerspectiveCamera::recalculate_projection_matrix() {
+    m_projection = glm::perspective(m_fov, m_aspect, m_znear, m_zfar);
 }
 
 //

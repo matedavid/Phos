@@ -214,6 +214,9 @@ class SandboxLayer : public Phos::Layer {
 
         m_scene_renderer->window_resized(width, height);
         m_presenter->window_resized(width, height);
+
+        const float aspect_ratio = (float)width / (float)height;
+        m_camera->set_aspect_ratio(aspect_ratio);
     }
 
   private:
@@ -223,7 +226,7 @@ class SandboxLayer : public Phos::Layer {
     std::shared_ptr<Phos::ISceneRenderer> m_scene_renderer;
     std::shared_ptr<Phos::Presenter> m_presenter;
 
-    std::shared_ptr<Phos::Camera> m_camera;
+    std::shared_ptr<Phos::PerspectiveCamera> m_camera;
     glm::vec2 m_mouse_pos{};
 };
 
