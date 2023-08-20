@@ -87,6 +87,8 @@ target_sources(${PROJECT_NAME} PRIVATE
 
         # Editor
         editor/main.cpp
+        editor/imgui/imgui_impl.cpp
+        editor/imgui/vulkan/imgui_vulkan_impl.cpp
 
         # src/main.cpp
 )
