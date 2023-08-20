@@ -44,8 +44,7 @@ class EditorLayer : public Phos::Layer {
         create_scene();
 
         const auto aspect_ratio = WIDTH / HEIGHT;
-        const auto m_camera =
-            std::make_shared<Phos::PerspectiveCamera>(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
+        m_camera = std::make_shared<Phos::PerspectiveCamera>(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
         m_camera->set_position({0.0f, 3.0f, 7.0f});
         m_camera->rotate(glm::vec2(0.0f, glm::radians(30.0f)));
 
@@ -179,7 +178,7 @@ class EditorLayer : public Phos::Layer {
             ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
 
             auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &dockspace_id);
-            auto dock_id_down = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, nullptr, &dockspace_id);
+            auto dock_id_down = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.20f, nullptr, &dockspace_id);
 
             // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow("Down", dock_id_down);
@@ -198,9 +197,44 @@ class EditorLayer : public Phos::Layer {
         ImGui::Text("Hello, down!");
         ImGui::End();
 
-        ImGui::Begin("Viewport");
+        ImGuiWindowClass window_class;
+        window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoTabBar;
+        ImGui::SetNextWindowClass(&window_class);
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::Begin("Viewport",
+                     nullptr,
+                     ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus |
+                         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+        ImGui::PopStyleVar();
+
+        static uint32_t last_width = WIDTH;
+        static uint32_t last_height = HEIGHT;
+
+        // const auto viewport_node = ImGui::GetWindowDockNode();
+        const auto viewport_node = ImGui::DockBuilderGetCentralNode(dockspace_id);
+
+        const auto width = static_cast<uint32_t>(viewport_node->Size.x);
+        const auto height = static_cast<uint32_t>(viewport_node->Size.y);
+
+        if (width != last_width || height != last_height) {
+            last_width = width;
+            last_height = height;
+
+            m_renderer->window_resized(width, height);
+            m_camera->set_aspect_ratio(float(width) / float(height));
+
+            // Image Descriptors
+            const auto output_texture = std::dynamic_pointer_cast<Phos::VulkanTexture>(m_renderer->output_texture());
+            const auto image = std::dynamic_pointer_cast<Phos::VulkanImage>(output_texture->get_image());
+
+            m_set = ImGui_ImplVulkan_AddTexture(
+                output_texture->sampler(), image->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        }
+
         m_renderer->render();
-        ImGui::Image((ImTextureID)m_set, ImVec2(WIDTH, HEIGHT));
+        ImGui::Image((ImTextureID)m_set, viewport_node->Size);
+
         ImGui::End();
 
         // Rendering
@@ -221,16 +255,15 @@ class EditorLayer : public Phos::Layer {
     std::shared_ptr<Phos::ISceneRenderer> m_renderer;
     std::shared_ptr<Phos::Scene> m_scene;
     std::shared_ptr<Phos::AssetManager> m_asset_manager;
+    std::shared_ptr<Phos::PerspectiveCamera> m_camera;
 
     ImGui_ImplVulkanH_Window* wd = new ImGui_ImplVulkanH_Window{};
-    VkDescriptorPool m_descriptor_pool;
+    VkDescriptorPool m_descriptor_pool{VK_NULL_HANDLE};
     VkDescriptorSet m_set;
 
     void setup_vulkan_window() {
         Phos::Application::instance()->get_window()->create_surface(Phos::VulkanContext::instance->handle(),
                                                                     wd->Surface);
-
-        // wd->Surface = Phos::VulkanContext::instance->get_surface();
 
         // Select Surface Format
         const VkFormat requestSurfaceImageFormat[] = {
