@@ -1,3 +1,6 @@
+#include <ranges>
+#include <algorithm>
+
 #include "core/entry_point.h"
 #include "core/layer.h"
 #include "core/application.h"
@@ -97,21 +100,32 @@ class EditorLayer : public Phos::Layer {
 
             // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow("Down", dock_id_down);
-            ImGui::DockBuilderDockWindow("Left", dock_id_left);
+            ImGui::DockBuilderDockWindow("Entity Panel", dock_id_left);
             ImGui::DockBuilderDockWindow("Viewport", dockspace_id);
             ImGui::DockBuilderFinish(dockspace_id);
         }
 
         ImGui::End();
 
-        ImGui::Begin("Left");
-        ImGui::Text("Hello, left!");
+        //
+        // Entity panel
+        //
+        ImGui::Begin("Entity Panel");
+
+        render_entity_panel();
+
         ImGui::End();
 
+        //
+        // Down panel
+        //
         ImGui::Begin("Down");
         ImGui::Text("Hello, down!");
         ImGui::End();
 
+        //
+        // Viewport panel
+        //
         ImGuiWindowClass window_class;
         window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoTabBar;
         ImGui::SetNextWindowClass(&window_class);
@@ -167,9 +181,45 @@ class EditorLayer : public Phos::Layer {
 
     ImTextureID m_set;
 
+    void render_entity_panel() {
+        std::vector<Phos::Entity> parent_entities;
+        std::ranges::copy_if(m_scene->get_entities_with<Phos::RelationshipComponent>(),
+                             std::back_inserter(parent_entities),
+                             [](Phos::Entity& entity) {
+                                 auto relationship = entity.get_component<Phos::RelationshipComponent>();
+                                 return !relationship.parent.has_value();
+                             });
+
+        for (const auto& entity : parent_entities) {
+            render_entity_panel_r(entity);
+        }
+    }
+
+    void render_entity_panel_r(const Phos::Entity& entity) {
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
+
+        const auto name = entity.get_component<Phos::NameComponent>().name;
+        const auto children = entity.get_component<Phos::RelationshipComponent>().children;
+        if (children.empty())
+            flags |= ImGuiTreeNodeFlags_Leaf;
+
+        if (ImGui::TreeNodeEx(name.c_str(), flags)) {
+            for (const auto& child_uuid : children) {
+                const auto child = m_scene->get_entity_with_uuid(child_uuid);
+                render_entity_panel_r(child);
+            }
+
+            ImGui::TreePop();
+        }
+    }
+
     void create_scene() {
         const auto sphere_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/sphere/sphere.psa");
         const auto cube_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/cube/cube.psa");
+
+        // model
+        auto model = m_asset_manager->load<Phos::ModelAsset>("../assets/models/john_117_imported/scene.gltf.psa");
+        model->import_into_scene(m_scene);
 
         // Floor
         const auto floor_material = Phos::Material::create(
@@ -190,7 +240,7 @@ class EditorLayer : public Phos::Layer {
             Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"), "Light Material");
         PS_ASSERT(light_material->bake(), "Failed to bake light material")
 
-        auto floor_entity = m_scene->create_entity();
+        auto floor_entity = m_scene->create_entity("Floor");
         floor_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(10.0f, 0.25f, 10.0f);
         floor_entity.get_component<Phos::TransformComponent>().position = glm::vec3(0.0f, -0.25f, 0.0f);
         floor_entity.add_component<Phos::MeshRendererComponent>({
@@ -198,7 +248,7 @@ class EditorLayer : public Phos::Layer {
             .material = floor_material,
         });
 
-        auto wall_entity = m_scene->create_entity();
+        auto wall_entity = m_scene->create_entity("Wall");
         wall_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(10.0f, 0.25f, 7.0f);
         wall_entity.get_component<Phos::TransformComponent>().position = glm::vec3(0.0f, 6.5f, -10.0f);
         wall_entity.get_component<Phos::TransformComponent>().rotation = glm::vec3(glm::radians(90.0f), 0.0f, 0.0f);
@@ -224,7 +274,9 @@ class EditorLayer : public Phos::Layer {
 
                 PS_ASSERT(sphere_material->bake(), "Failed to bake sphere material {} {}", metallic_idx, roughness_idx)
 
-                auto sphere_entity = m_scene->create_entity();
+                auto entity_name = "Sphere_" + std::to_string(metallic_idx) + "_" + std::to_string(roughness_idx);
+                auto sphere_entity = m_scene->create_entity(entity_name);
+
                 sphere_entity.get_component<Phos::TransformComponent>().position =
                     glm::vec3(metallic_idx * 2, roughness_idx * 2 + 1, -2.0f);
                 sphere_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(0.6f);
@@ -246,7 +298,7 @@ class EditorLayer : public Phos::Layer {
         };
 
         for (const auto& light_pos : light_positions) {
-            auto light_entity = m_scene->create_entity();
+            auto light_entity = m_scene->create_entity("PointLight");
             light_entity.get_component<Phos::TransformComponent>().position = light_pos;
             light_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(0.15f);
 
@@ -261,7 +313,7 @@ class EditorLayer : public Phos::Layer {
             });
         }
 
-        auto directional_light_entity = m_scene->create_entity();
+        auto directional_light_entity = m_scene->create_entity("DirectionalLight");
         directional_light_entity.get_component<Phos::TransformComponent>().position = glm::vec3(2.0f, 17.0f, 9.0f);
         directional_light_entity.get_component<Phos::TransformComponent>().rotation =
             glm::vec3(glm::radians(40.0f), glm::radians(180.0f), glm::radians(0.0f));
