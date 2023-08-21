@@ -33,16 +33,7 @@ ImGuiVulkanImpl::ImGuiVulkanImpl(std::shared_ptr<Phos::Window> window) : m_windo
                                                             &present_modes[0],
                                                             IM_ARRAYSIZE(present_modes));
 
-    const auto graphics_queue = Phos::VulkanContext::device->get_graphics_queue();
-    ImGui_ImplVulkanH_CreateOrResizeWindow(Phos::VulkanContext::instance->handle(),
-                                           Phos::VulkanContext::device->physical_device().handle(),
-                                           Phos::VulkanContext::device->handle(),
-                                           m_wd,
-                                           graphics_queue->family(),
-                                           nullptr,
-                                           static_cast<int32_t>(m_window->get_width()),
-                                           static_cast<int32_t>(m_window->get_height()),
-                                           2);
+    create_resize_window();
 
     // Descriptor pool
     VkDescriptorPoolSize pool_sizes[] = {
@@ -110,6 +101,19 @@ ImGuiVulkanImpl::~ImGuiVulkanImpl() {
 }
 
 void ImGuiVulkanImpl::new_frame() {
+    if (m_rebuild_swapchain) {
+        const auto width = m_window->get_width();
+        const auto height = m_window->get_width();
+
+        if (width > 0 && height > 0) {
+            ImGui_ImplVulkan_SetMinImageCount(m_min_image_count);
+            create_resize_window();
+
+            m_wd->FrameIndex = 0;
+            m_rebuild_swapchain = false;
+        }
+    }
+
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
 }
@@ -122,7 +126,7 @@ void ImGuiVulkanImpl::render_frame(ImDrawData* draw_data) {
     auto err = vkAcquireNextImageKHR(
         device, m_wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &m_wd->FrameIndex);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
-        // g_SwapChainRebuild = true;
+        m_rebuild_swapchain = true;
         return;
     }
     VK_CHECK(err);
@@ -180,6 +184,9 @@ void ImGuiVulkanImpl::render_frame(ImDrawData* draw_data) {
 }
 
 void ImGuiVulkanImpl::present_frame() {
+    if (m_rebuild_swapchain)
+        return;
+
     VkSemaphore render_complete_semaphore = m_wd->FrameSemaphores[m_wd->SemaphoreIndex].RenderCompleteSemaphore;
     VkPresentInfoKHR info = {};
     info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -191,7 +198,7 @@ void ImGuiVulkanImpl::present_frame() {
 
     auto err = vkQueuePresentKHR(Phos::VulkanContext::device->get_graphics_queue()->handle(), &info);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
-        // g_SwapChainRebuild = true;
+        m_rebuild_swapchain = true;
         return;
     }
     VK_CHECK(err);
@@ -204,4 +211,17 @@ ImTextureID ImGuiVulkanImpl::add_texture(const std::shared_ptr<Phos::Texture>& t
 
     return ImGui_ImplVulkan_AddTexture(
         native_texture->sampler(), native_image->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+void ImGuiVulkanImpl::create_resize_window() {
+    const auto graphics_queue = Phos::VulkanContext::device->get_graphics_queue();
+    ImGui_ImplVulkanH_CreateOrResizeWindow(Phos::VulkanContext::instance->handle(),
+                                           Phos::VulkanContext::device->physical_device().handle(),
+                                           Phos::VulkanContext::device->handle(),
+                                           m_wd,
+                                           graphics_queue->family(),
+                                           nullptr,
+                                           static_cast<int32_t>(m_window->get_width()),
+                                           static_cast<int32_t>(m_window->get_height()),
+                                           m_min_image_count);
 }

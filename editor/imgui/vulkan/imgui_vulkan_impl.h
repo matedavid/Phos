@@ -21,4 +21,10 @@ class ImGuiVulkanImpl : public INativeImGuiImpl {
     ImGui_ImplVulkanH_Window* m_wd;
 
     VkDescriptorPool m_descriptor_pool;
+    bool m_rebuild_swapchain = false;
+
+    uint32_t m_min_image_count = 2;
+
+    void create_resize_window();
+
 };
