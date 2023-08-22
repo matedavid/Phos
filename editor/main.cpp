@@ -16,12 +16,12 @@
 
 #include "panels/viewport_panel.h"
 #include "panels/entity_hierarchy_panel.h"
+#include "panels/components_panel.h"
 
 #include "asset/asset_manager.h"
 
 #include "scene/scene_renderer.h"
 #include "scene/scene.h"
-#include "scene/entity.h"
 
 #include "managers/shader_manager.h"
 
@@ -63,6 +63,7 @@ class EditorLayer : public Phos::Layer {
             [&](uint32_t width, uint32_t height) { on_viewport_resized(width, height); });
 
         m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_scene);
+        m_components_panel = std::make_unique<ComponentsPanel>("Components", m_scene);
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
@@ -98,15 +99,23 @@ class EditorLayer : public Phos::Layer {
             first_time = false;
 
             ImGui::DockBuilderRemoveNode(m_dockspace_id); // Clear out existing layout
-            ImGui::DockBuilderAddNode(m_dockspace_id, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_DockSpace); // Add empty node
+            ImGui::DockBuilderAddNode(m_dockspace_id,
+                                      ImGuiDockNodeFlags_PassthruCentralNode |
+                                          ImGuiDockNodeFlags_DockSpace); // Add empty node
             ImGui::DockBuilderSetNodeSize(m_dockspace_id, viewport->Size);
 
-            auto dock_id_left = ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &m_dockspace_id);
-            auto dock_id_down = ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Down, 0.20f, nullptr, &m_dockspace_id);
+            auto dock_id_left =
+                ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Left, 0.20f, nullptr, &m_dockspace_id);
+            auto dock_id_left_down =
+                ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.60f, nullptr, &dock_id_left);
+
+            auto dock_id_down =
+                ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Down, 0.20f, nullptr, &m_dockspace_id);
 
             // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow("Down", dock_id_down);
             ImGui::DockBuilderDockWindow("Entities", dock_id_left);
+            ImGui::DockBuilderDockWindow("Components", dock_id_left_down);
             ImGui::DockBuilderDockWindow("Viewport", m_dockspace_id);
             ImGui::DockBuilderFinish(m_dockspace_id);
         }
@@ -119,14 +128,23 @@ class EditorLayer : public Phos::Layer {
         m_entity_panel->on_imgui_render();
 
         //
-        // Down panel
+        // Components
+        //
+        const auto selected_entity = m_entity_panel->get_selected_entity();
+        if (selected_entity.has_value())
+            m_components_panel->set_selected_entity(selected_entity.value());
+
+        m_components_panel->on_imgui_render();
+
+        //
+        // Down Panel
         //
         ImGui::Begin("Down");
         ImGui::Text("Hello, down!");
         ImGui::End();
 
         //
-        // Viewport panel
+        // Viewport
         //
         m_viewport_panel->on_imgui_render();
 
@@ -149,6 +167,7 @@ class EditorLayer : public Phos::Layer {
 
     std::unique_ptr<ViewportPanel> m_viewport_panel;
     std::unique_ptr<EntityHierarchyPanel> m_entity_panel;
+    std::unique_ptr<ComponentsPanel> m_components_panel;
 
     ImGuiID m_dockspace_id;
 

@@ -2,6 +2,9 @@
 
 #include "core.h"
 
+#include <imgui.h>
+#include <imgui_internal.h>
+
 class IImGuiPanel {
   public:
     virtual ~IImGuiPanel() = default;

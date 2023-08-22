@@ -25,19 +25,30 @@ void EntityHierarchyPanel::on_imgui_render() {
 }
 
 void EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
+    if (m_selected_entity.has_value() && m_selected_entity.value().uuid() == entity.uuid())
+        flags |= ImGuiTreeNodeFlags_Selected;
 
-    const auto name = entity.get_component<Phos::NameComponent>().name;
-    const auto children = entity.get_component<Phos::RelationshipComponent>().children;
+    const auto& name = entity.get_component<Phos::NameComponent>().name;
+    const auto& children = entity.get_component<Phos::RelationshipComponent>().children;
     if (children.empty())
         flags |= ImGuiTreeNodeFlags_Leaf;
 
-    if (ImGui::TreeNodeEx(name.c_str(), flags)) {
+    const bool opened = ImGui::TreeNodeEx(name.c_str(), flags);
+    if (ImGui::IsItemClicked()) {
+        select_entity(entity);
+    }
+
+    if (opened) {
         for (const auto& child_uuid : children) {
-            const auto child = m_scene->get_entity_with_uuid(child_uuid);
+            const auto& child = m_scene->get_entity_with_uuid(child_uuid);
             render_entity_r(child);
         }
 
         ImGui::TreePop();
     }
+}
+
+void EntityHierarchyPanel::select_entity(const Phos::Entity& entity) {
+    m_selected_entity = entity;
 }
