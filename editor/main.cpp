@@ -11,6 +11,8 @@
 
 #include "imgui/imgui_impl.h"
 
+#include "panels/viewport_panel.h"
+
 #include "asset/asset_manager.h"
 
 #include "scene/scene_renderer.h"
@@ -51,9 +53,9 @@ class EditorLayer : public Phos::Layer {
         // Initialize ImGui backend
         ImGuiImpl::initialize(Phos::Application::instance()->get_window());
 
-        // Image Descriptors
-        const auto& output_texture = m_renderer->output_texture();
-        m_set = ImGuiImpl::add_texture(output_texture);
+        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer);
+        m_viewport_panel->set_viewport_resized_callback(
+            [&](uint32_t width, uint32_t height) { on_viewport_resized(width, height); });
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
@@ -65,16 +67,15 @@ class EditorLayer : public Phos::Layer {
         const auto viewport = ImGui::GetMainViewport();
 
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+        window_flags |= ImGuiWindowFlags_NoBackground;
 
         ImGui::SetNextWindowPos(viewport->Pos);
         ImGui::SetNextWindowSize(viewport->Size);
         ImGui::SetNextWindowViewport(viewport->ID);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-
-        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
-        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-        window_flags |= ImGuiWindowFlags_NoBackground;
 
         static ImGuiID dockspace_id;
         static bool first_time = true;
@@ -126,42 +127,7 @@ class EditorLayer : public Phos::Layer {
         //
         // Viewport panel
         //
-        ImGuiWindowClass window_class;
-        window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoTabBar;
-        ImGui::SetNextWindowClass(&window_class);
-
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-        ImGui::Begin("Viewport",
-                     nullptr,
-                     ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus |
-                         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
-        ImGui::PopStyleVar();
-
-        static uint32_t last_width = WIDTH;
-        static uint32_t last_height = HEIGHT;
-
-        // const auto viewport_node = ImGui::GetWindowDockNode();
-        const auto viewport_node = ImGui::DockBuilderGetCentralNode(dockspace_id);
-
-        const auto width = static_cast<uint32_t>(viewport_node->Size.x);
-        const auto height = static_cast<uint32_t>(viewport_node->Size.y);
-
-        if (width != last_width || height != last_height) {
-            last_width = width;
-            last_height = height;
-
-            m_renderer->window_resized(width, height);
-            m_camera->set_aspect_ratio(float(width) / float(height));
-
-            // Image Descriptors
-            const auto& output_texture = m_renderer->output_texture();
-            m_set = ImGuiImpl::add_texture(output_texture);
-        }
-
-        m_renderer->render();
-        ImGui::Image(m_set, viewport_node->Size);
-
-        ImGui::End();
+        m_viewport_panel->on_imgui_render();
 
         // Rendering
         ImGui::Render();
@@ -179,7 +145,11 @@ class EditorLayer : public Phos::Layer {
     std::shared_ptr<Phos::AssetManager> m_asset_manager;
     std::shared_ptr<Phos::PerspectiveCamera> m_camera;
 
-    ImTextureID m_set;
+    std::unique_ptr<ViewportPanel> m_viewport_panel;
+
+    void on_viewport_resized(uint32_t width, uint32_t height) {
+        m_camera->set_aspect_ratio(float(width) / float(height));
+    }
 
     void render_entity_panel() {
         std::vector<Phos::Entity> parent_entities;
