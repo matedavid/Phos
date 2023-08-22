@@ -89,6 +89,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         editor/main.cpp
 
         editor/panels/viewport_panel.cpp
+        editor/panels/entity_hierarchy_panel.cpp
 
         editor/imgui/imgui_impl.cpp
         editor/imgui/vulkan/imgui_vulkan_impl.cpp

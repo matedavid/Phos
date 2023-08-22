@@ -12,6 +12,7 @@
 #include "imgui/imgui_impl.h"
 
 #include "panels/viewport_panel.h"
+#include "panels/entity_hierarchy_panel.h"
 
 #include "asset/asset_manager.h"
 
@@ -53,9 +54,12 @@ class EditorLayer : public Phos::Layer {
         // Initialize ImGui backend
         ImGuiImpl::initialize(Phos::Application::instance()->get_window());
 
+        // Panels
         m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer);
         m_viewport_panel->set_viewport_resized_callback(
             [&](uint32_t width, uint32_t height) { on_viewport_resized(width, height); });
+
+        m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_scene);
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
@@ -101,7 +105,7 @@ class EditorLayer : public Phos::Layer {
 
             // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow("Down", dock_id_down);
-            ImGui::DockBuilderDockWindow("Entity Panel", dock_id_left);
+            ImGui::DockBuilderDockWindow("Entities", dock_id_left);
             ImGui::DockBuilderDockWindow("Viewport", dockspace_id);
             ImGui::DockBuilderFinish(dockspace_id);
         }
@@ -109,13 +113,9 @@ class EditorLayer : public Phos::Layer {
         ImGui::End();
 
         //
-        // Entity panel
+        // Entity Hierarchy
         //
-        ImGui::Begin("Entity Panel");
-
-        render_entity_panel();
-
-        ImGui::End();
+        m_entity_panel->on_imgui_render();
 
         //
         // Down panel
@@ -146,41 +146,10 @@ class EditorLayer : public Phos::Layer {
     std::shared_ptr<Phos::PerspectiveCamera> m_camera;
 
     std::unique_ptr<ViewportPanel> m_viewport_panel;
+    std::unique_ptr<EntityHierarchyPanel> m_entity_panel;
 
     void on_viewport_resized(uint32_t width, uint32_t height) {
         m_camera->set_aspect_ratio(float(width) / float(height));
-    }
-
-    void render_entity_panel() {
-        std::vector<Phos::Entity> parent_entities;
-        std::ranges::copy_if(m_scene->get_entities_with<Phos::RelationshipComponent>(),
-                             std::back_inserter(parent_entities),
-                             [](Phos::Entity& entity) {
-                                 auto relationship = entity.get_component<Phos::RelationshipComponent>();
-                                 return !relationship.parent.has_value();
-                             });
-
-        for (const auto& entity : parent_entities) {
-            render_entity_panel_r(entity);
-        }
-    }
-
-    void render_entity_panel_r(const Phos::Entity& entity) {
-        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
-
-        const auto name = entity.get_component<Phos::NameComponent>().name;
-        const auto children = entity.get_component<Phos::RelationshipComponent>().children;
-        if (children.empty())
-            flags |= ImGuiTreeNodeFlags_Leaf;
-
-        if (ImGui::TreeNodeEx(name.c_str(), flags)) {
-            for (const auto& child_uuid : children) {
-                const auto child = m_scene->get_entity_with_uuid(child_uuid);
-                render_entity_panel_r(child);
-            }
-
-            ImGui::TreePop();
-        }
     }
 
     void create_scene() {
