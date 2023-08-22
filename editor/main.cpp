@@ -6,6 +6,9 @@
 #include "core/application.h"
 #include "core/window.h"
 
+#include "input/input.h"
+#include "input/events.h"
+
 #include <imgui.h>
 #include <imgui_internal.h>
 
@@ -81,7 +84,6 @@ class EditorLayer : public Phos::Layer {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
-        static ImGuiID dockspace_id;
         static bool first_time = true;
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -89,25 +91,24 @@ class EditorLayer : public Phos::Layer {
         ImGui::PopStyleVar();
         ImGui::PopStyleVar(2);
 
-        dockspace_id = ImGui::GetID("MyDockSpace");
-        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+        m_dockspace_id = ImGui::GetID("MyDockSpace");
+        ImGui::DockSpace(m_dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 
         if (first_time) {
             first_time = false;
 
-            ImGui::DockBuilderRemoveNode(dockspace_id); // Clear out existing layout
-            ImGui::DockBuilderAddNode(
-                dockspace_id, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_DockSpace); // Add empty node
-            ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
+            ImGui::DockBuilderRemoveNode(m_dockspace_id); // Clear out existing layout
+            ImGui::DockBuilderAddNode(m_dockspace_id, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_DockSpace); // Add empty node
+            ImGui::DockBuilderSetNodeSize(m_dockspace_id, viewport->Size);
 
-            auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &dockspace_id);
-            auto dock_id_down = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.20f, nullptr, &dockspace_id);
+            auto dock_id_left = ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &m_dockspace_id);
+            auto dock_id_down = ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Down, 0.20f, nullptr, &m_dockspace_id);
 
             // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow("Down", dock_id_down);
             ImGui::DockBuilderDockWindow("Entities", dock_id_left);
-            ImGui::DockBuilderDockWindow("Viewport", dockspace_id);
-            ImGui::DockBuilderFinish(dockspace_id);
+            ImGui::DockBuilderDockWindow("Viewport", m_dockspace_id);
+            ImGui::DockBuilderFinish(m_dockspace_id);
         }
 
         ImGui::End();
@@ -144,12 +145,63 @@ class EditorLayer : public Phos::Layer {
     std::shared_ptr<Phos::Scene> m_scene;
     std::shared_ptr<Phos::AssetManager> m_asset_manager;
     std::shared_ptr<Phos::PerspectiveCamera> m_camera;
+    glm::vec2 m_mouse_pos{};
 
     std::unique_ptr<ViewportPanel> m_viewport_panel;
     std::unique_ptr<EntityHierarchyPanel> m_entity_panel;
 
+    ImGuiID m_dockspace_id;
+
     void on_viewport_resized(uint32_t width, uint32_t height) {
         m_camera->set_aspect_ratio(float(width) / float(height));
+    }
+
+    void on_mouse_moved(Phos::MouseMovedEvent& mouse_moved) override {
+        if (!ImGui::DockBuilderGetCentralNode(m_dockspace_id)->IsFocused)
+            return;
+
+        double x = mouse_moved.get_xpos();
+        double y = mouse_moved.get_ypos();
+
+        if (Phos::Input::is_mouse_button_pressed(Phos::MouseButton::Left)) {
+            float x_rotation = 0.0f;
+            float y_rotation = 0.0f;
+
+            if (x > m_mouse_pos.x) {
+                x_rotation -= 0.03f;
+            } else if (x < m_mouse_pos.x) {
+                x_rotation += 0.03f;
+            }
+
+            if (y > m_mouse_pos.y) {
+                y_rotation += 0.03f;
+            } else if (y < m_mouse_pos.y) {
+                y_rotation -= 0.03f;
+            }
+
+            m_camera->rotate({x_rotation, y_rotation});
+        }
+
+        m_mouse_pos = glm::vec2(x, y);
+    }
+
+    void on_key_pressed(Phos::KeyPressedEvent& key_pressed) override {
+        if (!ImGui::DockBuilderGetCentralNode(m_dockspace_id)->IsFocused)
+            return;
+
+        glm::vec3 new_pos = m_camera->non_rotated_position();
+
+        if (key_pressed.get_key() == Phos::Key::W) {
+            new_pos.z -= 1;
+        } else if (key_pressed.get_key() == Phos::Key::S) {
+            new_pos.z += 1;
+        } else if (key_pressed.get_key() == Phos::Key::A) {
+            new_pos.x -= 1;
+        } else if (key_pressed.get_key() == Phos::Key::D) {
+            new_pos.x += 1;
+        }
+
+        m_camera->set_position(new_pos);
     }
 
     void create_scene() {
