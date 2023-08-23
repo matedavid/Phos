@@ -29,6 +29,8 @@ class VulkanMaterial : public Material {
 
     bool bake() override;
 
+    [[nodiscard]] const std::string& name() const override { return m_name; }
+
     void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const;
 
   private:

@@ -41,7 +41,11 @@ class Registry {
         return m_component_manager->get_entities_with_component<T>();
     }
 
-    template<typename T>
+    [[nodiscard]] std::vector<std::string> get_component_names(std::size_t entity_id) {
+        return m_component_manager->get_component_names(entity_id);
+    }
+
+    template <typename T>
     void register_component() {
         if (!m_component_manager->contains_component<T>())
             m_component_manager->register_component<T>();

@@ -25,5 +25,8 @@ class ComponentsPanel : public IImGuiPanel {
 
     std::optional<Phos::Entity> m_selected_entity;
 
+    bool render_component(const std::string& name, const Phos::Entity& entity) const;
+
     void render_transform_component(Phos::TransformComponent& transform) const;
+    void render_mesh_renderer_component(Phos::MeshRendererComponent& mesh_renderer) const;
 };

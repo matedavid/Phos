@@ -48,6 +48,15 @@ class ComponentManager {
         return get_component_array<T>()->get_entities();
     }
 
+    [[nodiscard]] std::vector<std::string> get_component_names(std::size_t entity_id) {
+        std::vector<std::string> names;
+        for (const auto& [name, _] : m_component_arrays) {
+            names.push_back(name);
+        }
+
+        return names;
+    }
+
     void entity_destroyed(std::size_t entity_id) {
         for (const auto& [_, array] : m_component_arrays) {
             array->entity_destroyed(entity_id);

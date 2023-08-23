@@ -2,6 +2,8 @@
 
 #include "scene/scene.h"
 
+#include "renderer/backend/material.h"
+
 ComponentsPanel::ComponentsPanel(std::string name, std::shared_ptr<Phos::Scene> scene)
       : m_name(std::move(name)), m_scene(std::move(scene)) {}
 
@@ -20,6 +22,13 @@ void ComponentsPanel::on_imgui_render() {
         render_transform_component(transform);
 
         ImGui::Separator();
+
+        const auto component_names = m_selected_entity->get_component_names();
+        for (const auto& name : component_names) {
+            bool rendered = render_component(name, *m_selected_entity);
+            if (rendered)
+                ImGui::Separator();
+        }
     }
 
     ImGui::End();
@@ -45,6 +54,16 @@ void render_label_input(const std::string& label, const std::string& group, T* v
     }
 }
 
+bool ComponentsPanel::render_component(const std::string& name, const Phos::Entity& entity) const {
+    if (name == typeid(Phos::MeshRendererComponent).name()) {
+        auto& mesh_renderer = entity.get_component<Phos::MeshRendererComponent>();
+        render_mesh_renderer_component(mesh_renderer);
+        return true;
+    }
+
+    return false;
+}
+
 void ComponentsPanel::render_transform_component(Phos::TransformComponent& transform) const {
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Transform");
@@ -52,9 +71,7 @@ void ComponentsPanel::render_transform_component(Phos::TransformComponent& trans
     if (!ImGui::BeginTable("Transform", 4))
         return;
 
-    //
     // Position
-    //
     ImGui::TableNextRow();
 
     ImGui::TableSetColumnIndex(0);
@@ -69,9 +86,7 @@ void ComponentsPanel::render_transform_component(Phos::TransformComponent& trans
     ImGui::TableSetColumnIndex(3);
     render_label_input("Z", "Position", &transform.position.z);
 
-    //
     // Rotation
-    //
     ImGui::TableNextRow();
 
     ImGui::TableSetColumnIndex(0);
@@ -87,9 +102,7 @@ void ComponentsPanel::render_transform_component(Phos::TransformComponent& trans
     ImGui::TableSetColumnIndex(3);
     render_label_input("Z", "Rotation", &transform.rotation.z);
 
-    //
     // Scale
-    //
     ImGui::TableNextRow();
 
     ImGui::TableSetColumnIndex(0);
@@ -104,6 +117,34 @@ void ComponentsPanel::render_transform_component(Phos::TransformComponent& trans
 
     ImGui::TableSetColumnIndex(3);
     render_label_input("Z", "Scale", &transform.scale.z);
+
+    ImGui::EndTable();
+}
+
+void ComponentsPanel::render_mesh_renderer_component(Phos::MeshRendererComponent& mesh_renderer) const {
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("MeshRenderer");
+
+    if (!ImGui::BeginTable("MeshRenderer", 2))
+        return;
+
+    ImGui::TableNextRow();
+
+    // Mesh
+    ImGui::TableSetColumnIndex(0);
+    ImGui::Text("Mesh:");
+
+    ImGui::TableSetColumnIndex(1);
+    ImGui::Text("-");
+
+    ImGui::TableNextRow();
+
+    // Material
+    ImGui::TableSetColumnIndex(0);
+    ImGui::Text("Material:");
+
+    ImGui::TableSetColumnIndex(1);
+    ImGui::Text("%s", mesh_renderer.material->name().c_str());
 
     ImGui::EndTable();
 }
