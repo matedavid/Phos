@@ -24,4 +24,6 @@ class ComponentsPanel : public IImGuiPanel {
     std::shared_ptr<Phos::Scene> m_scene;
 
     std::optional<Phos::Entity> m_selected_entity;
+
+    void render_transform_component(Phos::TransformComponent& transform) const;
 };
