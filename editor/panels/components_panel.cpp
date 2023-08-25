@@ -7,33 +7,6 @@
 ComponentsPanel::ComponentsPanel(std::string name, std::shared_ptr<Phos::Scene> scene)
       : m_name(std::move(name)), m_scene(std::move(scene)) {}
 
-void ComponentsPanel::on_imgui_render() {
-    ImGui::Begin(m_name.c_str());
-
-    if (m_selected_entity.has_value()) {
-        // Name component
-        const auto& entity_name = m_selected_entity->get_component<Phos::NameComponent>().name;
-        ImGui::Text("Name: %s", entity_name.c_str());
-
-        ImGui::Separator();
-
-        // Transform component
-        auto& transform = m_selected_entity->get_component<Phos::TransformComponent>();
-        render_transform_component(transform);
-
-        ImGui::Separator();
-
-        const auto component_names = m_selected_entity->get_component_names();
-        for (const auto& name : component_names) {
-            bool rendered = render_component(name, *m_selected_entity);
-            if (rendered)
-                ImGui::Separator();
-        }
-    }
-
-    ImGui::End();
-}
-
 void ComponentsPanel::set_selected_entity(const Phos::Entity& entity) {
     m_selected_entity = entity;
 }
@@ -54,17 +27,46 @@ void render_label_input(const std::string& label, const std::string& group, T* v
     }
 }
 
-bool ComponentsPanel::render_component(const std::string& name, const Phos::Entity& entity) const {
-    if (name == typeid(Phos::MeshRendererComponent).name()) {
-        auto& mesh_renderer = entity.get_component<Phos::MeshRendererComponent>();
-        render_mesh_renderer_component(mesh_renderer);
-        return true;
-    }
+template <typename T>
+void render_component(T& component);
 
-    return false;
+template <typename T>
+void render_component(const Phos::Entity& entity) {
+    if (!entity.has_component<T>())
+        return;
+
+    render_component<T>(entity.get_component<T>());
+    ImGui::Separator();
 }
 
-void ComponentsPanel::render_transform_component(Phos::TransformComponent& transform) const {
+void ComponentsPanel::on_imgui_render() {
+    ImGui::Begin(m_name.c_str());
+
+    if (m_selected_entity.has_value()) {
+        const auto& entity = *m_selected_entity;
+
+        render_component<Phos::NameComponent>(entity);
+
+        render_component<Phos::TransformComponent>(entity);
+
+        render_component<Phos::MeshRendererComponent>(entity);
+    }
+
+    ImGui::End();
+}
+
+//
+// Specific render_component
+//
+
+template <>
+void render_component<Phos::NameComponent>(Phos::NameComponent& component) {
+    const auto& entity_name = component.name;
+    ImGui::Text("Name: %s", entity_name.c_str());
+}
+
+template <>
+void render_component<Phos::TransformComponent>(Phos::TransformComponent& component) {
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Transform");
 
@@ -75,16 +77,17 @@ void ComponentsPanel::render_transform_component(Phos::TransformComponent& trans
     ImGui::TableNextRow();
 
     ImGui::TableSetColumnIndex(0);
+    ImGui::AlignTextToFramePadding();
     ImGui::Text("Position:");
 
     ImGui::TableSetColumnIndex(1);
-    render_label_input("X", "Position", &transform.position.x);
+    render_label_input("X", "Position", &component.position.x);
 
     ImGui::TableSetColumnIndex(2);
-    render_label_input("Y", "Position", &transform.position.y);
+    render_label_input("Y", "Position", &component.position.y);
 
     ImGui::TableSetColumnIndex(3);
-    render_label_input("Z", "Position", &transform.position.z);
+    render_label_input("Z", "Position", &component.position.z);
 
     // Rotation
     ImGui::TableNextRow();
@@ -94,13 +97,13 @@ void ComponentsPanel::render_transform_component(Phos::TransformComponent& trans
     ImGui::Text("Rotation:");
 
     ImGui::TableSetColumnIndex(1);
-    render_label_input("X", "Rotation", &transform.rotation.x);
+    render_label_input("X", "Rotation", &component.rotation.x);
 
     ImGui::TableSetColumnIndex(2);
-    render_label_input("Y", "Rotation", &transform.rotation.y);
+    render_label_input("Y", "Rotation", &component.rotation.y);
 
     ImGui::TableSetColumnIndex(3);
-    render_label_input("Z", "Rotation", &transform.rotation.z);
+    render_label_input("Z", "Rotation", &component.rotation.z);
 
     // Scale
     ImGui::TableNextRow();
@@ -110,18 +113,19 @@ void ComponentsPanel::render_transform_component(Phos::TransformComponent& trans
     ImGui::Text("Scale:");
 
     ImGui::TableSetColumnIndex(1);
-    render_label_input("X", "Scale", &transform.scale.x);
+    render_label_input("X", "Scale", &component.scale.x);
 
     ImGui::TableSetColumnIndex(2);
-    render_label_input("Y", "Scale", &transform.scale.y);
+    render_label_input("Y", "Scale", &component.scale.y);
 
     ImGui::TableSetColumnIndex(3);
-    render_label_input("Z", "Scale", &transform.scale.z);
+    render_label_input("Z", "Scale", &component.scale.z);
 
     ImGui::EndTable();
 }
 
-void ComponentsPanel::render_mesh_renderer_component(Phos::MeshRendererComponent& mesh_renderer) const {
+template <>
+void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& component) {
     ImGui::AlignTextToFramePadding();
     ImGui::Text("MeshRenderer");
 
@@ -144,7 +148,7 @@ void ComponentsPanel::render_mesh_renderer_component(Phos::MeshRendererComponent
     ImGui::Text("Material:");
 
     ImGui::TableSetColumnIndex(1);
-    ImGui::Text("%s", mesh_renderer.material->name().c_str());
+    ImGui::Text("%s", component.material->name().c_str());
 
     ImGui::EndTable();
 }

@@ -44,7 +44,12 @@ class ComponentManager {
     }
 
     template <typename T>
-    [[nodiscard]] std::vector<std::size_t> get_entities_with_component() {
+    [[nodiscard]] bool entity_has_component(std::size_t entity_id) const {
+        return get_component_array<T>()->entity_has_component(entity_id);
+    }
+
+    template <typename T>
+    [[nodiscard]] std::vector<std::size_t> get_entities_with_component() const {
         return get_component_array<T>()->get_entities();
     }
 

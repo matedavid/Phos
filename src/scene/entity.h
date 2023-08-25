@@ -44,6 +44,11 @@ class Entity {
         return m_scene->m_registry->get_component<T>(m_id);
     }
 
+    template<typename T>
+    [[nodiscard]] bool has_component() const {
+        return m_scene->m_registry->has_component<T>(m_id);
+    }
+
     [[nodiscard]] std::vector<std::string> get_component_names() {
         return m_scene->m_registry->get_component_names(m_id);
     }
