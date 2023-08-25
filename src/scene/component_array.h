@@ -50,14 +50,16 @@ class ComponentArray : public IComponentArray {
         --m_size;
     }
 
-    T& get_data(std::size_t entity_id) {
+    [[nodiscard]] T& get_data(std::size_t entity_id) {
         auto it = m_entity_to_idx.find(entity_id);
-        PS_ASSERT(it != m_entity_to_idx.end(), "Entity {} does not have the component {}", entity_id, m_name);
+        PS_ASSERT(it != m_entity_to_idx.end(), "Entity {} does not have the component {}", entity_id, m_name)
 
         return m_components[it->second];
     }
 
-    [[nodiscard]] std::vector<std::size_t> get_entities() {
+    [[nodiscard]] bool entity_has_component(std::size_t entity_id) const { return m_entity_to_idx.contains(entity_id); }
+
+    [[nodiscard]] std::vector<std::size_t> get_entities() const {
         std::vector<std::size_t> entities;
         entities.reserve(m_entity_to_idx.size());
 

@@ -62,7 +62,7 @@ VulkanDevice::VulkanDevice(const std::unique_ptr<VulkanInstance>& instance,
         VkQueue graphics_queue;
         vkGetDeviceQueue(m_device, queue_families.graphics, 0, &graphics_queue);
 
-        m_graphics_queue = std::make_shared<VulkanQueue>(graphics_queue);
+        m_graphics_queue = std::make_shared<VulkanQueue>(graphics_queue, queue_families.graphics);
     }
 
     if (requirements.presentation) {
@@ -73,7 +73,7 @@ VulkanDevice::VulkanDevice(const std::unique_ptr<VulkanInstance>& instance,
             VkQueue presentation_queue;
             vkGetDeviceQueue(m_device, queue_families.presentation, 0, &presentation_queue);
 
-            m_presentation_queue = std::make_shared<VulkanQueue>(presentation_queue);
+            m_presentation_queue = std::make_shared<VulkanQueue>(presentation_queue, queue_families.presentation);
         }
     }
 

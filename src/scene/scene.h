@@ -17,6 +17,7 @@ class Scene {
     ~Scene();
 
     Entity create_entity();
+    Entity create_entity(const std::string& name);
     void destroy_entity(Entity entity);
 
     // TODO: Camera should be entity with CameraComponent or something similar, but for the moment setting camera

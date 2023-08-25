@@ -21,6 +21,10 @@ struct RelationshipComponent {
     std::vector<UUID> children;
 };
 
+struct NameComponent {
+    std::string name;
+};
+
 struct TransformComponent {
     glm::vec3 position{};
     glm::vec3 rotation{};

@@ -17,6 +17,7 @@ namespace Phos {
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     // TODO: Maybe do differently?
     m_shader = std::dynamic_pointer_cast<VulkanShader>(description.shader);
+    m_target_framebuffer = description.target_framebuffer;
     const auto target_framebuffer = std::dynamic_pointer_cast<VulkanFramebuffer>(description.target_framebuffer);
 
     // Shaders
@@ -184,6 +185,10 @@ bool VulkanGraphicsPipeline::bake() {
     }
 
     return builder.build(m_set);
+}
+
+std::shared_ptr<Framebuffer> VulkanGraphicsPipeline::target_framebuffer() const {
+    return m_target_framebuffer;
 }
 
 void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) {

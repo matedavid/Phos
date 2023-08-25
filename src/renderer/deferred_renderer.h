@@ -36,10 +36,12 @@ class DeferredRenderer : public ISceneRenderer {
 
     void set_scene(std::shared_ptr<Scene> scene) override;
     void render() override;
+    [[nodiscard]] std::shared_ptr<Texture> output_texture() const override;
+
+    void window_resized(uint32_t width, uint32_t height) override;
 
   private:
     std::shared_ptr<Scene> m_scene;
-
     std::shared_ptr<CommandBuffer> m_command_buffer;
 
     // Shadow mapping pass
@@ -77,14 +79,11 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<Cubemap> m_skybox;
     std::shared_ptr<GraphicsPipeline> m_skybox_pipeline;
 
-    // Blending pass
-    std::shared_ptr<RenderPass> m_blending_pass;
-    std::shared_ptr<GraphicsPipeline> m_blending_pipeline;
-
     // Skybox cube
     std::shared_ptr<Mesh> m_cube_mesh;
     std::shared_ptr<Material> m_cube_material;
 
+    void init();
     [[nodiscard]] std::vector<std::shared_ptr<Light>> get_light_info() const;
 };
 

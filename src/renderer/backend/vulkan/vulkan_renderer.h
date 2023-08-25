@@ -43,8 +43,7 @@ class VulkanRenderer : public INativeRenderer {
                             const std::shared_ptr<Material>& material) override;
 
     void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
-                           const std::shared_ptr<RenderPass>& render_pass,
-                           bool presentation_target) override;
+                           const std::shared_ptr<RenderPass>& render_pass) override;
 
     void end_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                          const std::shared_ptr<RenderPass>& render_pass) override;
@@ -53,18 +52,10 @@ class VulkanRenderer : public INativeRenderer {
 
     void draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer) override;
 
-    std::shared_ptr<Framebuffer> current_frame_framebuffer() override;
-    std::shared_ptr<Framebuffer> presentation_framebuffer() override;
-
   private:
-    std::shared_ptr<VulkanSwapchain> m_swapchain;
-
     std::shared_ptr<VulkanQueue> m_graphics_queue;
-    std::shared_ptr<VulkanQueue> m_presentation_queue;
 
-    VkSemaphore image_available_semaphore{VK_NULL_HANDLE};
-    VkSemaphore render_finished_semaphore{VK_NULL_HANDLE};
-    VkFence in_flight_fence{VK_NULL_HANDLE};
+    VkFence m_in_flight_fence{VK_NULL_HANDLE};
 
     // Frame descriptors
     struct CameraUniformBuffer {

@@ -26,6 +26,8 @@ class Material : public IAsset {
     virtual void set(const std::string& name, std::shared_ptr<Texture> texture) = 0;
 
     virtual bool bake() = 0;
+
+    [[nodiscard]] virtual const std::string& name() const = 0;
 };
 
 } // namespace Phos

@@ -32,213 +32,26 @@ namespace Phos {
 DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::move(scene)) {
     m_command_buffer = CommandBuffer::create();
 
-    const auto width = Renderer::config().window->get_width();
-    const auto height = Renderer::config().window->get_height();
+    m_shadow_map_material =
+        Material::create(Renderer::shader_manager()->get_builtin_shader("ShadowMap"), "ShadowMap Material");
+    PS_ASSERT(m_shadow_map_material->bake(), "Failed to bake Shadow Map material")
 
-    const Image::Description depth_image_description = {
-        .width = width,
-        .height = height,
-        .type = Image::Type::Image2D,
-        .format = Image::Format::D32_SFLOAT,
-        .transfer = false,
-        .attachment = true,
+    const auto faces = Cubemap::Faces{
+        .right = "right.jpg",
+        .left = "left.jpg",
+        .top = "top.jpg",
+        .bottom = "bottom.jpg",
+        .front = "front.jpg",
+        .back = "back.jpg",
     };
-    const auto depth_image = Image::create(depth_image_description);
-
-    // Shadow mapping pass
-    {
-        m_shadow_map_texture = Texture::create(Image::create({
-            .width = width,
-            .height = height,
-            .type = Image::Type::Image2D,
-            .format = Image::Format::D32_SFLOAT,
-            .transfer = false,
-            .attachment = true,
-        }));
-
-        const auto shadow_depth_attachment = Framebuffer::Attachment{
-            .image = m_shadow_map_texture->get_image(),
-            .load_operation = LoadOperation::Clear,
-            .store_operation = StoreOperation::Store,
-            .clear_value = glm::vec3(1.0f),
-
-            .input_depth = true,
-        };
-
-        m_shadow_map_framebuffer = Framebuffer::create({
-            .attachments = {shadow_depth_attachment},
-        });
-
-        m_shadow_map_pipeline = GraphicsPipeline::create({
-            .shader = Renderer::shader_manager()->get_builtin_shader("ShadowMap"),
-            .target_framebuffer = m_shadow_map_framebuffer,
-            .depth_write = true,
-        });
-
-        m_shadow_map_pass = RenderPass::create({
-            .debug_name = "Shadow Mapping pass",
-            .target_framebuffer = m_shadow_map_framebuffer,
-        });
-
-        m_shadow_map_material =
-            Material::create(Renderer::shader_manager()->get_builtin_shader("ShadowMap"), "ShadowMap Material");
-        PS_ASSERT(m_shadow_map_material->bake(), "Failed to bake Shadow Map material")
-    }
-
-    // Geometry pass
-    {
-        m_position_texture = Texture::create(Image::create({
-            .width = width,
-            .height = height,
-            .type = Image::Type::Image2D,
-            .format = Image::Format::R16G16B16A16_SFLOAT,
-            .attachment = true,
-        }));
-
-        m_normal_texture = Texture::create(Image::create({
-            .width = width,
-            .height = height,
-            .type = Image::Type::Image2D,
-            .format = Image::Format::R16G16B16A16_SFLOAT,
-            .attachment = true,
-        }));
-
-        m_albedo_texture = Texture::create(width, height);
-        m_metallic_roughness_ao_texture = Texture::create(width, height);
-
-        const auto position_attachment = Framebuffer::Attachment{
-            .image = m_position_texture->get_image(),
-            .load_operation = LoadOperation::Clear,
-            .store_operation = StoreOperation::Store,
-            .clear_value = glm::vec3(0.0f),
-        };
-        const auto normal_attachment = Framebuffer::Attachment{
-            .image = m_normal_texture->get_image(),
-            .load_operation = LoadOperation::Clear,
-            .store_operation = StoreOperation::Store,
-            .clear_value = glm::vec3(0.0f),
-        };
-        const auto albedo_attachment = Framebuffer::Attachment{
-            .image = m_albedo_texture->get_image(),
-            .load_operation = LoadOperation::Clear,
-            .store_operation = StoreOperation::Store,
-            .clear_value = glm::vec3(0.0f),
-        };
-        const auto metallic_roughness_ao_attachment = Framebuffer::Attachment{
-            .image = m_metallic_roughness_ao_texture->get_image(),
-            .load_operation = LoadOperation::Clear,
-            .store_operation = StoreOperation::Store,
-            .clear_value = glm::vec3(0.0f),
-        };
-        const auto depth_attachment = Framebuffer::Attachment{
-            .image = depth_image,
-            .load_operation = LoadOperation::Clear,
-            .store_operation = StoreOperation::Store,
-            .clear_value = glm::vec3(1.0f),
-        };
-
-        m_geometry_framebuffer = Framebuffer::create(Framebuffer::Description{
-            .attachments = {position_attachment,
-                            normal_attachment,
-                            albedo_attachment,
-                            metallic_roughness_ao_attachment,
-                            depth_attachment},
-        });
-
-        m_geometry_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-            .shader = Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"),
-            .target_framebuffer = m_geometry_framebuffer,
-        });
-
-        m_geometry_pass = RenderPass::create(RenderPass::Description{
-            .debug_name = "Deferred-Geometry",
-            .target_framebuffer = m_geometry_framebuffer,
-        });
-    }
-
-    // Lighting pass
-    {
-        m_lighting_texture = Texture::create(width, height);
-
-        const auto lighting_attachment = Framebuffer::Attachment{
-            .image = m_lighting_texture->get_image(),
-            .load_operation = LoadOperation::Clear,
-            .store_operation = StoreOperation::Store,
-            .clear_value = glm::vec3(0.0f),
-        };
-
-        const auto depth_attachment = Framebuffer::Attachment{
-            .image = depth_image,
-            .load_operation = LoadOperation::Load,
-            .store_operation = StoreOperation::DontCare,
-            .clear_value = glm::vec3(1.0f),
-        };
-        m_lighting_framebuffer = Framebuffer::create({.attachments = {lighting_attachment, depth_attachment}});
-
-        m_lighting_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-            .shader = Renderer::shader_manager()->get_builtin_shader("PBR.Lighting.Deferred"),
-            .target_framebuffer = m_lighting_framebuffer,
-
-            .depth_write = false,
-        });
-
-        m_lighting_pipeline->add_input("uPositionMap", m_position_texture);
-        m_lighting_pipeline->add_input("uNormalMap", m_normal_texture);
-        m_lighting_pipeline->add_input("uAlbedoMap", m_albedo_texture);
-        m_lighting_pipeline->add_input("uMetallicRoughnessAOMap", m_metallic_roughness_ao_texture);
-        m_lighting_pipeline->add_input("uShadowMap", m_shadow_map_texture);
-        PS_ASSERT(m_geometry_pipeline->bake(), "Failed to bake Lighting Pipeline")
-
-        m_lighting_pass = RenderPass::create(RenderPass::Description{
-            .debug_name = "Deferred-Lighting",
-            .target_framebuffer = m_lighting_framebuffer,
-        });
-    }
-
-    // Cubemap pass
-    {
-        const auto faces = Cubemap::Faces{
-            .right = "right.jpg",
-            .left = "left.jpg",
-            .top = "top.jpg",
-            .bottom = "bottom.jpg",
-            .front = "front.jpg",
-            .back = "back.jpg",
-        };
-        m_skybox = Cubemap::create(faces, "../assets/skybox/");
-
-        m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-            .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
-            .target_framebuffer = Renderer::presentation_framebuffer(),
-
-            .front_face = FrontFace::Clockwise,
-            .depth_compare_op = DepthCompareOp::LessEq,
-        });
-
-        m_skybox_pipeline->add_input("uSkybox", m_skybox);
-        PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
-    }
-
-    // Blending pass
-    {
-        m_blending_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-            .shader = Renderer::shader_manager()->get_builtin_shader("Blending"),
-            .target_framebuffer = Renderer::presentation_framebuffer(),
-        });
-
-        m_blending_pipeline->add_input("uBlendingTexture", m_lighting_texture);
-        PS_ASSERT(m_blending_pipeline->bake(), "Failed to bake Blending Pipeline")
-
-        m_blending_pass = RenderPass::create(RenderPass::Description{
-            .debug_name = "Blending",
-            .presentation_target = true,
-        });
-    }
+    m_skybox = Cubemap::create(faces, "../assets/skybox/");
 
     // Create cube
     m_cube_mesh = ModelLoader::load_single_mesh("../assets/cube.fbx");
     m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
     m_cube_material->bake();
+
+    init();
 }
 
 DeferredRenderer::~DeferredRenderer() {
@@ -377,24 +190,197 @@ void DeferredRenderer::render() {
 
             Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
         }
-
-        // Blending pass
-        // ==========================
-        {
-            Renderer::begin_render_pass(m_command_buffer, m_blending_pass, true);
-
-            // Draw quad
-            Renderer::bind_graphics_pipeline(m_command_buffer, m_blending_pipeline);
-            Renderer::draw_screen_quad(m_command_buffer);
-
-            Renderer::end_render_pass(m_command_buffer, m_blending_pass);
-        }
     });
 
     // Submit command buffer
     Renderer::submit_command_buffer(m_command_buffer);
 
     Renderer::end_frame();
+}
+
+std::shared_ptr<Texture> DeferredRenderer::output_texture() const {
+    return m_lighting_texture;
+}
+
+void DeferredRenderer::window_resized(uint32_t width, uint32_t height) {
+    Renderer::wait_idle();
+
+    init();
+}
+
+void DeferredRenderer::init() {
+    const auto width = Renderer::config().window->get_width();
+    const auto height = Renderer::config().window->get_height();
+
+    const Image::Description depth_image_description = {
+        .width = width,
+        .height = height,
+        .type = Image::Type::Image2D,
+        .format = Image::Format::D32_SFLOAT,
+        .transfer = false,
+        .attachment = true,
+    };
+    const auto depth_image = Image::create(depth_image_description);
+
+    // Shadow mapping pass
+    {
+        m_shadow_map_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::D32_SFLOAT,
+            .transfer = false,
+            .attachment = true,
+        }));
+
+        const auto shadow_depth_attachment = Framebuffer::Attachment{
+            .image = m_shadow_map_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(1.0f),
+
+            .input_depth = true,
+        };
+
+        m_shadow_map_framebuffer = Framebuffer::create({
+            .attachments = {shadow_depth_attachment},
+        });
+
+        m_shadow_map_pipeline = GraphicsPipeline::create({
+            .shader = Renderer::shader_manager()->get_builtin_shader("ShadowMap"),
+            .target_framebuffer = m_shadow_map_framebuffer,
+            .depth_write = true,
+        });
+
+        m_shadow_map_pass = RenderPass::create({
+            .debug_name = "Shadow Mapping pass",
+            .target_framebuffer = m_shadow_map_framebuffer,
+        });
+    }
+
+    // Geometry pass
+    {
+        m_position_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .attachment = true,
+        }));
+
+        m_normal_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .attachment = true,
+        }));
+
+        m_albedo_texture = Texture::create(width, height);
+        m_metallic_roughness_ao_texture = Texture::create(width, height);
+
+        const auto position_attachment = Framebuffer::Attachment{
+            .image = m_position_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(0.0f),
+        };
+        const auto normal_attachment = Framebuffer::Attachment{
+            .image = m_normal_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(0.0f),
+        };
+        const auto albedo_attachment = Framebuffer::Attachment{
+            .image = m_albedo_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(0.0f),
+        };
+        const auto metallic_roughness_ao_attachment = Framebuffer::Attachment{
+            .image = m_metallic_roughness_ao_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(0.0f),
+        };
+        const auto depth_attachment = Framebuffer::Attachment{
+            .image = depth_image,
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(1.0f),
+        };
+
+        m_geometry_framebuffer = Framebuffer::create(Framebuffer::Description{
+            .attachments = {position_attachment,
+                            normal_attachment,
+                            albedo_attachment,
+                            metallic_roughness_ao_attachment,
+                            depth_attachment},
+        });
+
+        m_geometry_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
+            .shader = Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred"),
+            .target_framebuffer = m_geometry_framebuffer,
+        });
+
+        m_geometry_pass = RenderPass::create(RenderPass::Description{
+            .debug_name = "Deferred-Geometry",
+            .target_framebuffer = m_geometry_framebuffer,
+        });
+    }
+
+    // Lighting pass
+    {
+        m_lighting_texture = Texture::create(width, height);
+
+        const auto lighting_attachment = Framebuffer::Attachment{
+            .image = m_lighting_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(0.0f),
+        };
+
+        const auto depth_attachment = Framebuffer::Attachment{
+            .image = depth_image,
+            .load_operation = LoadOperation::Load,
+            .store_operation = StoreOperation::DontCare,
+            .clear_value = glm::vec3(1.0f),
+        };
+        m_lighting_framebuffer = Framebuffer::create({.attachments = {lighting_attachment, depth_attachment}});
+
+        m_lighting_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
+            .shader = Renderer::shader_manager()->get_builtin_shader("PBR.Lighting.Deferred"),
+            .target_framebuffer = m_lighting_framebuffer,
+
+            .depth_write = false,
+        });
+
+        m_lighting_pipeline->add_input("uPositionMap", m_position_texture);
+        m_lighting_pipeline->add_input("uNormalMap", m_normal_texture);
+        m_lighting_pipeline->add_input("uAlbedoMap", m_albedo_texture);
+        m_lighting_pipeline->add_input("uMetallicRoughnessAOMap", m_metallic_roughness_ao_texture);
+        m_lighting_pipeline->add_input("uShadowMap", m_shadow_map_texture);
+        PS_ASSERT(m_geometry_pipeline->bake(), "Failed to bake Lighting Pipeline")
+
+        m_lighting_pass = RenderPass::create(RenderPass::Description{
+            .debug_name = "Deferred-Lighting",
+            .target_framebuffer = m_lighting_framebuffer,
+        });
+    }
+
+    // Cubemap pass
+    {
+        m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
+            .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
+            .target_framebuffer = m_lighting_framebuffer,
+
+            .front_face = FrontFace::Clockwise,
+            .depth_compare_op = DepthCompareOp::LessEq,
+        });
+
+        m_skybox_pipeline->add_input("uSkybox", m_skybox);
+        PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
+    }
 }
 
 std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {

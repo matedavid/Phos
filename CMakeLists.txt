@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Create executable
 add_executable(${PROJECT_NAME})
 
-target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
+# target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
@@ -58,6 +58,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/graphics_pipeline.cpp
         src/renderer/backend/material.cpp
         src/renderer/backend/cubemap.cpp
+        src/renderer/backend/presenter.cpp
 
         # Vulkan Backend
         src/renderer/backend/vulkan/vulkan_renderer.cpp
@@ -82,9 +83,20 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_renderer_api.cpp
         src/renderer/backend/vulkan/vulkan_material.cpp
         src/renderer/backend/vulkan/vulkan_cubemap.cpp
+        src/renderer/backend/vulkan/vulkan_presenter.cpp
 
-        src/main.cpp
-        )
+        # Editor
+        editor/main.cpp
+
+        editor/panels/viewport_panel.cpp
+        editor/panels/entity_hierarchy_panel.cpp
+        editor/panels/components_panel.cpp
+
+        editor/imgui/imgui_impl.cpp
+        editor/imgui/vulkan/imgui_vulkan_impl.cpp
+
+        # src/main.cpp
+)
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)
 
@@ -135,6 +147,12 @@ set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "disable yaml contrib")
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/yaml-cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE yaml-cpp)
 
+# imgui
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)
+target_link_libraries(${PROJECT_NAME} PRIVATE imgui)
+target_link_libraries(${PROJECT_NAME} PRIVATE imgui_impl_glfw)
+target_link_libraries(${PROJECT_NAME} PRIVATE imgui_impl_vulkan)
+
 
 # Catch 2
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/Catch2)
@@ -151,7 +169,7 @@ target_sources(tests PRIVATE
         tests/scene/scene_tests.cpp
         src/scene/scene.cpp
         src/core/uuid.cpp
-        )
+)
 
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(tests PRIVATE spdlog::spdlog)

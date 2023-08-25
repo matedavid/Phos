@@ -32,16 +32,25 @@ class Registry {
     }
 
     template <typename T>
-    T& get_component(std::size_t entity_id) const {
+    [[nodiscard]] T& get_component(std::size_t entity_id) const {
         return m_component_manager->get_component<T>(entity_id);
     }
 
+    template<typename T>
+    [[nodiscard]] bool has_component(std::size_t entity_id) const {
+        return m_component_manager->entity_has_component<T>(entity_id);
+    }
+
     template <typename T>
-    [[nodiscard]] std::vector<std::size_t> view() {
+    [[nodiscard]] std::vector<std::size_t> view() const {
         return m_component_manager->get_entities_with_component<T>();
     }
 
-    template<typename T>
+    [[nodiscard]] std::vector<std::string> get_component_names(std::size_t entity_id) {
+        return m_component_manager->get_component_names(entity_id);
+    }
+
+    template <typename T>
     void register_component() {
         if (!m_component_manager->contains_component<T>())
             m_component_manager->register_component<T>();

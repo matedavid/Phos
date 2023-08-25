@@ -29,31 +29,21 @@ static std::vector<VkClearValue> get_clear_values(const std::shared_ptr<VulkanFr
 }
 
 VulkanRenderPass::VulkanRenderPass(Description description) : m_description(std::move(description)), m_begin_info({}) {
-    PS_ASSERT(m_description.presentation_target || m_description.target_framebuffer != nullptr,
-              "You must provide a target framebuffer");
+    const auto target_framebuffer = std::dynamic_pointer_cast<VulkanFramebuffer>(m_description.target_framebuffer);
 
-    // TODO: Maybe do differently?
-    const auto target_framebuffer = m_description.target_framebuffer != nullptr
-                                        ? std::dynamic_pointer_cast<VulkanFramebuffer>(m_description.target_framebuffer)
-                                        : nullptr;
-
-    if (target_framebuffer != nullptr) {
-        m_clear_values = get_clear_values(target_framebuffer);
-    }
+    m_clear_values = get_clear_values(target_framebuffer);
 
     m_begin_info = VkRenderPassBeginInfo{};
     m_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 
-    if (!m_description.presentation_target) {
-        m_begin_info.renderPass = target_framebuffer->get_render_pass();
-        m_begin_info.framebuffer = target_framebuffer->handle();
+    m_begin_info.renderPass = target_framebuffer->get_render_pass();
+    m_begin_info.framebuffer = target_framebuffer->handle();
 
-        m_begin_info.renderArea.offset = {0, 0};
-        m_begin_info.renderArea.extent = {
-            m_description.target_framebuffer->width(),
-            m_description.target_framebuffer->height(),
-        };
-    }
+    m_begin_info.renderArea.offset = {0, 0};
+    m_begin_info.renderArea.extent = {
+        m_description.target_framebuffer->width(),
+        m_description.target_framebuffer->height(),
+    };
 
     m_begin_info.clearValueCount = static_cast<uint32_t>(m_clear_values.size());
     m_begin_info.pClearValues = m_clear_values.data();
@@ -63,7 +53,6 @@ void VulkanRenderPass::begin(const std::shared_ptr<CommandBuffer>& command_buffe
     // TODO: Maybe do differently?
     const auto native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
 
-    PS_ASSERT(!m_description.presentation_target, "For presentation render passes, use function with framebuffer")
     vkCmdBeginRenderPass(native_command_buffer->handle(), &m_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 

@@ -32,7 +32,7 @@ class ModelAsset : public IAsset {
   private:
     Node* m_parent;
 
-    void import_into_scene_r(std::shared_ptr<Scene>& scene, Node* node) const;
+    UUID import_into_scene_r(std::shared_ptr<Scene>& scene, Node* node, UUID* parent_uuid) const;
     void destroy_r(Node* node);
 };
 
