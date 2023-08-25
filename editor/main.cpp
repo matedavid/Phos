@@ -169,7 +169,7 @@ class EditorLayer : public Phos::Layer {
     std::unique_ptr<EntityHierarchyPanel> m_entity_panel;
     std::unique_ptr<ComponentsPanel> m_components_panel;
 
-    ImGuiID m_dockspace_id;
+    ImGuiID m_dockspace_id{0};
 
     void on_viewport_resized(uint32_t width, uint32_t height) {
         m_camera->set_aspect_ratio(float(width) / float(height));
