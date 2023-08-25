@@ -50,6 +50,8 @@ void ComponentsPanel::on_imgui_render() {
         render_component<Phos::TransformComponent>(entity);
 
         render_component<Phos::MeshRendererComponent>(entity);
+
+        render_component<Phos::LightComponent>(entity);
     }
 
     ImGui::End();
@@ -149,6 +151,109 @@ void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& 
 
     ImGui::TableSetColumnIndex(1);
     ImGui::Text("%s", component.material->name().c_str());
+
+    ImGui::EndTable();
+}
+
+template <>
+void render_component<Phos::LightComponent>(Phos::LightComponent& component) {
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Light");
+
+    if (!ImGui::BeginTable("MeshRenderer", 2))
+        return;
+
+    ImGui::TableNextRow();
+
+    ImGui::TableSetColumnIndex(0);
+    { ImGui::Text("Type:"); }
+
+    ImGui::TableSetColumnIndex(1);
+    {
+        constexpr const char* point_light_name = "Point";
+        constexpr const char* directional_light_name = "Directional";
+
+        std::string selected_type;
+
+        switch (component.light_type) {
+        default:
+        case Phos::Light::Type::Point:
+            selected_type = point_light_name;
+            break;
+        case Phos::Light::Type::Directional:
+            selected_type = directional_light_name;
+            break;
+        }
+
+        if (ImGui::BeginCombo("##LightTypeCombo", selected_type.c_str())) {
+            if (ImGui::Selectable(point_light_name, component.light_type == Phos::Light::Type::Point))
+                component.light_type = Phos::Light::Type::Point;
+
+            if (ImGui::Selectable(directional_light_name, component.light_type == Phos::Light::Type::Directional))
+                component.light_type = Phos::Light::Type::Directional;
+
+            ImGui::EndCombo();
+        }
+    }
+
+    ImGui::TableNextRow();
+
+    ImGui::TableSetColumnIndex(0);
+    { ImGui::Text("Color:"); }
+
+    ImGui::TableSetColumnIndex(1);
+    {
+        float color[4] = {component.color.x, component.color.y, component.color.z, component.color.w};
+        ImGui::ColorEdit4("##LightColorPicker", color, ImGuiColorEditFlags_NoInputs);
+
+        component.color.x = color[0];
+        component.color.y = color[1];
+        component.color.z = color[2];
+        component.color.w = color[3];
+    }
+
+    if (component.light_type == Phos::Light::Type::Point) {
+        ImGui::TableNextRow();
+
+        ImGui::TableSetColumnIndex(0);
+        { ImGui::Text("Radius:"); }
+
+        ImGui::TableSetColumnIndex(1);
+        { ImGui::InputFloat("##RadiusInput", &component.radius); }
+    }
+
+    ImGui::TableNextRow();
+
+    ImGui::TableSetColumnIndex(0);
+    { ImGui::Text("Shadow Type:"); }
+
+    ImGui::TableSetColumnIndex(1);
+    {
+        constexpr const char* none_shadow_name = "None";
+        constexpr const char* hard_shadow_name = "Hard";
+
+        std::string selected_type;
+
+        switch (component.shadow_type) {
+        default:
+        case Phos::Light::ShadowType::None:
+            selected_type = none_shadow_name;
+            break;
+        case Phos::Light::ShadowType::Hard:
+            selected_type = hard_shadow_name;
+            break;
+        }
+
+        if (ImGui::BeginCombo("##ShadowTypeCombo", selected_type.c_str())) {
+            if (ImGui::Selectable(none_shadow_name, component.shadow_type == Phos::Light::ShadowType::None))
+                component.shadow_type = Phos::Light::ShadowType::None;
+
+            if (ImGui::Selectable(hard_shadow_name, component.shadow_type == Phos::Light::ShadowType::Hard))
+                component.shadow_type = Phos::Light::ShadowType::Hard;
+
+            ImGui::EndCombo();
+        }
+    }
 
     ImGui::EndTable();
 }
