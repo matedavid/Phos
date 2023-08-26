@@ -18,6 +18,7 @@ class ComponentsPanel : public IImGuiPanel {
 
     void on_imgui_render() override;
     void set_selected_entity(const Phos::Entity& entity);
+    void deselect_entity();
 
   private:
     std::string m_name;

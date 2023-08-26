@@ -1,7 +1,8 @@
 #include "components_panel.h"
 
-#include "scene/scene.h"
+#include <misc/cpp/imgui_stdlib.h>
 
+#include "scene/scene.h"
 #include "renderer/backend/material.h"
 
 ComponentsPanel::ComponentsPanel(std::string name, std::shared_ptr<Phos::Scene> scene)
@@ -9,6 +10,10 @@ ComponentsPanel::ComponentsPanel(std::string name, std::shared_ptr<Phos::Scene> 
 
 void ComponentsPanel::set_selected_entity(const Phos::Entity& entity) {
     m_selected_entity = entity;
+}
+
+void ComponentsPanel::deselect_entity() {
+    m_selected_entity.reset();
 }
 
 template <typename T>
@@ -31,7 +36,7 @@ template <typename T>
 void render_component(T& component);
 
 template <typename T>
-void render_component(const Phos::Entity& entity) {
+void render_component(Phos::Entity& entity) {
     if (!entity.has_component<T>())
         return;
 
@@ -39,11 +44,15 @@ void render_component(const Phos::Entity& entity) {
     ImGui::Separator();
 }
 
+#define ADD_COMPONENT_POPUP_ITEM(T, name)                                \
+    if (!m_selected_entity->has_component<T>() && ImGui::MenuItem(name)) \
+    m_selected_entity->add_component<T>()
+
 void ComponentsPanel::on_imgui_render() {
     ImGui::Begin(m_name.c_str());
 
     if (m_selected_entity.has_value()) {
-        const auto& entity = *m_selected_entity;
+        auto& entity = *m_selected_entity;
 
         render_component<Phos::NameComponent>(entity);
 
@@ -52,6 +61,23 @@ void ComponentsPanel::on_imgui_render() {
         render_component<Phos::MeshRendererComponent>(entity);
 
         render_component<Phos::LightComponent>(entity);
+
+        // Add component on Right Click
+        if (ImGui::Button("Add Component")) {
+            ImGui::OpenPopup("##AddComponentWindow");
+        }
+
+        if (ImGui::BeginPopup("##AddComponentWindow", ImGuiWindowFlags_MenuBar)) {
+            if (ImGui::BeginMenuBar()) {
+                ImGui::Text("Add Component");
+                ImGui::EndMenuBar();
+            }
+
+            ADD_COMPONENT_POPUP_ITEM(Phos::MeshRendererComponent, "Mesh Renderer Component");
+            ADD_COMPONENT_POPUP_ITEM(Phos::LightComponent, "Light Component");
+
+            ImGui::EndPopup();
+        }
     }
 
     ImGui::End();
@@ -63,8 +89,11 @@ void ComponentsPanel::on_imgui_render() {
 
 template <>
 void render_component<Phos::NameComponent>(Phos::NameComponent& component) {
-    const auto& entity_name = component.name;
-    ImGui::Text("Name: %s", entity_name.c_str());
+    ImGui::AlignTextToFramePadding();
+
+    ImGui::Text("Name:");
+    ImGui::SameLine();
+    ImGui::InputText("##NameInput", &component.name);
 }
 
 template <>

@@ -133,6 +133,8 @@ class EditorLayer : public Phos::Layer {
         const auto selected_entity = m_entity_panel->get_selected_entity();
         if (selected_entity.has_value())
             m_components_panel->set_selected_entity(selected_entity.value());
+        else
+            m_components_panel->deselect_entity();
 
         m_components_panel->on_imgui_render();
 

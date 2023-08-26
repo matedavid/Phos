@@ -21,11 +21,25 @@ void EntityHierarchyPanel::on_imgui_render() {
         render_entity_r(entity);
     }
 
+    // Left click on blank = deselect entity
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && ImGui::IsWindowHovered()) {
+        m_selected_entity.reset();
+    }
+
+    // Right click on blank
+    if (ImGui::BeginPopupContextWindow("##RightClickEntityHierarchy", ImGuiPopupFlags_MouseButtonRight)) {
+        if (ImGui::MenuItem("Create Empty Entity")) {
+            m_scene->create_entity();
+        }
+
+        ImGui::EndPopup();
+    }
+
     ImGui::End();
 }
 
 void EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (m_selected_entity.has_value() && m_selected_entity.value().uuid() == entity.uuid())
         flags |= ImGuiTreeNodeFlags_Selected;
 
@@ -34,7 +48,7 @@ void EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
     if (children.empty())
         flags |= ImGuiTreeNodeFlags_Leaf;
 
-    const bool opened = ImGui::TreeNodeEx(name.c_str(), flags);
+    const bool opened = ImGui::TreeNodeEx((void*)(uint64_t)entity.uuid(), flags, name.c_str());
     if (ImGui::IsItemClicked()) {
         select_entity(entity);
     }
