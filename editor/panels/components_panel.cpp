@@ -17,7 +17,7 @@ void ComponentsPanel::deselect_entity() {
 }
 
 template <typename T>
-void render_label_input(const std::string& label, const std::string& group, T* value) {
+void render_label_input(const std::string& label, const std::string& group, T* value, int precision = 1) {
     ImGui::AlignTextToFramePadding();
 
     ImGui::TextUnformatted(label.c_str());
@@ -26,7 +26,8 @@ void render_label_input(const std::string& label, const std::string& group, T* v
     const std::string input_label = "##" + group + label;
 
     if (typeid(T) == typeid(float)) {
-        ImGui::InputFloat(input_label.c_str(), value, 0.0f, 0.0f, "%.1f");
+        const std::string format_string = "%." + std::to_string(precision) + "f";
+        ImGui::InputFloat(input_label.c_str(), value, 0.0f, 0.0f, format_string.c_str());
     } else {
         PS_FAIL("Unsupported input type")
     }
@@ -54,13 +55,12 @@ void ComponentsPanel::on_imgui_render() {
     if (m_selected_entity.has_value()) {
         auto& entity = *m_selected_entity;
 
+        // Components
         render_component<Phos::NameComponent>(entity);
-
         render_component<Phos::TransformComponent>(entity);
-
         render_component<Phos::MeshRendererComponent>(entity);
-
         render_component<Phos::LightComponent>(entity);
+        render_component<Phos::CameraComponent>(entity);
 
         // Add component on Right Click
         if (ImGui::Button("Add Component")) {
@@ -75,6 +75,7 @@ void ComponentsPanel::on_imgui_render() {
 
             ADD_COMPONENT_POPUP_ITEM(Phos::MeshRendererComponent, "Mesh Renderer Component");
             ADD_COMPONENT_POPUP_ITEM(Phos::LightComponent, "Light Component");
+            ADD_COMPONENT_POPUP_ITEM(Phos::CameraComponent, "Camera Component");
 
             ImGui::EndPopup();
         }
@@ -204,7 +205,7 @@ void render_component<Phos::LightComponent>(Phos::LightComponent& component) {
 
         std::string selected_type;
 
-        switch (component.light_type) {
+        switch (component.type) {
         default:
         case Phos::Light::Type::Point:
             selected_type = point_light_name;
@@ -215,11 +216,11 @@ void render_component<Phos::LightComponent>(Phos::LightComponent& component) {
         }
 
         if (ImGui::BeginCombo("##LightTypeCombo", selected_type.c_str())) {
-            if (ImGui::Selectable(point_light_name, component.light_type == Phos::Light::Type::Point))
-                component.light_type = Phos::Light::Type::Point;
+            if (ImGui::Selectable(point_light_name, component.type == Phos::Light::Type::Point))
+                component.type = Phos::Light::Type::Point;
 
-            if (ImGui::Selectable(directional_light_name, component.light_type == Phos::Light::Type::Directional))
-                component.light_type = Phos::Light::Type::Directional;
+            if (ImGui::Selectable(directional_light_name, component.type == Phos::Light::Type::Directional))
+                component.type = Phos::Light::Type::Directional;
 
             ImGui::EndCombo();
         }
@@ -241,7 +242,7 @@ void render_component<Phos::LightComponent>(Phos::LightComponent& component) {
         component.color.w = color[3];
     }
 
-    if (component.light_type == Phos::Light::Type::Point) {
+    if (component.type == Phos::Light::Type::Point) {
         ImGui::TableNextRow();
 
         ImGui::TableSetColumnIndex(0);
@@ -283,6 +284,88 @@ void render_component<Phos::LightComponent>(Phos::LightComponent& component) {
             ImGui::EndCombo();
         }
     }
+
+    ImGui::EndTable();
+}
+
+template <>
+void render_component<Phos::CameraComponent>(Phos::CameraComponent& component) {
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Camera");
+
+    if (!ImGui::BeginTable("Camera Component", 2))
+        return;
+
+    ImGui::TableNextRow();
+
+    // Type
+    ImGui::TableSetColumnIndex(0);
+    { ImGui::Text("Type:"); }
+
+    ImGui::TableSetColumnIndex(1);
+    {
+        constexpr const char* perspective_camera_name = "Perspective";
+        constexpr const char* orthographic_camera_name = "Orthographic";
+
+        std::string selected_type;
+
+        switch (component.type) {
+        default:
+        case Phos::Camera::Type::Perspective:
+            selected_type = perspective_camera_name;
+            break;
+        case Phos::Camera::Type::Orthographic:
+            selected_type = orthographic_camera_name;
+            break;
+        }
+
+        if (ImGui::BeginCombo("##CameraTypeCombo", selected_type.c_str())) {
+            if (ImGui::Selectable(perspective_camera_name, component.type == Phos::Camera::Type::Perspective))
+                component.type = Phos::Camera::Type::Perspective;
+
+            if (ImGui::Selectable(orthographic_camera_name, component.type == Phos::Camera::Type::Orthographic))
+                component.type = Phos::Camera::Type::Orthographic;
+
+            ImGui::EndCombo();
+        }
+    }
+
+    // Fov (Perspective) and Size (Orthographic)
+    if (component.type == Phos::Camera::Type::Perspective) {
+        ImGui::TableNextRow();
+
+        ImGui::TableSetColumnIndex(0);
+        { ImGui::Text("Fov:"); }
+
+        ImGui::TableSetColumnIndex(1);
+        { ImGui::InputFloat("##FovInput", &component.fov); }
+    } else if (component.type == Phos::Camera::Type::Orthographic) {
+        ImGui::TableNextRow();
+
+        ImGui::TableSetColumnIndex(0);
+        { ImGui::Text("Size:"); }
+
+        ImGui::TableSetColumnIndex(1);
+        { ImGui::InputFloat("##OrthographicSizeInput", &component.size); }
+    }
+
+    ImGui::TableNextRow();
+
+    // znear / zfar
+    ImGui::TableSetColumnIndex(0);
+    render_label_input("znear", "CameraZnear", &component.znear, 3);
+
+    ImGui::TableSetColumnIndex(1);
+    render_label_input("zfar", "CameraZfar", &component.zfar, 2);
+
+    ImGui::TableNextRow();
+
+    // Depth
+    ImGui::TableSetColumnIndex(0);
+    ImGui::Text("Depth:");
+
+    ImGui::TableSetColumnIndex(1);
+    ImGui::InputInt("##DepthCamera", &component.depth);
 
     ImGui::EndTable();
 }

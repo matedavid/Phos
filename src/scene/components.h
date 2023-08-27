@@ -5,6 +5,7 @@
 
 #include "core/uuid.h"
 #include "renderer/light.h"
+#include "renderer/camera.h"
 
 namespace Phos {
 
@@ -32,7 +33,7 @@ struct TransformComponent {
 };
 
 struct LightComponent {
-    Light::Type light_type = Light::Type::Point;
+    Light::Type type = Light::Type::Point;
 
     float radius = 10.0f; // Only Point lights
     glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
@@ -43,6 +44,18 @@ struct LightComponent {
 struct MeshRendererComponent {
     std::shared_ptr<Mesh> mesh;
     std::shared_ptr<Material> material;
+};
+
+struct CameraComponent {
+    Camera::Type type = Camera::Type::Perspective;
+
+    float fov = 90.0f; // Only Perspective Camera (degrees)
+    float size = 5.0f; // Only Orthographic Camera
+
+    float znear = 0.01f;
+    float zfar = 100.0f;
+
+    int depth = 0;
 };
 
 } // namespace Phos

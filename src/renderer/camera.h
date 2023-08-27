@@ -6,6 +6,11 @@ namespace Phos {
 
 class Camera {
   public:
+    enum class Type {
+        Perspective,
+        Orthographic,
+    };
+
     virtual ~Camera() = default;
 
     void set_position(const glm::vec3& position);
@@ -45,6 +50,7 @@ class OrthographicCamera : public Camera {
   public:
     explicit OrthographicCamera();
     explicit OrthographicCamera(float left, float right, float bottom, float top);
+    explicit OrthographicCamera(float left, float right, float bottom, float top, float znear, float zfar);
     ~OrthographicCamera() override = default;
 };
 

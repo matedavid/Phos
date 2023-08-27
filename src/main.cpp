@@ -131,7 +131,7 @@ class SandboxLayer : public Phos::Layer {
             light_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(0.15f);
 
             light_entity.add_component<Phos::LightComponent>({
-                .light_type = Phos::Light::Type::Point,
+                .type = Phos::Light::Type::Point,
                 .color = glm::vec4(1.0f),
             });
 
@@ -154,7 +154,7 @@ class SandboxLayer : public Phos::Layer {
         });
 
         directional_light_entity.add_component<Phos::LightComponent>({
-            .light_type = Phos::Light::Type::Directional,
+            .type = Phos::Light::Type::Directional,
             .color = glm::vec4(1.0f),
 
             .shadow_type = Phos::Light::ShadowType::Hard,

@@ -391,10 +391,10 @@ std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
         const auto transform = entity.get_component<TransformComponent>();
         const auto light_component = entity.get_component<LightComponent>();
 
-        if (light_component.light_type == Light::Type::Point) {
+        if (light_component.type == Light::Type::Point) {
             auto light = std::make_shared<PointLight>(transform.position, light_component.color);
             lights.push_back(light);
-        } else if (light_component.light_type == Light::Type::Directional) {
+        } else if (light_component.type == Light::Type::Directional) {
             auto direction = glm::vec3(0.0f, 0.0f, 1.0f); // Z+
             direction = glm::rotate(direction, transform.rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
             direction = glm::rotate(direction, transform.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
