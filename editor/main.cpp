@@ -47,21 +47,11 @@ class EditorLayer : public Phos::Layer {
 
         create_scene();
 
-        const auto aspect_ratio = WIDTH / HEIGHT;
-        m_camera = std::make_shared<Phos::PerspectiveCamera>(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
-        m_camera->set_position({0.0f, 3.0f, 7.0f});
-        m_camera->rotate(glm::vec2(0.0f, glm::radians(30.0f)));
-
-        m_scene->set_camera(m_camera);
-
         // Initialize ImGui backend
         ImGuiImpl::initialize(Phos::Application::instance()->get_window());
 
         // Panels
-        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer);
-        m_viewport_panel->set_viewport_resized_callback(
-            [&](uint32_t width, uint32_t height) { on_viewport_resized(width, height); });
-
+        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene);
         m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_scene);
         m_components_panel = std::make_unique<ComponentsPanel>("Components", m_scene);
     }
@@ -107,7 +97,7 @@ class EditorLayer : public Phos::Layer {
             auto dock_id_left =
                 ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Left, 0.20f, nullptr, &m_dockspace_id);
             auto dock_id_left_down =
-                ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.60f, nullptr, &dock_id_left);
+                ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.40f, nullptr, &dock_id_left);
 
             auto dock_id_down =
                 ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Down, 0.20f, nullptr, &m_dockspace_id);
@@ -164,8 +154,6 @@ class EditorLayer : public Phos::Layer {
     std::shared_ptr<Phos::ISceneRenderer> m_renderer;
     std::shared_ptr<Phos::Scene> m_scene;
     std::shared_ptr<Phos::AssetManager> m_asset_manager;
-    std::shared_ptr<Phos::PerspectiveCamera> m_camera;
-    glm::vec2 m_mouse_pos{};
 
     std::unique_ptr<ViewportPanel> m_viewport_panel;
     std::unique_ptr<EntityHierarchyPanel> m_entity_panel;
@@ -173,61 +161,28 @@ class EditorLayer : public Phos::Layer {
 
     ImGuiID m_dockspace_id{0};
 
-    void on_viewport_resized(uint32_t width, uint32_t height) {
-        m_camera->set_aspect_ratio(float(width) / float(height));
-    }
-
     void on_mouse_moved(Phos::MouseMovedEvent& mouse_moved) override {
-        if (!ImGui::DockBuilderGetCentralNode(m_dockspace_id)->IsFocused)
-            return;
-
-        double x = mouse_moved.get_xpos();
-        double y = mouse_moved.get_ypos();
-
-        if (Phos::Input::is_mouse_button_pressed(Phos::MouseButton::Left)) {
-            float x_rotation = 0.0f;
-            float y_rotation = 0.0f;
-
-            if (x > m_mouse_pos.x) {
-                x_rotation -= 0.03f;
-            } else if (x < m_mouse_pos.x) {
-                x_rotation += 0.03f;
-            }
-
-            if (y > m_mouse_pos.y) {
-                y_rotation += 0.03f;
-            } else if (y < m_mouse_pos.y) {
-                y_rotation -= 0.03f;
-            }
-
-            m_camera->rotate({x_rotation, y_rotation});
-        }
-
-        m_mouse_pos = glm::vec2(x, y);
+        m_viewport_panel->on_mouse_moved(mouse_moved, m_dockspace_id);
     }
 
     void on_key_pressed(Phos::KeyPressedEvent& key_pressed) override {
-        if (!ImGui::DockBuilderGetCentralNode(m_dockspace_id)->IsFocused)
-            return;
-
-        glm::vec3 new_pos = m_camera->non_rotated_position();
-
-        if (key_pressed.get_key() == Phos::Key::W) {
-            new_pos.z -= 1;
-        } else if (key_pressed.get_key() == Phos::Key::S) {
-            new_pos.z += 1;
-        } else if (key_pressed.get_key() == Phos::Key::A) {
-            new_pos.x -= 1;
-        } else if (key_pressed.get_key() == Phos::Key::D) {
-            new_pos.x += 1;
-        }
-
-        m_camera->set_position(new_pos);
+        m_viewport_panel->on_key_pressed(key_pressed, m_dockspace_id);
     }
 
     void create_scene() {
         const auto sphere_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/sphere/sphere.psa");
         const auto cube_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/cube/cube.psa");
+
+        // Camera
+        auto camera_entity = m_scene->create_entity("Main Camera");
+        camera_entity.get_component<Phos::TransformComponent>().position = glm::vec3(0.0f, 5.0f, 5.0f);
+        camera_entity.get_component<Phos::TransformComponent>().rotation = glm::vec3(0.0f, glm::radians(20.0f), 0.0f);
+        camera_entity.add_component<Phos::CameraComponent>({
+            .type = Phos::Camera::Type::Perspective,
+            .fov = 90.0f,
+            .znear = 0.001f,
+            .zfar = 40.0f,
+        });
 
         // model
         auto model = m_asset_manager->load<Phos::ModelAsset>("../assets/models/john_117_imported/scene.gltf.psa");
@@ -315,7 +270,7 @@ class EditorLayer : public Phos::Layer {
             light_entity.get_component<Phos::TransformComponent>().scale = glm::vec3(0.15f);
 
             light_entity.add_component<Phos::LightComponent>({
-                .light_type = Phos::Light::Type::Point,
+                .type = Phos::Light::Type::Point,
                 .color = glm::vec4(1.0f),
             });
 
@@ -337,7 +292,7 @@ class EditorLayer : public Phos::Layer {
         });
 
         directional_light_entity.add_component<Phos::LightComponent>({
-            .light_type = Phos::Light::Type::Directional,
+            .type = Phos::Light::Type::Directional,
             .color = glm::vec4(1.0f),
 
             .shadow_type = Phos::Light::ShadowType::Hard,

@@ -35,7 +35,7 @@ class DeferredRenderer : public ISceneRenderer {
     ~DeferredRenderer() override;
 
     void set_scene(std::shared_ptr<Scene> scene) override;
-    void render() override;
+    void render(const std::shared_ptr<Camera>& camera) override;
     [[nodiscard]] std::shared_ptr<Texture> output_texture() const override;
 
     void window_resized(uint32_t width, uint32_t height) override;

@@ -68,9 +68,9 @@ struct ShadowMappingPushConstants {
     glm::mat4 model;
 };
 
-void DeferredRenderer::render() {
+void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
     const FrameInformation frame_info = {
-        .camera = m_scene->get_camera(),
+        .camera = camera,
         .lights = get_light_info(),
     };
 
