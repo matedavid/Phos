@@ -90,10 +90,9 @@ class EditorLayer : public Phos::Layer {
         if (first_time) {
             first_time = false;
 
-            ImGui::DockBuilderRemoveNode(m_dockspace_id); // Clear out existing layout
+            ImGui::DockBuilderRemoveNode(m_dockspace_id);
             ImGui::DockBuilderAddNode(m_dockspace_id,
-                                      ImGuiDockNodeFlags_PassthruCentralNode |
-                                          ImGuiDockNodeFlags_DockSpace); // Add empty node
+                                      ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_DockSpace);
             ImGui::DockBuilderSetNodeSize(m_dockspace_id, viewport->Size);
 
             auto dock_id_left =
