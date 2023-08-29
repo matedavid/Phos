@@ -6,9 +6,6 @@
 #include "core/application.h"
 #include "core/window.h"
 
-#include "input/input.h"
-#include "input/events.h"
-
 #include <imgui.h>
 #include <imgui_internal.h>
 
@@ -34,6 +31,8 @@
 #include "renderer/backend/shader.h"
 #include "renderer/backend/texture.h"
 
+#include "editor_state_manager.h"
+
 constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 960;
 
@@ -50,8 +49,11 @@ class EditorLayer : public Phos::Layer {
         // Initialize ImGui backend
         ImGuiImpl::initialize(Phos::Application::instance()->get_window());
 
+        // Editor State Manager
+        m_state_manager = std::make_shared<EditorStateManager>();
+
         // Panels
-        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene);
+        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene, m_state_manager);
         m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_scene);
         m_components_panel = std::make_unique<ComponentsPanel>("Components", m_scene);
     }
@@ -102,10 +104,14 @@ class EditorLayer : public Phos::Layer {
             auto dock_id_down =
                 ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Down, 0.20f, nullptr, &m_dockspace_id);
 
+            auto dock_id_viewport_up =
+                ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Up, 0.04f, nullptr, &m_dockspace_id);
+
             // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow("Down", dock_id_down);
             ImGui::DockBuilderDockWindow("Entities", dock_id_left);
             ImGui::DockBuilderDockWindow("Components", dock_id_left_down);
+            ImGui::DockBuilderDockWindow("ViewportControls", dock_id_viewport_up);
             ImGui::DockBuilderDockWindow("Viewport", m_dockspace_id);
             ImGui::DockBuilderFinish(m_dockspace_id);
         }
@@ -140,6 +146,41 @@ class EditorLayer : public Phos::Layer {
         //
         m_viewport_panel->on_imgui_render();
 
+        //
+        // Viewport Controls
+        //
+        ImGuiWindowClass window_class;
+        window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoTabBar;
+        ImGui::SetNextWindowClass(&window_class);
+
+        ImGui::Begin("ViewportControls",
+                     nullptr,
+                     ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus |
+                         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize);
+
+        std::string control_button_text;
+        switch (m_state_manager->state) {
+        case EditorState::Editing:
+            control_button_text = "Play";
+            break;
+        case EditorState::Playing:
+            control_button_text = "Stop";
+            break;
+        }
+
+        auto windowWidth = ImGui::GetWindowSize().x;
+        auto textWidth = ImGui::CalcTextSize(control_button_text.c_str()).x;
+
+        ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
+        if (ImGui::Button(control_button_text.c_str())) {
+            if (m_state_manager->state == EditorState::Editing)
+                m_state_manager->state = EditorState::Playing;
+            else if (m_state_manager->state == EditorState::Playing)
+                m_state_manager->state = EditorState::Editing;
+        }
+
+        ImGui::End();
+
         // Rendering
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
@@ -160,6 +201,8 @@ class EditorLayer : public Phos::Layer {
     std::unique_ptr<ComponentsPanel> m_components_panel;
 
     ImGuiID m_dockspace_id{0};
+
+    std::shared_ptr<EditorStateManager> m_state_manager;
 
     void on_mouse_moved(Phos::MouseMovedEvent& mouse_moved) override {
         m_viewport_panel->on_mouse_moved(mouse_moved, m_dockspace_id);

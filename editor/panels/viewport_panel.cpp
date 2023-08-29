@@ -17,8 +17,10 @@
 
 ViewportPanel::ViewportPanel(std::string name,
                              std::shared_ptr<Phos::ISceneRenderer> renderer,
-                             std::shared_ptr<Phos::Scene> scene)
-      : m_name(std::move(name)), m_renderer(std::move(renderer)), m_scene(std::move(scene)) {
+                             std::shared_ptr<Phos::Scene> scene,
+                             std::shared_ptr<EditorStateManager> state_manager)
+      : m_name(std::move(name)), m_renderer(std::move(renderer)), m_scene(std::move(scene)),
+        m_state_manager(std::move(state_manager)) {
     const auto& output_texture = m_renderer->output_texture();
     m_texture_id = ImGuiImpl::add_texture(output_texture);
 
@@ -61,28 +63,9 @@ void ViewportPanel::on_imgui_render() {
     }
 
     // Render scene
-    auto camera_entities = m_scene->get_entities_with<Phos::CameraComponent>();
-    if (!camera_entities.empty()) {
-        std::ranges::sort(camera_entities, [](Phos::Entity& a, Phos::Entity& b) {
-            return a.get_component<Phos::CameraComponent>().depth < b.get_component<Phos::CameraComponent>().depth;
-        });
-
-        const auto& scene_camera_entity = camera_entities[0];
-        const auto& camera_component = scene_camera_entity.get_component<Phos::CameraComponent>();
-        const auto& camera_transform = scene_camera_entity.get_component<Phos::TransformComponent>();
-
-        std::shared_ptr<Phos::Camera> scene_camera;
-        if (camera_component.type == Phos::Camera::Type::Perspective) {
-            scene_camera = std::make_shared<Phos::PerspectiveCamera>(
-                camera_component.fov, (float)m_width / (float)m_height, camera_component.znear, camera_component.zfar);
-        }
-
-        scene_camera->set_position(camera_transform.position);
-        scene_camera->rotate(camera_transform.rotation);
-
-        m_renderer->render(m_editor_camera);
-        // m_renderer->render(scene_camera);
-    }
+    const auto camera = get_camera();
+    if (camera != nullptr)
+        m_renderer->render(camera);
 
     ImGui::Image(m_texture_id, viewport_node->Size);
 
@@ -90,7 +73,7 @@ void ViewportPanel::on_imgui_render() {
 }
 
 void ViewportPanel::on_mouse_moved(Phos::MouseMovedEvent& mouse_moved, uint32_t dockspace_id) {
-    if (!ImGui::DockBuilderGetCentralNode(dockspace_id)->IsFocused)
+    if (!ImGui::DockBuilderGetCentralNode(dockspace_id)->IsFocused || m_state_manager->state != EditorState::Editing)
         return;
 
     double x = mouse_moved.get_xpos();
@@ -119,7 +102,7 @@ void ViewportPanel::on_mouse_moved(Phos::MouseMovedEvent& mouse_moved, uint32_t 
 }
 
 void ViewportPanel::on_key_pressed(Phos::KeyPressedEvent& key_pressed, uint32_t dockspace_id) {
-    if (!ImGui::DockBuilderGetCentralNode(dockspace_id)->IsFocused)
+    if (!ImGui::DockBuilderGetCentralNode(dockspace_id)->IsFocused || m_state_manager->state != EditorState::Editing)
         return;
 
     glm::vec3 new_pos = m_editor_camera->non_rotated_position();
@@ -135,4 +118,36 @@ void ViewportPanel::on_key_pressed(Phos::KeyPressedEvent& key_pressed, uint32_t 
     }
 
     m_editor_camera->set_position(new_pos);
+}
+
+std::shared_ptr<Phos::Camera> ViewportPanel::get_camera() const {
+    if (m_state_manager->state == EditorState::Editing) {
+        return m_editor_camera;
+    } else if (m_state_manager->state == EditorState::Playing) {
+        auto camera_entities = m_scene->get_entities_with<Phos::CameraComponent>();
+
+        if (camera_entities.empty())
+            return nullptr;
+
+        std::ranges::sort(camera_entities, [](Phos::Entity& a, Phos::Entity& b) {
+            return a.get_component<Phos::CameraComponent>().depth < b.get_component<Phos::CameraComponent>().depth;
+        });
+
+        const auto& scene_camera_entity = camera_entities[0];
+        const auto& camera_component = scene_camera_entity.get_component<Phos::CameraComponent>();
+        const auto& camera_transform = scene_camera_entity.get_component<Phos::TransformComponent>();
+
+        std::shared_ptr<Phos::Camera> scene_camera;
+        if (camera_component.type == Phos::Camera::Type::Perspective) {
+            scene_camera = std::make_shared<Phos::PerspectiveCamera>(
+                camera_component.fov, (float)m_width / (float)m_height, camera_component.znear, camera_component.zfar);
+        }
+
+        scene_camera->set_position(camera_transform.position);
+        scene_camera->rotate(camera_transform.rotation);
+
+        return scene_camera;
+    }
+
+    return nullptr;
 }
