@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Create executable
-add_executable(${PROJECT_NAME})
+add_library(${PROJECT_NAME})
 
 # target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -85,17 +85,6 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_cubemap.cpp
         src/renderer/backend/vulkan/vulkan_presenter.cpp
 
-        # Editor
-        editor/main.cpp
-
-        editor/panels/viewport_panel.cpp
-        editor/panels/entity_hierarchy_panel.cpp
-        editor/panels/components_panel.cpp
-
-        editor/imgui/imgui_impl.cpp
-        editor/imgui/vulkan/imgui_vulkan_impl.cpp
-
-        # src/main.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)
@@ -106,11 +95,11 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/glfw)
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
+target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
 
 # glm
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/glm)
-target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
+target_link_libraries(${PROJECT_NAME} PUBLIC glm::glm)
 
 # Vulkan
 find_package(Vulkan REQUIRED)
@@ -122,7 +111,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE stb)
 
 # spdlog
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog)
-target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
+target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
 
 # assimp
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -149,13 +138,41 @@ target_link_libraries(${PROJECT_NAME} PRIVATE yaml-cpp)
 
 # imgui
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)
-target_link_libraries(${PROJECT_NAME} PRIVATE imgui)
-target_link_libraries(${PROJECT_NAME} PRIVATE imgui_impl_glfw)
-target_link_libraries(${PROJECT_NAME} PRIVATE imgui_impl_vulkan)
 
 
 # Catch 2
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/Catch2)
+
+#
+# Editor
+#
+add_executable(PhosEditor
+        editor/main.cpp
+
+        editor/panels/viewport_panel.cpp
+        editor/panels/entity_hierarchy_panel.cpp
+        editor/panels/components_panel.cpp
+
+        editor/imgui/imgui_impl.cpp
+        editor/imgui/vulkan/imgui_vulkan_impl.cpp
+)
+
+target_include_directories(PhosEditor PUBLIC editor/)
+
+target_link_libraries(PhosEditor PUBLIC ${PROJECT_NAME})
+
+target_link_libraries(PhosEditor PRIVATE imgui)
+target_link_libraries(PhosEditor PRIVATE imgui_impl_glfw)
+target_link_libraries(PhosEditor PRIVATE imgui_impl_vulkan)
+
+#
+# Application
+#
+add_executable(PhosApplication
+        src/main.cpp
+)
+
+target_link_libraries(PhosApplication PUBLIC ${PROJECT_NAME})
 
 #
 # Tests

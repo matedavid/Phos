@@ -1,7 +1,7 @@
 #pragma once
 
 #include "imgui_panel.h"
-#include "../editor_state_manager.h"
+#include "editor_state_manager.h"
 
 #include <glm/glm.hpp>
 

@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "../imgui/imgui_impl.h"
+#include "imgui/imgui_impl.h"
 
 #include "scene/scene_renderer.h"
 #include "scene/scene.h"
