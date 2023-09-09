@@ -41,7 +41,7 @@ static AssetType string_to_asset_type(const std::string& str) {
 
 #define REGISTER_PARSER(Parser) m_parsers.push_back(std::make_unique<Parser>(m_manager))
 
-AssetLoader::AssetLoader(AssetManager* manager) : m_manager(manager) {
+AssetLoader::AssetLoader(AssetManagerBase* manager) : m_manager(manager) {
     // Register parsers
     REGISTER_PARSER(TextureParser);
     REGISTER_PARSER(CubemapParser);
@@ -155,7 +155,7 @@ std::shared_ptr<IAsset> MaterialParser::parse(const YAML::Node& node, [[maybe_un
 
 std::shared_ptr<Texture> MaterialParser::parse_texture(const YAML::Node& node) const {
     const auto id = UUID(node.as<uint64_t>());
-    return m_manager->load_by_id<Texture>(id);
+    return m_manager->load_by_id_type<Texture>(id);
 }
 
 glm::vec3 MaterialParser::parse_vec3(const YAML::Node& node) const {
@@ -277,14 +277,14 @@ ModelAsset::Node* ModelParser::parse_node_r(const YAML::Node& node) const {
     if (const auto mesh_node = node["mesh"]) {
         const auto mesh_id = UUID(mesh_node.as<uint64_t>());
 
-        const auto mesh = m_manager->load_by_id<Mesh>(mesh_id);
+        const auto mesh = m_manager->load_by_id_type<Mesh>(mesh_id);
         n->mesh = mesh;
     }
 
     if (const auto material_node = node["material"]) {
         const auto material_id = UUID(material_node.as<uint64_t>());
 
-        const auto material = m_manager->load_by_id<Material>(material_id);
+        const auto material = m_manager->load_by_id_type<Material>(material_id);
         n->material = material;
     }
 

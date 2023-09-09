@@ -16,13 +16,13 @@ namespace Phos {
 
 // Forward declarations
 class IAssetParser;
-class AssetManager;
+class AssetManagerBase;
 class Texture;
 class ModelAsset;
 
 class AssetLoader {
   public:
-    explicit AssetLoader(AssetManager* manager);
+    explicit AssetLoader(AssetManagerBase* manager);
     ~AssetLoader() = default;
 
     [[nodiscard]] UUID get_id(const std::string& path) const;
@@ -30,7 +30,7 @@ class AssetLoader {
 
   private:
     std::vector<std::unique_ptr<IAssetParser>> m_parsers;
-    AssetManager* m_manager;
+    AssetManagerBase* m_manager;
 };
 
 //
@@ -47,7 +47,7 @@ class IAssetParser {
 
 class TextureParser : public IAssetParser {
   public:
-    explicit TextureParser([[maybe_unused]] AssetManager*) {}
+    explicit TextureParser([[maybe_unused]] AssetManagerBase*) {}
 
     [[nodiscard]] AssetType type() override { return AssetType::Texture; }
     std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
@@ -55,7 +55,7 @@ class TextureParser : public IAssetParser {
 
 class CubemapParser : public IAssetParser {
   public:
-    explicit CubemapParser([[maybe_unused]] AssetManager*) {}
+    explicit CubemapParser([[maybe_unused]] AssetManagerBase*) {}
 
     [[nodiscard]] AssetType type() override { return AssetType::Cubemap; }
     std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
@@ -63,13 +63,13 @@ class CubemapParser : public IAssetParser {
 
 class MaterialParser : public IAssetParser {
   public:
-    explicit MaterialParser(AssetManager* manager) : m_manager(manager) {}
+    explicit MaterialParser(AssetManagerBase* manager) : m_manager(manager) {}
 
     [[nodiscard]] AssetType type() override { return AssetType::Material; }
     std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
 
   private:
-    AssetManager* m_manager;
+    AssetManagerBase* m_manager;
 
     [[nodiscard]] std::shared_ptr<Texture> parse_texture(const YAML::Node& node) const;
     [[nodiscard]] glm::vec3 parse_vec3(const YAML::Node& node) const;
@@ -80,7 +80,7 @@ class MaterialParser : public IAssetParser {
 
 class MeshParser : public IAssetParser {
   public:
-    explicit MeshParser([[maybe_unused]] AssetManager*) {}
+    explicit MeshParser([[maybe_unused]] AssetManagerBase*) {}
 
     [[nodiscard]] AssetType type() override { return AssetType::Mesh; }
     std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
@@ -88,13 +88,13 @@ class MeshParser : public IAssetParser {
 
 class ModelParser : public IAssetParser {
   public:
-    explicit ModelParser(AssetManager* manager) : m_manager(manager) {}
+    explicit ModelParser(AssetManagerBase* manager) : m_manager(manager) {}
 
     [[nodiscard]] AssetType type() override { return AssetType::Model; }
     std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
 
   private:
-    AssetManager* m_manager;
+    AssetManagerBase* m_manager;
 
     [[nodiscard]] ModelAsset::Node* parse_node_r(const YAML::Node& node) const;
 };

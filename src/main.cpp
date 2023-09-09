@@ -12,6 +12,7 @@
 #include "scene/entity.h"
 
 #include "asset/asset_manager.h"
+#include "asset/runtime_asset_manager.h"
 
 #include "renderer/camera.h"
 #include "renderer/mesh.h"
@@ -32,7 +33,7 @@ class SandboxLayer : public Phos::Layer {
         m_presenter = Phos::Presenter::create(m_scene_renderer, Phos::Application::instance()->get_window());
 
         const auto pack = std::make_shared<Phos::AssetPack>("../assets/asset_pack.psap");
-        m_asset_manager = std::make_shared<Phos::AssetManager>(pack);
+        m_asset_manager = std::make_shared<Phos::RuntimeAssetManager>(pack);
 
         // Camera
         const auto aspect_ratio = WIDTH / HEIGHT;
@@ -46,8 +47,8 @@ class SandboxLayer : public Phos::Layer {
     ~SandboxLayer() override = default;
 
     void create_scene() {
-        const auto sphere_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/sphere/sphere.psa");
-        const auto cube_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/cube/cube.psa");
+        const auto sphere_mesh = m_asset_manager->load_type<Phos::Mesh>("../assets/models/sphere/sphere.psa");
+        const auto cube_mesh = m_asset_manager->load_type<Phos::Mesh>("../assets/models/cube/cube.psa");
 
         // Camera
         auto camera_entity = m_scene->create_entity("Main Camera");
@@ -59,10 +60,6 @@ class SandboxLayer : public Phos::Layer {
             .znear = 0.001f,
             .zfar = 40.0f,
         });
-
-        // model
-        auto model = m_asset_manager->load<Phos::ModelAsset>("../assets/models/john_117_imported/scene.gltf.psa");
-        model->import_into_scene(m_scene);
 
         // Floor
         const auto floor_material = Phos::Material::create(
@@ -234,7 +231,7 @@ class SandboxLayer : public Phos::Layer {
 
   private:
     std::shared_ptr<Phos::Scene> m_scene;
-    std::shared_ptr<Phos::AssetManager> m_asset_manager;
+    std::shared_ptr<Phos::RuntimeAssetManager> m_asset_manager;
 
     std::shared_ptr<Phos::ISceneRenderer> m_scene_renderer;
     std::shared_ptr<Phos::Presenter> m_presenter;

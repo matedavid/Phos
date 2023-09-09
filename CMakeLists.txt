@@ -20,11 +20,14 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/core/window.cpp
         src/core/entry_point.cpp
         src/core/uuid.cpp
+        src/core/project.cpp
 
         # Asset
         src/asset/asset_loader.cpp
         src/asset/asset_pack.cpp
         src/asset/model_asset.cpp
+        src/asset/runtime_asset_manager.cpp
+        src/asset/editor_asset_manager.cpp
 
         # Scene
         src/scene/registry.cpp

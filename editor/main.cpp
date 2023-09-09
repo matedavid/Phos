@@ -15,7 +15,8 @@
 #include "panels/entity_hierarchy_panel.h"
 #include "panels/components_panel.h"
 
-#include "asset/asset_manager.h"
+#include "asset/editor_asset_manager.h"
+#include "asset/runtime_asset_manager.h"
 
 #include "scene/scene_renderer.h"
 #include "scene/scene.h"
@@ -40,7 +41,7 @@ class EditorLayer : public Phos::Layer {
   public:
     EditorLayer() {
         m_asset_manager =
-            std::make_shared<Phos::AssetManager>(std::make_shared<Phos::AssetPack>("../assets/asset_pack.psap"));
+            std::make_shared<Phos::RuntimeAssetManager>(std::make_shared<Phos::AssetPack>("../assets/asset_pack.psap"));
         m_scene = std::make_shared<Phos::Scene>("Example");
         m_renderer = std::make_shared<Phos::DeferredRenderer>(m_scene);
 
@@ -193,7 +194,7 @@ class EditorLayer : public Phos::Layer {
   private:
     std::shared_ptr<Phos::ISceneRenderer> m_renderer;
     std::shared_ptr<Phos::Scene> m_scene;
-    std::shared_ptr<Phos::AssetManager> m_asset_manager;
+    std::shared_ptr<Phos::RuntimeAssetManager> m_asset_manager;
 
     std::unique_ptr<ViewportPanel> m_viewport_panel;
     std::unique_ptr<EntityHierarchyPanel> m_entity_panel;
@@ -212,8 +213,8 @@ class EditorLayer : public Phos::Layer {
     }
 
     void create_scene() {
-        const auto sphere_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/sphere/sphere.psa");
-        const auto cube_mesh = m_asset_manager->load<Phos::Mesh>("../assets/models/cube/cube.psa");
+        const auto sphere_mesh = m_asset_manager->load_type<Phos::Mesh>("../assets/models/sphere/sphere.psa");
+        const auto cube_mesh = m_asset_manager->load_type<Phos::Mesh>("../assets/models/cube/cube.psa");
 
         // Camera
         auto camera_entity = m_scene->create_entity("Main Camera");
@@ -225,10 +226,6 @@ class EditorLayer : public Phos::Layer {
             .znear = 0.001f,
             .zfar = 40.0f,
         });
-
-        // model
-        auto model = m_asset_manager->load<Phos::ModelAsset>("../assets/models/john_117_imported/scene.gltf.psa");
-        model->import_into_scene(m_scene);
 
         // Floor
         const auto floor_material = Phos::Material::create(
