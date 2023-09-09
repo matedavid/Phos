@@ -59,6 +59,7 @@ void PerspectiveCamera::recalculate_projection_matrix() {
 // OrthographicCamera
 //
 
+/*
 OrthographicCamera::OrthographicCamera() {
     m_projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f);
     recalculate_view_matrix();
@@ -71,5 +72,6 @@ OrthographicCamera::OrthographicCamera(float left, float right, float bottom, fl
     m_projection = glm::ortho(left, right, bottom, top, znear, zfar);
     recalculate_view_matrix();
 }
+*/
 
 } // namespace Phos

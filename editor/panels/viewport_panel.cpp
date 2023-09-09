@@ -141,6 +141,8 @@ std::shared_ptr<Phos::Camera> ViewportPanel::get_camera() const {
         if (camera_component.type == Phos::Camera::Type::Perspective) {
             scene_camera = std::make_shared<Phos::PerspectiveCamera>(
                 camera_component.fov, (float)m_width / (float)m_height, camera_component.znear, camera_component.zfar);
+        } else {
+            PS_FAIL("OrthographicCamera not implemented")
         }
 
         scene_camera->set_position(camera_transform.position);

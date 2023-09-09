@@ -323,8 +323,10 @@ void render_component<Phos::CameraComponent>(Phos::CameraComponent& component) {
             if (ImGui::Selectable(perspective_camera_name, component.type == Phos::Camera::Type::Perspective))
                 component.type = Phos::Camera::Type::Perspective;
 
+            /*
             if (ImGui::Selectable(orthographic_camera_name, component.type == Phos::Camera::Type::Orthographic))
                 component.type = Phos::Camera::Type::Orthographic;
+            */
 
             ImGui::EndCombo();
         }

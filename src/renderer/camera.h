@@ -34,8 +34,8 @@ class Camera {
 
 class PerspectiveCamera : public Camera {
   public:
-    explicit PerspectiveCamera();
-    explicit PerspectiveCamera(float fov, float aspect, float znear, float zfar);
+    PerspectiveCamera();
+    PerspectiveCamera(float fov, float aspect, float znear, float zfar);
     ~PerspectiveCamera() override = default;
 
     void set_aspect_ratio(float aspect);
@@ -46,12 +46,14 @@ class PerspectiveCamera : public Camera {
     void recalculate_projection_matrix();
 };
 
+/*
 class OrthographicCamera : public Camera {
   public:
-    explicit OrthographicCamera();
-    explicit OrthographicCamera(float left, float right, float bottom, float top);
-    explicit OrthographicCamera(float left, float right, float bottom, float top, float znear, float zfar);
+    OrthographicCamera();
+    OrthographicCamera(float left, float right, float bottom, float top);
+    OrthographicCamera(float left, float right, float bottom, float top, float znear, float zfar);
     ~OrthographicCamera() override = default;
 };
+*/
 
 } // namespace Phos
