@@ -4,10 +4,10 @@
 
 namespace Phos {
 
-AssetPack::AssetPack(const std::string& path) {
-    m_containing_folder = std::filesystem::path(path).parent_path();
+AssetPack::AssetPack(std::string path) : m_path(std::move(path)) {
+    m_containing_folder = std::filesystem::path(m_path).parent_path();
 
-    const YAML::Node node = YAML::LoadFile(path);
+    const YAML::Node node = YAML::LoadFile(m_path);
 
     const YAML::Node assets_node = node["assets"];
     for (const auto& asset : assets_node) {
