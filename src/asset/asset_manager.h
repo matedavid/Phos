@@ -6,9 +6,12 @@
 
 #include "asset/asset.h"
 #include "asset/asset_loader.h"
-#include "asset/asset_pack.h"
 
 namespace Phos {
+
+// Forward declarations
+class AssetLoader;
+class AssetPack;
 
 class AssetManagerBase {
   public:

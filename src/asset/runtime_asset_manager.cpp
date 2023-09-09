@@ -1,5 +1,7 @@
 #include "runtime_asset_manager.h"
 
+#include "asset/asset_pack.h"
+
 namespace Phos {
 
 RuntimeAssetManager::RuntimeAssetManager(std::shared_ptr<AssetPack> asset_pack) : m_asset_pack(std::move(asset_pack)) {
