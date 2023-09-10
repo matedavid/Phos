@@ -9,8 +9,8 @@
 
 namespace Phos {
 
-Project::Project(std::shared_ptr<Scene> scene, std::shared_ptr<AssetManagerBase> asset_manager)
-      : m_scene(std::move(scene)), m_asset_manager(std::move(asset_manager)) {}
+Project::Project(std::string name, std::shared_ptr<Scene> scene, std::shared_ptr<AssetManagerBase> asset_manager)
+      : m_name(std::move(name)), m_scene(std::move(scene)), m_asset_manager(std::move(asset_manager)) {}
 
 std::shared_ptr<Project> Project::create(const std::string& path) {
     PS_FAIL("Unimplemented");
@@ -21,7 +21,7 @@ std::shared_ptr<Project> Project::open(const std::string& path) {
     const auto containing_folder = std::filesystem::path(path).parent_path();
 
     const auto node = YAML::LoadFile(path);
-    // const auto project_name = node["name"].as<std::string>();
+    const auto project_name = node["name"].as<std::string>();
 
     const auto asset_manager = std::make_shared<EditorAssetManager>(containing_folder);
 
@@ -34,7 +34,7 @@ std::shared_ptr<Project> Project::open(const std::string& path) {
     }
 
     // TODO: Should pass all of the scenes in the project file, at the moment only one is allowed
-    auto* project = new Project(scenes[0], asset_manager);
+    auto* project = new Project(project_name, scenes[0], asset_manager);
     return std::shared_ptr<Project>(project);
 }
 

@@ -26,7 +26,7 @@ class Project {
     std::shared_ptr<Scene> m_scene;
     std::shared_ptr<AssetManagerBase> m_asset_manager;
 
-    Project(std::shared_ptr<Scene> scene, std::shared_ptr<AssetManagerBase> asset_manager);
+    Project(std::string name, std::shared_ptr<Scene> scene, std::shared_ptr<AssetManagerBase> asset_manager);
 };
 
 } // namespace Phos
