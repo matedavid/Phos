@@ -6,4 +6,5 @@ shaders/build/
 *.spv
 
 assets/
+projects/
 

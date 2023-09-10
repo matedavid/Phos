@@ -34,6 +34,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/scene/scene.cpp
         src/scene/model_loader.cpp
         src/scene/scene_serializer.cpp
+        src/scene/scene_deserializer.cpp
 
         # Input
         src/input/input.cpp
@@ -138,7 +139,7 @@ set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "disable yaml tools")
 set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "disable yaml contrib")
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/yaml-cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE yaml-cpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC yaml-cpp)
 
 # imgui
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)

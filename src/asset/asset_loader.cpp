@@ -143,6 +143,9 @@ std::shared_ptr<IAsset> MaterialParser::parse(const YAML::Node& node, [[maybe_un
         } else if (property_type == "vec4") {
             const auto data = parse_vec4(data_node);
             material->set(property_name, data);
+        } else if (property_type == "float") {
+            const auto data = parse_float(data_node);
+            material->set(property_name, data);
         } else {
             PS_WARNING("Property type '{}' is not valid", property_type);
         }
@@ -159,32 +162,24 @@ std::shared_ptr<Texture> MaterialParser::parse_texture(const YAML::Node& node) c
 }
 
 glm::vec3 MaterialParser::parse_vec3(const YAML::Node& node) const {
-    const auto data_str = node.as<std::string>();
-    const auto data = split_string(data_str);
-
-    // TODO: Should check size of vector is correct
-
-    return {data[0], data[1], data[2]};
+    return {
+        node["x"].as<float>(),
+        node["y"].as<float>(),
+        node["z"].as<float>(),
+    };
 }
 
 glm::vec4 MaterialParser::parse_vec4(const YAML::Node& node) const {
-    const auto data_str = node.as<std::string>();
-    const auto data = split_string(data_str);
-
-    // TODO: Should check size of vector is correct
-
-    return {data[0], data[1], data[2], data[3]};
+    return {
+        node["x"].as<float>(),
+        node["y"].as<float>(),
+        node["z"].as<float>(),
+        node["w"].as<float>(),
+    };
 }
 
-std::vector<float> MaterialParser::split_string(const std::string& str) const {
-    std::vector<float> data;
-
-    std::stringstream ss(str);
-    std::string value;
-    while (ss >> value)
-        data.push_back(std::stof(value));
-
-    return data;
+float MaterialParser::parse_float(const YAML::Node& node) const {
+    return node.as<float>();
 }
 
 //

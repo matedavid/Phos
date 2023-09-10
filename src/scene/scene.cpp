@@ -64,4 +64,15 @@ Entity Scene::get_entity_with_uuid(const UUID& uuid) {
     return *m_uuid_to_entity[uuid];
 }
 
+std::vector<Entity> Scene::get_all_entities() const {
+    std::vector<Entity> entities(m_uuid_to_entity.size());
+
+    uint32_t i = 0;
+    for (auto& [_, entity] : m_uuid_to_entity) {
+        entities[i++] = *entity;
+    }
+
+    return entities;
+}
+
 } // namespace Phos

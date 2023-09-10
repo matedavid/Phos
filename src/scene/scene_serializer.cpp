@@ -110,8 +110,8 @@ void serialize_component_t<TransformComponent>(YAML::Emitter& out, const Transfo
         out << YAML::BeginMap;
 
         emit_yaml(out, "x", component.position.x);
-        emit_yaml(out, "y", component.position.x);
-        emit_yaml(out, "z", component.position.x);
+        emit_yaml(out, "y", component.position.y);
+        emit_yaml(out, "z", component.position.z);
 
         out << YAML::EndMap;
     }
@@ -121,8 +121,8 @@ void serialize_component_t<TransformComponent>(YAML::Emitter& out, const Transfo
         out << YAML::BeginMap;
 
         emit_yaml(out, "x", component.rotation.x);
-        emit_yaml(out, "y", component.rotation.x);
-        emit_yaml(out, "z", component.rotation.x);
+        emit_yaml(out, "y", component.rotation.y);
+        emit_yaml(out, "z", component.rotation.z);
 
         out << YAML::EndMap;
     }
@@ -132,8 +132,8 @@ void serialize_component_t<TransformComponent>(YAML::Emitter& out, const Transfo
         out << YAML::BeginMap;
 
         emit_yaml(out, "x", component.scale.x);
-        emit_yaml(out, "y", component.scale.x);
-        emit_yaml(out, "z", component.scale.x);
+        emit_yaml(out, "y", component.scale.y);
+        emit_yaml(out, "z", component.scale.z);
 
         out << YAML::EndMap;
     }

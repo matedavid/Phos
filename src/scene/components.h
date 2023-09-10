@@ -55,7 +55,7 @@ struct CameraComponent {
     float znear = 0.01f;
     float zfar = 100.0f;
 
-    int depth = 0;
+    int32_t depth = 0;
 };
 
 } // namespace Phos

@@ -39,8 +39,6 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id_r(UUID id, const std::str
     std::queue<std::string> pending_directories;
 
     for (const auto& entry : std::filesystem::directory_iterator(folder)) {
-        fmt::print("Looking for: {}, current: {}\n", (uint64_t)id, entry.path().c_str());
-
         if (entry.is_directory()) {
             pending_directories.push(entry.path());
             continue;

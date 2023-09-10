@@ -74,8 +74,7 @@ class MaterialParser : public IAssetParser {
     [[nodiscard]] std::shared_ptr<Texture> parse_texture(const YAML::Node& node) const;
     [[nodiscard]] glm::vec3 parse_vec3(const YAML::Node& node) const;
     [[nodiscard]] glm::vec4 parse_vec4(const YAML::Node& node) const;
-
-    [[nodiscard]] std::vector<float> split_string(const std::string& str) const;
+    [[nodiscard]] float parse_float(const YAML::Node& node) const;
 };
 
 class MeshParser : public IAssetParser {
