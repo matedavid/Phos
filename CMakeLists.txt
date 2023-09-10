@@ -33,6 +33,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/scene/registry.cpp
         src/scene/scene.cpp
         src/scene/model_loader.cpp
+        src/scene/scene_serializer.cpp
 
         # Input
         src/input/input.cpp
