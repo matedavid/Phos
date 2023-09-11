@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "entity.h"
+#include "scene/entity.h"
 
 namespace Phos {
 
