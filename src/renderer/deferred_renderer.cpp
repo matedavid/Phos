@@ -190,6 +190,17 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
             Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
         }
+
+        // Tone Mapping pass
+        // ==========================
+        {
+            Renderer::begin_render_pass(m_command_buffer, m_tone_mapping_pass);
+
+            Renderer::bind_graphics_pipeline(m_command_buffer, m_tone_mapping_pipeline);
+            Renderer::draw_screen_quad(m_command_buffer);
+
+            Renderer::end_render_pass(m_command_buffer, m_tone_mapping_pass);
+        }
     });
 
     // Submit command buffer
@@ -199,7 +210,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 }
 
 std::shared_ptr<Texture> DeferredRenderer::output_texture() const {
-    return m_lighting_texture;
+    return m_tone_mapping_texture;
 }
 
 void DeferredRenderer::window_resized(uint32_t width, uint32_t height) {
@@ -331,7 +342,13 @@ void DeferredRenderer::init() {
 
     // Lighting pass
     {
-        m_lighting_texture = Texture::create(width, height);
+        m_lighting_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .attachment = true,
+        }));
 
         const auto lighting_attachment = Framebuffer::Attachment{
             .image = m_lighting_texture->get_image(),
@@ -365,6 +382,41 @@ void DeferredRenderer::init() {
         m_lighting_pass = RenderPass::create(RenderPass::Description{
             .debug_name = "Deferred-Lighting",
             .target_framebuffer = m_lighting_framebuffer,
+        });
+    }
+
+    // Tone Mapping pass
+    {
+        m_tone_mapping_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::B8G8R8A8_SRGB,
+            .attachment = true,
+        }));
+
+        const auto tone_mapping_attachment = Framebuffer::Attachment{
+            .image = m_tone_mapping_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(0.0f),
+        };
+
+        m_tone_mapping_framebuffer = Framebuffer::create({
+            .attachments = {tone_mapping_attachment},
+        });
+
+        m_tone_mapping_pipeline = GraphicsPipeline::create({
+            .shader = Renderer::shader_manager()->get_builtin_shader("ToneMapping"),
+            .target_framebuffer = m_tone_mapping_framebuffer,
+        });
+
+        m_tone_mapping_pipeline->add_input("uToneMappingTexture", m_lighting_texture);
+        PS_ASSERT(m_tone_mapping_pipeline->bake(), "Could not bake ToneMapping pipeline")
+
+        m_tone_mapping_pass = RenderPass::create({
+            .debug_name = "ToneMappingPass",
+            .target_framebuffer = m_tone_mapping_framebuffer,
         });
     }
 

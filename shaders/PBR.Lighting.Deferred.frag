@@ -97,7 +97,7 @@ vec3 PBRCalculation(PBRInformation info, vec3 V, vec3 L, vec3 F0) {
 
     // Cook-Torrence BRDF
     vec3 numerator = NDF * G * F;
-    float denominator = 4.0 * max(dot(info.N, V), 0.0) * max(dot(info.N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
+    float denominator = 4.0 * max(dot(info.N, V), 0.0) * max(dot(info.N, L), 0.0) + 0.0001;// + 0.0001 to prevent divide by zero
     vec3 specular = numerator / denominator;
 
     vec3 kS = F;
@@ -167,11 +167,6 @@ void main() {
 
     vec3 ambient = vec3(0.001) * albedo * ao * (shadow == 1.0 ? vec3(0.04) : vec3(1.0));
     vec3 color = ambient + (1.0 - shadow) * Lo;
-
-    // HDR tonemapping
-    color = color / (color + vec3(1.0));
-    // Gamma correction
-    color = pow(color, vec3(1.0 / 2.2));
 
     outColor = vec4(color, 1.0);
 }

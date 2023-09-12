@@ -75,6 +75,13 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<GraphicsPipeline> m_lighting_pipeline;
     std::shared_ptr<RenderPass> m_lighting_pass;
 
+    // Tone mapping Pass
+    std::shared_ptr<Texture> m_tone_mapping_texture;
+    std::shared_ptr<Framebuffer> m_tone_mapping_framebuffer;
+
+    std::shared_ptr<GraphicsPipeline> m_tone_mapping_pipeline;
+    std::shared_ptr<RenderPass> m_tone_mapping_pass;
+
     // Cubemap pipeline
     std::shared_ptr<Cubemap> m_skybox;
     std::shared_ptr<GraphicsPipeline> m_skybox_pipeline;
