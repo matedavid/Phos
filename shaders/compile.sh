@@ -18,3 +18,5 @@ glslc ShadowMap.frag -o build/ShadowMap.Frag.spv
 
 glslc post_processing/ToneMapping.vert -o build/ToneMapping.Vert.spv
 glslc post_processing/ToneMapping.frag -o build/ToneMapping.Frag.spv
+
+glslc -fshader-stage=compute post_processing/Bloom.Compute.glsl -o build/Bloom.Compute.spv

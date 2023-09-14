@@ -36,6 +36,10 @@ class VulkanDevice {
         PS_ASSERT(m_presentation_queue != nullptr, "Presentation queue was not requested")
         return m_presentation_queue;
     }
+    [[nodiscard]] std::shared_ptr<VulkanQueue> get_compute_queue() const {
+        PS_ASSERT(m_presentation_queue != nullptr, "Compute queue was not requested")
+        return m_compute_queue;
+    }
 
     [[nodiscard]] const std::shared_ptr<VulkanQueue>& get_queue_from_type(VulkanQueue::Type type) const;
 
@@ -48,8 +52,10 @@ class VulkanDevice {
 
     std::shared_ptr<VulkanQueue> m_graphics_queue = nullptr;
     std::shared_ptr<VulkanQueue> m_presentation_queue = nullptr;
+    std::shared_ptr<VulkanQueue> m_compute_queue = nullptr;
 
     std::unique_ptr<VulkanCommandPool> m_graphics_command_pool = nullptr;
+    std::unique_ptr<VulkanCommandPool> m_compute_command_pool = nullptr;
 
     [[nodiscard]] VulkanPhysicalDevice select_physical_device(const std::unique_ptr<VulkanInstance>& instance,
                                                               const VulkanPhysicalDevice::Requirements& reqs) const;

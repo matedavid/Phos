@@ -89,7 +89,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_material.cpp
         src/renderer/backend/vulkan/vulkan_cubemap.cpp
         src/renderer/backend/vulkan/vulkan_presenter.cpp
-
+        src/renderer/backend/vulkan/vulkan_compute_pipeline.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)

@@ -28,6 +28,7 @@ class Image {
 
         bool transfer = false;   // Will the image be used for transfer operations
         bool attachment = false; // Will the image be used as an attachment of a Framebuffer
+        bool storage = false;    // Will the image be used as storage parameters in compute shaders
     };
 
     virtual ~Image() = default;

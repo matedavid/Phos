@@ -35,6 +35,9 @@ VulkanImage::VulkanImage(const Description& description) : m_description(descrip
     else if (description.attachment)
         image_create_info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
+    if (description.storage)
+        image_create_info.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+
     // Flags
     if (description.type == Image::Type::Cubemap)
         image_create_info.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
