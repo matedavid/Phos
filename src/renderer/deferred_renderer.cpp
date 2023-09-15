@@ -198,9 +198,9 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
         // Compute test pass
         {
-            auto native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(m_command_buffer);
-            vkCmdBindPipeline(native_cb->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, m_compute_pipeline->handle());
+            m_compute_pipeline->bind(m_command_buffer);
 
+            auto native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(m_command_buffer);
             vkCmdBindDescriptorSets(native_cb->handle(),
                                     VK_PIPELINE_BIND_POINT_COMPUTE,
                                     m_compute_pipeline->layout(),
@@ -210,9 +210,9 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                                     0,
                                     nullptr);
 
-            auto work_groups_x = m_lighting_texture->get_image()->width() / 1;
-            auto work_groups_y = m_lighting_texture->get_image()->height() / 1;
-            vkCmdDispatch(native_cb->handle(), work_groups_x, work_groups_y, 1);
+            const auto work_groups_x = m_lighting_texture->get_image()->width() / 4;
+            const auto work_groups_y = m_lighting_texture->get_image()->height() / 4;
+            m_compute_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
         }
 
         // Tone Mapping pass
@@ -463,8 +463,8 @@ void DeferredRenderer::init() {
     m_compute_pipeline = std::make_shared<VulkanComputePipeline>();
 
     m_compute_output_texture = Texture::create(Image::create({
-        .width = width,
-        .height = height,
+        .width = width / 4,
+        .height = height / 4,
         .type = Image::Type::Image2D,
         .format = Image::Format::R16G16B16A16_SFLOAT,
         .attachment = true,

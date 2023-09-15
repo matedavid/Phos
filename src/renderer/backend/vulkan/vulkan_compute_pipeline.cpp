@@ -4,6 +4,7 @@
 
 #include "renderer/backend/vulkan/vulkan_context.h"
 #include "renderer/backend/vulkan/vulkan_device.h"
+#include "renderer/backend/vulkan/vulkan_command_buffer.h"
 
 namespace Phos {
 
@@ -76,6 +77,16 @@ VulkanComputePipeline::~VulkanComputePipeline() {
     vkDestroyPipelineLayout(VulkanContext::device->handle(), m_layout, nullptr);
     vkDestroyDescriptorSetLayout(VulkanContext::device->handle(), m_descriptor_set_layout, nullptr);
     vkDestroyShaderModule(VulkanContext::device->handle(), m_shader, nullptr);
+}
+
+void VulkanComputePipeline::bind(const std::shared_ptr<CommandBuffer>& command_buffer) {
+    const auto native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
+    vkCmdBindPipeline(native_cb->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
+}
+
+void VulkanComputePipeline::execute(const std::shared_ptr<CommandBuffer>& command_buffer, glm::ivec3 work_groups) {
+    const auto native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
+    vkCmdDispatch(native_cb->handle(), work_groups.x, work_groups.y, work_groups.z);
 }
 
 } // namespace Phos

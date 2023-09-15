@@ -3,7 +3,7 @@
 layout (binding = 0) uniform sampler2D uInputImage;
 layout (binding = 1, rgba16f) restrict writeonly uniform image2D uOutputImage;
 
-layout (local_size_x = 1, local_size_y = 1) in;
+layout (local_size_x = 4, local_size_y = 4) in;
 
 void main() {
     vec2 imgSize = vec2(imageSize(uOutputImage));
@@ -12,6 +12,6 @@ void main() {
     vec2 texCoords = vec2(float(invocationID.x) / imgSize.x, float(invocationID.y) / imgSize.y);
     texCoords += (1.0f / imgSize) * 0.5f;
 
-    vec3 color = vec3(1.0f) - texture(uInputImage, texCoords).rgb;
+    vec3 color = texture(uInputImage, texCoords).rgb;
     imageStore(uOutputImage, invocationID, vec4(color, 1.0f));
 }
