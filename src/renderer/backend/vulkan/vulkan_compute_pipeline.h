@@ -20,7 +20,7 @@ class VulkanComputePipeline : public ComputePipeline {
     void bind(const std::shared_ptr<CommandBuffer>& command_buffer) override;
     void execute(const std::shared_ptr<CommandBuffer>& command_buffer, glm::ivec3 work_groups) override;
 
-    /// Builds the descriptor sets
+    /// Builds the descriptor set
     [[nodiscard]] bool bake() override;
     /// Invalidates de descriptors sets
     void invalidate() override;
@@ -43,7 +43,7 @@ class VulkanComputePipeline : public ComputePipeline {
     std::vector<std::pair<VulkanDescriptorInfo, VkDescriptorBufferInfo>> m_buffer_descriptor_info;
     std::vector<std::pair<VulkanDescriptorInfo, VkDescriptorImageInfo>> m_image_descriptor_info;
 
-    VkDescriptorSet m_set{VK_NULL_HANDLE};
+    std::vector<VkDescriptorSet> m_descriptor_sets;
 
     [[nodiscard]] static bool is_valid_texture_type(VkDescriptorType type);
 };

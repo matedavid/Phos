@@ -3,7 +3,7 @@
 layout (binding = 0) uniform sampler2D uInputImage;
 layout (binding = 1, rgba16f) restrict writeonly uniform image2D uOutputImage;
 
-layout (local_size_x = 4, local_size_y = 4) in;
+layout (local_size_x = 2, local_size_y = 2) in;
 
 void main() {
     vec2 imgSize = vec2(imageSize(uOutputImage));

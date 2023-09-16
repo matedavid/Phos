@@ -34,8 +34,14 @@ void VulkanComputePipeline::bind(const std::shared_ptr<CommandBuffer>& command_b
     const auto native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
 
     vkCmdBindPipeline(native_cb->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
-    vkCmdBindDescriptorSets(
-        native_cb->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, m_shader->get_pipeline_layout(), 0, 1, &m_set, 0, nullptr);
+    vkCmdBindDescriptorSets(native_cb->handle(),
+                            VK_PIPELINE_BIND_POINT_COMPUTE,
+                            m_shader->get_pipeline_layout(),
+                            0,
+                            1,
+                            &m_descriptor_sets[m_descriptor_sets.size() - 1],
+                            0,
+                            nullptr);
 }
 
 void VulkanComputePipeline::execute(const std::shared_ptr<CommandBuffer>& command_buffer, glm::ivec3 work_groups) {
@@ -44,56 +50,24 @@ void VulkanComputePipeline::execute(const std::shared_ptr<CommandBuffer>& comman
 }
 
 bool VulkanComputePipeline::bake() {
-    if (m_set == VK_NULL_HANDLE) {
-        auto builder = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator);
+    auto builder = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator);
 
-        for (const auto& [info, write] : m_buffer_descriptor_info) {
-            builder = builder.bind_buffer(info.binding, write, info.type, info.stage);
-        }
-
-        for (const auto& [info, write] : m_image_descriptor_info) {
-            builder = builder.bind_image(info.binding, write, info.type, info.stage);
-        }
-
-        m_buffer_descriptor_info.clear();
-        m_image_descriptor_info.clear();
-
-        return builder.build(m_set);
-    } else {
-        std::vector<VkWriteDescriptorSet> writes;
-
-        for (const auto& [info, write_info] : m_buffer_descriptor_info) {
-            VkWriteDescriptorSet write{};
-            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            write.pNext = nullptr;
-            write.descriptorCount = 1;
-            write.descriptorType = info.type;
-            write.pBufferInfo = &write_info;
-            write.dstBinding = info.binding;
-            write.dstSet = m_set;
-
-            writes.push_back(write);
-        }
-
-        for (const auto& [info, write_info] : m_image_descriptor_info) {
-            VkWriteDescriptorSet write{};
-            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            write.pNext = nullptr;
-            write.descriptorCount = 1;
-            write.descriptorType = info.type;
-            write.pImageInfo = &write_info;
-            write.dstBinding = info.binding;
-            write.dstSet = m_set;
-
-            writes.push_back(write);
-        }
-
-        m_buffer_descriptor_info.clear();
-        m_image_descriptor_info.clear();
-
-        vkUpdateDescriptorSets(VulkanContext::device->handle(), (uint32_t)writes.size(), writes.data(), 0, nullptr);
-        return true;
+    for (const auto& [info, write] : m_buffer_descriptor_info) {
+        builder = builder.bind_buffer(info.binding, write, info.type, info.stage);
     }
+
+    for (const auto& [info, write] : m_image_descriptor_info) {
+        builder = builder.bind_image(info.binding, write, info.type, info.stage);
+    }
+
+    m_buffer_descriptor_info.clear();
+    m_image_descriptor_info.clear();
+
+    VkDescriptorSet set;
+    const bool built = builder.build(set);
+    m_descriptor_sets.push_back(set);
+
+    return built;
 }
 
 void VulkanComputePipeline::invalidate() {
@@ -101,6 +75,7 @@ void VulkanComputePipeline::invalidate() {
     m_image_descriptor_info.clear();
 
     m_allocator = std::make_shared<VulkanDescriptorAllocator>();
+    m_descriptor_sets.clear();
 }
 
 void VulkanComputePipeline::set(std::string_view name, const std::shared_ptr<Texture>& texture) {

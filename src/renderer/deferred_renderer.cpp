@@ -194,16 +194,26 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
         // Compute test pass
         {
-            m_compute_pipeline->set("uInputImage", m_lighting_texture);
-            m_compute_pipeline->set("uOutputImage", m_compute_output_texture, 0);
+            auto work_groups_x = m_lighting_texture->get_image()->width() / 2;
+            auto work_groups_y = m_lighting_texture->get_image()->height() / 2;
 
-            PS_ASSERT(m_compute_pipeline->bake(), "Could not bake ComputePipeline")
+            const uint32_t num_mips = m_compute_output_texture->get_image()->num_mips();
+            for (uint32_t i = 1; i < num_mips - 3; ++i) {
+                if (i == 1)
+                    m_compute_pipeline->set("uInputImage", m_lighting_texture);
+                else
+                    m_compute_pipeline->set("uInputImage", m_compute_output_texture, i - 1);
 
-            m_compute_pipeline->bind(m_command_buffer);
+                m_compute_pipeline->set("uOutputImage", m_compute_output_texture, i);
 
-            const auto work_groups_x = m_lighting_texture->get_image()->width() / 4;
-            const auto work_groups_y = m_lighting_texture->get_image()->height() / 4;
-            m_compute_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
+                PS_ASSERT(m_compute_pipeline->bake(), "Could not bake ComputePipeline")
+
+                m_compute_pipeline->bind(m_command_buffer);
+                m_compute_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
+
+                work_groups_x /= 2;
+                work_groups_y /= 2;
+            }
         }
 
         // Tone Mapping pass
@@ -220,6 +230,8 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
     // Submit command buffer
     Renderer::submit_command_buffer(m_command_buffer);
+
+    m_compute_pipeline->invalidate();
 
     Renderer::end_frame();
 }
@@ -456,8 +468,8 @@ void DeferredRenderer::init() {
     });
 
     m_compute_output_texture = Texture::create(Image::create({
-        .width = width / 4,
-        .height = height / 4,
+        .width = width,
+        .height = height,
         .type = Image::Type::Image2D,
         .format = Image::Format::R16G16B16A16_SFLOAT,
         .generate_mips = true,
