@@ -64,6 +64,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/material.cpp
         src/renderer/backend/cubemap.cpp
         src/renderer/backend/presenter.cpp
+        src/renderer/backend/compute_pipeline.cpp
 
         # Vulkan Backend
         src/renderer/backend/vulkan/vulkan_renderer.cpp

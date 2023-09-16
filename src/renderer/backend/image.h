@@ -25,6 +25,7 @@ class Image {
         Type type = Type::Image2D;
         Format format = Format::B8G8R8A8_SRGB;
         uint32_t num_layers = 1;
+        bool generate_mips = false;
 
         bool transfer = false;   // Will the image be used for transfer operations
         bool attachment = false; // Will the image be used as an attachment of a Framebuffer
@@ -38,6 +39,7 @@ class Image {
     [[nodiscard]] virtual uint32_t width() const = 0;
     [[nodiscard]] virtual uint32_t height() const = 0;
     [[nodiscard]] virtual Format format() const = 0;
+    [[nodiscard]] virtual uint32_t num_mips() const = 0;
 };
 
 } // namespace Phos

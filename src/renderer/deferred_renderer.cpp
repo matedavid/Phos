@@ -22,15 +22,11 @@
 #include "renderer/backend/framebuffer.h"
 #include "renderer/backend/shader.h"
 #include "renderer/backend/graphics_pipeline.h"
+#include "renderer/backend/compute_pipeline.h"
 #include "renderer/backend/render_pass.h"
 #include "renderer/backend/buffers.h"
 #include "renderer/backend/material.h"
 #include "renderer/backend/cubemap.h"
-
-#include "renderer/backend/vulkan/vulkan_command_buffer.h"
-#include "renderer/backend/vulkan/vulkan_image.h"
-#include "renderer/backend/vulkan/vulkan_texture.h"
-#include "renderer/backend/vulkan/vulkan_context.h"
 
 namespace Phos {
 
@@ -198,17 +194,12 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
         // Compute test pass
         {
-            m_compute_pipeline->bind(m_command_buffer);
+            m_compute_pipeline->set("uInputImage", m_lighting_texture);
+            m_compute_pipeline->set("uOutputImage", m_compute_output_texture, 0);
 
-            auto native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(m_command_buffer);
-            vkCmdBindDescriptorSets(native_cb->handle(),
-                                    VK_PIPELINE_BIND_POINT_COMPUTE,
-                                    m_compute_pipeline->layout(),
-                                    0,
-                                    1,
-                                    &m_compute_set,
-                                    0,
-                                    nullptr);
+            PS_ASSERT(m_compute_pipeline->bake(), "Could not bake ComputePipeline")
+
+            m_compute_pipeline->bind(m_command_buffer);
 
             const auto work_groups_x = m_lighting_texture->get_image()->width() / 4;
             const auto work_groups_y = m_lighting_texture->get_image()->height() / 4;
@@ -460,41 +451,19 @@ void DeferredRenderer::init() {
     }
 
     // Test compute
-    m_compute_pipeline = std::make_shared<VulkanComputePipeline>();
+    m_compute_pipeline = ComputePipeline::create(ComputePipeline::Description{
+        .shader = Shader::create("../shaders/build/Bloom.Compute.spv"),
+    });
 
     m_compute_output_texture = Texture::create(Image::create({
         .width = width / 4,
         .height = height / 4,
         .type = Image::Type::Image2D,
         .format = Image::Format::R16G16B16A16_SFLOAT,
+        .generate_mips = true,
         .attachment = true,
         .storage = true,
     }));
-
-    auto native_lighting_texture = std::dynamic_pointer_cast<VulkanTexture>(m_lighting_texture);
-    auto native_lighting_image = std::dynamic_pointer_cast<VulkanImage>(m_lighting_texture->get_image());
-
-    VkDescriptorImageInfo input_image_info{};
-    input_image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    input_image_info.imageView = native_lighting_image->view();
-    input_image_info.sampler = native_lighting_texture->sampler();
-
-    auto native_output_texture = std::dynamic_pointer_cast<VulkanTexture>(m_compute_output_texture);
-    auto native_output_image = std::dynamic_pointer_cast<VulkanImage>(m_compute_output_texture->get_image());
-
-    VkDescriptorImageInfo output_image_info{};
-    output_image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    output_image_info.imageView = native_output_image->view();
-    output_image_info.sampler = native_output_texture->sampler();
-
-    m_compute_allocator = std::make_shared<VulkanDescriptorAllocator>();
-    bool build =
-        VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_compute_allocator)
-            .bind_image(0, input_image_info, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT)
-            .bind_image(1, output_image_info, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT)
-            .build(m_compute_set);
-
-    PS_ASSERT(build, "Could not build compute shader descriptor set")
 }
 
 std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {

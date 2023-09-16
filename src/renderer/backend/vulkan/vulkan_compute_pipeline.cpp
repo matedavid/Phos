@@ -5,88 +5,144 @@
 #include "renderer/backend/vulkan/vulkan_context.h"
 #include "renderer/backend/vulkan/vulkan_device.h"
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
+#include "renderer/backend/vulkan/vulkan_texture.h"
+#include "renderer/backend/vulkan/vulkan_image.h"
+#include "renderer/backend/vulkan/vulkan_descriptors.h"
+#include "renderer/backend/vulkan/vulkan_shader.h"
 
 namespace Phos {
 
-VulkanComputePipeline::VulkanComputePipeline() {
-    std::ifstream file("../shaders/build/Bloom.Compute.spv", std::ios::ate | std::ios::binary);
-    PS_ASSERT(file.is_open(), "Could not open compute shader file")
-
-    const auto size = (uint32_t)file.tellg();
-    std::vector<char> content(size);
-
-    file.seekg(0);
-    file.read(content.data(), size);
-
-    file.close();
-
-    VkShaderModuleCreateInfo shader_create_info{};
-    shader_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    shader_create_info.codeSize = size;
-    shader_create_info.pCode = reinterpret_cast<const uint32_t*>(content.data());
-
-    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &shader_create_info, nullptr, &m_shader))
-
-    VkPipelineShaderStageCreateInfo shader_stage_create_info{};
-    shader_stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    shader_stage_create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    shader_stage_create_info.module = m_shader;
-    shader_stage_create_info.pName = "main";
-
-    const std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-        },
-        {
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-        },
-    };
-
-    VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info{};
-    descriptor_set_layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptor_set_layout_create_info.bindingCount = (uint32_t)bindings.size();
-    descriptor_set_layout_create_info.pBindings = bindings.data();
-
-    VK_CHECK(vkCreateDescriptorSetLayout(
-        VulkanContext::device->handle(), &descriptor_set_layout_create_info, nullptr, &m_descriptor_set_layout))
-
-    VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
-    pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.setLayoutCount = 1;
-    pipeline_layout_create_info.pSetLayouts = &m_descriptor_set_layout;
-    pipeline_layout_create_info.pushConstantRangeCount = 0;
-
-    VK_CHECK(vkCreatePipelineLayout(VulkanContext::device->handle(), &pipeline_layout_create_info, nullptr, &m_layout))
+VulkanComputePipeline::VulkanComputePipeline(const Description& description) {
+    m_shader = std::dynamic_pointer_cast<VulkanShader>(description.shader);
 
     VkComputePipelineCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    create_info.stage = shader_stage_create_info;
-    create_info.layout = m_layout;
+    create_info.stage = m_shader->get_shader_stage_create_infos()[0];
+    create_info.layout = m_shader->get_pipeline_layout();
 
     VK_CHECK(vkCreateComputePipelines(VulkanContext::device->handle(), nullptr, 1, &create_info, nullptr, &m_pipeline))
+
+    // Allocator for descriptor builder
+    m_allocator = std::make_shared<VulkanDescriptorAllocator>();
 }
 
 VulkanComputePipeline::~VulkanComputePipeline() {
     vkDestroyPipeline(VulkanContext::device->handle(), m_pipeline, nullptr);
-    vkDestroyPipelineLayout(VulkanContext::device->handle(), m_layout, nullptr);
-    vkDestroyDescriptorSetLayout(VulkanContext::device->handle(), m_descriptor_set_layout, nullptr);
-    vkDestroyShaderModule(VulkanContext::device->handle(), m_shader, nullptr);
 }
 
 void VulkanComputePipeline::bind(const std::shared_ptr<CommandBuffer>& command_buffer) {
     const auto native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
+
     vkCmdBindPipeline(native_cb->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
+    vkCmdBindDescriptorSets(
+        native_cb->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, m_shader->get_pipeline_layout(), 0, 1, &m_set, 0, nullptr);
 }
 
 void VulkanComputePipeline::execute(const std::shared_ptr<CommandBuffer>& command_buffer, glm::ivec3 work_groups) {
     const auto native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
     vkCmdDispatch(native_cb->handle(), work_groups.x, work_groups.y, work_groups.z);
+}
+
+bool VulkanComputePipeline::bake() {
+    if (m_set == VK_NULL_HANDLE) {
+        auto builder = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator);
+
+        for (const auto& [info, write] : m_buffer_descriptor_info) {
+            builder = builder.bind_buffer(info.binding, write, info.type, info.stage);
+        }
+
+        for (const auto& [info, write] : m_image_descriptor_info) {
+            builder = builder.bind_image(info.binding, write, info.type, info.stage);
+        }
+
+        m_buffer_descriptor_info.clear();
+        m_image_descriptor_info.clear();
+
+        return builder.build(m_set);
+    } else {
+        std::vector<VkWriteDescriptorSet> writes;
+
+        for (const auto& [info, write_info] : m_buffer_descriptor_info) {
+            VkWriteDescriptorSet write{};
+            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write.pNext = nullptr;
+            write.descriptorCount = 1;
+            write.descriptorType = info.type;
+            write.pBufferInfo = &write_info;
+            write.dstBinding = info.binding;
+            write.dstSet = m_set;
+
+            writes.push_back(write);
+        }
+
+        for (const auto& [info, write_info] : m_image_descriptor_info) {
+            VkWriteDescriptorSet write{};
+            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write.pNext = nullptr;
+            write.descriptorCount = 1;
+            write.descriptorType = info.type;
+            write.pImageInfo = &write_info;
+            write.dstBinding = info.binding;
+            write.dstSet = m_set;
+
+            writes.push_back(write);
+        }
+
+        m_buffer_descriptor_info.clear();
+        m_image_descriptor_info.clear();
+
+        vkUpdateDescriptorSets(VulkanContext::device->handle(), (uint32_t)writes.size(), writes.data(), 0, nullptr);
+        return true;
+    }
+}
+
+void VulkanComputePipeline::invalidate() {
+    m_buffer_descriptor_info.clear();
+    m_image_descriptor_info.clear();
+
+    m_allocator = std::make_shared<VulkanDescriptorAllocator>();
+}
+
+void VulkanComputePipeline::set(std::string_view name, const std::shared_ptr<Texture>& texture) {
+    const auto native_texture = std::dynamic_pointer_cast<VulkanTexture>(texture);
+    const auto native_image = std::dynamic_pointer_cast<VulkanImage>(texture->get_image());
+
+    const auto info = m_shader->descriptor_info(name);
+    PS_ASSERT(info.has_value() && is_valid_texture_type(info->type),
+              "Compute Pipeline does not contain texture with name: {}",
+              name)
+
+    VkDescriptorImageInfo descriptor{};
+    descriptor.imageView = native_image->view();
+    descriptor.sampler = native_texture->sampler();
+    descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL; // @TODO
+
+    m_image_descriptor_info.emplace_back(info.value(), descriptor);
+}
+
+void VulkanComputePipeline::set(std::string_view name, const std::shared_ptr<Texture>& texture, uint32_t mip_level) {
+    const auto native_texture = std::dynamic_pointer_cast<VulkanTexture>(texture);
+    const auto native_image = std::dynamic_pointer_cast<VulkanImage>(texture->get_image());
+
+    const auto info = m_shader->descriptor_info(name);
+    PS_ASSERT(info.has_value() && is_valid_texture_type(info->type),
+              "Compute Pipeline does not contain texture with name: {}",
+              name)
+
+    VkDescriptorImageInfo descriptor{};
+    descriptor.imageView = native_image->mip_view(mip_level);
+    descriptor.sampler = native_texture->sampler();
+    descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL; // @TODO
+
+    m_image_descriptor_info.emplace_back(info.value(), descriptor);
+}
+
+bool VulkanComputePipeline::is_valid_texture_type(VkDescriptorType type) {
+    return type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+}
+
+VkPipelineLayout VulkanComputePipeline::layout() const {
+    return m_shader->get_pipeline_layout();
 }
 
 } // namespace Phos

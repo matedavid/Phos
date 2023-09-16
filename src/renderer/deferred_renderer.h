@@ -7,9 +7,6 @@
 
 #include "scene/scene_renderer.h"
 
-#include "renderer/backend/vulkan/vulkan_compute_pipeline.h"
-#include "renderer/backend/vulkan/vulkan_descriptors.h"
-
 namespace Phos {
 
 // Forward declarations
@@ -17,6 +14,7 @@ class CommandBuffer;
 class Texture;
 class Framebuffer;
 class GraphicsPipeline;
+class ComputePipeline;
 class RenderPass;
 class VertexBuffer;
 class IndexBuffer;
@@ -94,10 +92,8 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<Material> m_cube_material;
 
     // Compute test
-    std::shared_ptr<VulkanComputePipeline> m_compute_pipeline;
+    std::shared_ptr<ComputePipeline> m_compute_pipeline;
     std::shared_ptr<Texture> m_compute_output_texture;
-    std::shared_ptr<VulkanDescriptorAllocator> m_compute_allocator;
-    VkDescriptorSet m_compute_set;
 
     void init();
     [[nodiscard]] std::vector<std::shared_ptr<Light>> get_light_info() const;
