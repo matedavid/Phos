@@ -31,8 +31,25 @@ VulkanShader::VulkanShader(const std::string& vertex_path, const std::string& fr
     fragment_create_info.codeSize = fragment_src.size();
     fragment_create_info.pCode = reinterpret_cast<const uint32_t*>(fragment_src.data());
 
-    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &vertex_create_info, nullptr, &m_vertex_shader))
-    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &fragment_create_info, nullptr, &m_fragment_shader))
+    VkShaderModule vertex_shader, fragment_shader;
+    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &vertex_create_info, nullptr, &vertex_shader))
+    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &fragment_create_info, nullptr, &fragment_shader))
+
+    // Create Vertex and Fragment stage create infos
+    VkPipelineShaderStageCreateInfo vertex_stage{};
+    vertex_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertex_stage.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertex_stage.module = vertex_shader;
+    vertex_stage.pName = "main";
+
+    VkPipelineShaderStageCreateInfo fragment_stage{};
+    fragment_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragment_stage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragment_stage.module = fragment_shader;
+    fragment_stage.pName = "main";
+
+    m_shader_stage_create_infos.push_back(vertex_stage);
+    m_shader_stage_create_infos.push_back(fragment_stage);
 
     // Spirv reflection
     SpvReflectShaderModule vertex_module, fragment_module;
@@ -59,33 +76,46 @@ VulkanShader::VulkanShader(const std::string& vertex_path, const std::string& fr
     spvReflectDestroyShaderModule(&fragment_module);
 }
 
+VulkanShader::VulkanShader(const std::string& path) {
+    const auto src = read_shader_file(path);
+
+    VkShaderModuleCreateInfo create_info{};
+    create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    create_info.codeSize = src.size();
+    create_info.pCode = reinterpret_cast<const uint32_t*>(src.data());
+
+    VkShaderModule shader;
+    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &create_info, nullptr, &shader))
+
+    SpvReflectShaderModule reflect_module;
+    SPIRV_REFLECT_CHECK(
+        spvReflectCreateShaderModule(src.size(), reinterpret_cast<const uint32_t*>(src.data()), &reflect_module))
+
+    VkPipelineShaderStageCreateInfo shader_stage{};
+    shader_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shader_stage.stage = static_cast<VkShaderStageFlagBits>(reflect_module.shader_stage);
+    shader_stage.module = shader;
+    shader_stage.pName = "main";
+
+    m_shader_stage_create_infos.push_back(shader_stage);
+
+    // Retrieve SPIR-V info
+    retrieve_descriptor_sets_info(reflect_module);
+    retrieve_push_constants(reflect_module);
+
+    create_pipeline_layout();
+
+    // Cleanup
+    spvReflectDestroyShaderModule(&reflect_module);
+}
+
 VulkanShader::~VulkanShader() {
     // Destroy shader modules
-    vkDestroyShaderModule(VulkanContext::device->handle(), m_vertex_shader, nullptr);
-    vkDestroyShaderModule(VulkanContext::device->handle(), m_fragment_shader, nullptr);
+    for (const auto& stage_info : m_shader_stage_create_infos)
+        vkDestroyShaderModule(VulkanContext::device->handle(), stage_info.module, nullptr);
 
     // Destroy pipeline layout
     vkDestroyPipelineLayout(VulkanContext::device->handle(), m_pipeline_layout, nullptr);
-}
-
-VkPipelineShaderStageCreateInfo VulkanShader::get_vertex_create_info() const {
-    VkPipelineShaderStageCreateInfo create_info{};
-    create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    create_info.module = m_vertex_shader;
-    create_info.pName = "main";
-
-    return create_info;
-}
-
-VkPipelineShaderStageCreateInfo VulkanShader::get_fragment_create_info() const {
-    VkPipelineShaderStageCreateInfo create_info{};
-    create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    create_info.module = m_fragment_shader;
-    create_info.pName = "main";
-
-    return create_info;
 }
 
 std::optional<VulkanDescriptorInfo> VulkanShader::descriptor_info(std::string_view name) const {
@@ -182,67 +212,15 @@ void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& v
     SPIRV_REFLECT_CHECK(
         spvReflectEnumerateDescriptorSets(&fragment_module, &fragment_set_count, fragment_descriptor_sets.data()))
 
-    constexpr auto max_descriptor_set = 4;
-    std::vector<std::vector<VkDescriptorSetLayoutBinding>> set_bindings(max_descriptor_set);
+    // Retrieve descriptor set bindings
+    std::vector<std::vector<VkDescriptorSetLayoutBinding>> set_bindings(MAX_DESCRIPTOR_SET);
 
-    const auto retrieve_set_bindings = [&](const std::vector<SpvReflectDescriptorSet*>& descriptor_sets,
-                                           VkShaderStageFlags stage) {
-        for (const auto& set_info : descriptor_sets) {
-            for (uint32_t i = 0; i < set_info->binding_count; ++i) {
-                auto* set_binding = set_info->bindings[i];
-
-                VkDescriptorSetLayoutBinding binding{};
-                binding.binding = set_binding->binding;
-                binding.descriptorType = static_cast<VkDescriptorType>(set_binding->descriptor_type);
-                binding.descriptorCount = set_binding->count;
-                binding.stageFlags = stage;
-                binding.pImmutableSamplers = VK_NULL_HANDLE;
-
-                // Don't know why, but it's done this way in the example
-                // (https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_descriptors.cpp)
-                for (uint32_t i_dim = 0; i_dim < set_binding->array.dims_count; ++i_dim)
-                    binding.descriptorCount *= set_binding->array.dims[i_dim];
-
-                PS_ASSERT(set_info->set < max_descriptor_set,
-                          "Cannot create descriptor set bigger than {}",
-                          max_descriptor_set)
-
-                set_bindings[set_info->set].push_back(binding);
-
-                // Add to descriptor info for reference
-                VulkanDescriptorInfo descriptor_info{};
-                descriptor_info.name = std::string(set_binding->name);
-                descriptor_info.type = static_cast<VkDescriptorType>(set_binding->descriptor_type);
-                descriptor_info.stage = stage;
-                descriptor_info.set = set_binding->set;
-                descriptor_info.binding = set_binding->binding;
-                descriptor_info.size = set_binding->block.size;
-
-                for (uint32_t j = 0; j < set_binding->block.member_count; ++j) {
-                    const auto mem = set_binding->block.members[j];
-
-                    const VulkanUniformBufferMember member = {
-                        .name = mem.name,
-                        .size = mem.size,
-                        .offset = mem.offset,
-                    };
-                    descriptor_info.members.push_back(member);
-                }
-
-                m_descriptor_info.insert({descriptor_info.name, descriptor_info});
-            }
-        }
-    };
-
-    retrieve_set_bindings(vertex_descriptor_sets, VK_SHADER_STAGE_VERTEX_BIT);
-    retrieve_set_bindings(fragment_descriptor_sets, VK_SHADER_STAGE_FRAGMENT_BIT);
+    retrieve_set_bindings(vertex_descriptor_sets, VK_SHADER_STAGE_VERTEX_BIT, set_bindings);
+    retrieve_set_bindings(fragment_descriptor_sets, VK_SHADER_STAGE_FRAGMENT_BIT, set_bindings);
 
     // Create descriptor set create info
-    for (uint32_t i = 0; i < max_descriptor_set; ++i) {
+    for (uint32_t i = 0; i < MAX_DESCRIPTOR_SET; ++i) {
         const auto bindings = set_bindings[i];
-
-        //        if (bindings.empty())
-        //            continue;
 
         VkDescriptorSetLayoutCreateInfo descriptor_set_create_info{};
         descriptor_set_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -257,28 +235,113 @@ void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& v
     }
 }
 
+void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& reflect_module) {
+    // Vertex descriptor sets
+    uint32_t set_count;
+    SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&reflect_module, &set_count, nullptr))
+
+    std::vector<SpvReflectDescriptorSet*> descriptor_sets(set_count);
+    SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&reflect_module, &set_count, descriptor_sets.data()))
+
+    // Retrieve descriptor set bindings
+    std::vector<std::vector<VkDescriptorSetLayoutBinding>> set_bindings(MAX_DESCRIPTOR_SET);
+    retrieve_set_bindings(
+        descriptor_sets, static_cast<VkShaderStageFlagBits>(reflect_module.shader_stage), set_bindings);
+
+    // Create descriptor set create info
+    for (uint32_t i = 0; i < MAX_DESCRIPTOR_SET; ++i) {
+        const auto bindings = set_bindings[i];
+
+        VkDescriptorSetLayoutCreateInfo descriptor_set_create_info{};
+        descriptor_set_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        descriptor_set_create_info.bindingCount = static_cast<uint32_t>(bindings.size());
+        descriptor_set_create_info.pBindings = bindings.data();
+
+        const auto layout =
+            VulkanContext::descriptor_layout_cache->create_descriptor_layout(descriptor_set_create_info);
+        PS_ASSERT(layout != VK_NULL_HANDLE, "Layout has null")
+
+        m_descriptor_set_layouts.push_back(layout);
+    }
+}
+
+void VulkanShader::retrieve_set_bindings(const std::vector<SpvReflectDescriptorSet*>& descriptor_sets,
+                                         VkShaderStageFlags stage,
+                                         std::vector<std::vector<VkDescriptorSetLayoutBinding>>& set_bindings) {
+    for (const auto& set_info : descriptor_sets) {
+        for (uint32_t i = 0; i < set_info->binding_count; ++i) {
+            auto* set_binding = set_info->bindings[i];
+
+            VkDescriptorSetLayoutBinding binding{};
+            binding.binding = set_binding->binding;
+            binding.descriptorType = static_cast<VkDescriptorType>(set_binding->descriptor_type);
+            binding.descriptorCount = set_binding->count;
+            binding.stageFlags = stage;
+            binding.pImmutableSamplers = VK_NULL_HANDLE;
+
+            // Don't know why, but it's done this way in the example
+            // (https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_descriptors.cpp)
+            for (uint32_t i_dim = 0; i_dim < set_binding->array.dims_count; ++i_dim)
+                binding.descriptorCount *= set_binding->array.dims[i_dim];
+
+            PS_ASSERT(set_info->set < MAX_DESCRIPTOR_SET,
+                      "Trying to create descriptor set with value {} but maximum set is {}",
+                      set_info->set,
+                      MAX_DESCRIPTOR_SET)
+
+            set_bindings[set_info->set].push_back(binding);
+
+            // Add to descriptor info for reference
+            VulkanDescriptorInfo descriptor_info{};
+            descriptor_info.name = std::string(set_binding->name);
+            descriptor_info.type = static_cast<VkDescriptorType>(set_binding->descriptor_type);
+            descriptor_info.stage = stage;
+            descriptor_info.set = set_binding->set;
+            descriptor_info.binding = set_binding->binding;
+            descriptor_info.size = set_binding->block.size;
+
+            for (uint32_t j = 0; j < set_binding->block.member_count; ++j) {
+                const auto mem = set_binding->block.members[j];
+
+                const VulkanUniformBufferMember member = {
+                    .name = mem.name,
+                    .size = mem.size,
+                    .offset = mem.offset,
+                };
+                descriptor_info.members.push_back(member);
+            }
+
+            m_descriptor_info.insert({descriptor_info.name, descriptor_info});
+        }
+    }
+}
+
 void VulkanShader::retrieve_push_constants(const SpvReflectShaderModule& vertex_module,
                                            const SpvReflectShaderModule& fragment_module) {
-    const auto retrieve_push_constant_ranges = [&](const SpvReflectShaderModule& module, VkShaderStageFlags stage) {
-        uint32_t push_constant_count;
-        SPIRV_REFLECT_CHECK(spvReflectEnumeratePushConstantBlocks(&module, &push_constant_count, nullptr))
-
-        std::vector<SpvReflectBlockVariable*> push_constant_blocks(push_constant_count);
-        SPIRV_REFLECT_CHECK(
-            spvReflectEnumeratePushConstantBlocks(&module, &push_constant_count, push_constant_blocks.data()))
-
-        for (const auto& push_constant_block : push_constant_blocks) {
-            VkPushConstantRange range{};
-            range.offset = push_constant_block->offset;
-            range.size = push_constant_block->size;
-            range.stageFlags = stage;
-
-            m_push_constant_ranges.push_back(range);
-        }
-    };
-
     retrieve_push_constant_ranges(vertex_module, VK_SHADER_STAGE_VERTEX_BIT);
     retrieve_push_constant_ranges(fragment_module, VK_SHADER_STAGE_FRAGMENT_BIT);
+}
+
+void VulkanShader::retrieve_push_constants(const SpvReflectShaderModule& reflect_module) {
+    retrieve_push_constant_ranges(reflect_module, static_cast<VkShaderStageFlagBits>(reflect_module.shader_stage));
+}
+
+void VulkanShader::retrieve_push_constant_ranges(const SpvReflectShaderModule& module, VkShaderStageFlags stage) {
+    uint32_t push_constant_count;
+    SPIRV_REFLECT_CHECK(spvReflectEnumeratePushConstantBlocks(&module, &push_constant_count, nullptr))
+
+    std::vector<SpvReflectBlockVariable*> push_constant_blocks(push_constant_count);
+    SPIRV_REFLECT_CHECK(
+        spvReflectEnumeratePushConstantBlocks(&module, &push_constant_count, push_constant_blocks.data()))
+
+    for (const auto& push_constant_block : push_constant_blocks) {
+        VkPushConstantRange range{};
+        range.offset = push_constant_block->offset;
+        range.size = push_constant_block->size;
+        range.stageFlags = stage;
+
+        m_push_constant_ranges.push_back(range);
+    }
 }
 
 void VulkanShader::create_pipeline_layout() {
@@ -292,5 +355,4 @@ void VulkanShader::create_pipeline_layout() {
     VK_CHECK(vkCreatePipelineLayout(
         VulkanContext::device->handle(), &pipeline_layout_create_info, nullptr, &m_pipeline_layout))
 }
-
 } // namespace Phos

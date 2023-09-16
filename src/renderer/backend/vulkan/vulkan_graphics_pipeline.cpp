@@ -21,10 +21,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     const auto target_framebuffer = std::dynamic_pointer_cast<VulkanFramebuffer>(description.target_framebuffer);
 
     // Shaders
-    const std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
-        m_shader->get_vertex_create_info(),
-        m_shader->get_fragment_create_info(),
-    };
+    const std::vector<VkPipelineShaderStageCreateInfo> shader_stages = m_shader->get_shader_stage_create_infos();
 
     // Vertex input
     const auto binding_description = m_shader->get_binding_description();

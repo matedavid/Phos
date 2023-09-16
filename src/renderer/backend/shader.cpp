@@ -14,4 +14,13 @@ std::shared_ptr<Shader> Shader::create(const std::string& vertex_path, const std
     }
 }
 
+std::shared_ptr<Shader> Shader::create(const std::string& path) {
+    switch (Renderer::graphics_api()) {
+    case GraphicsAPI::Vulkan:
+        return std::dynamic_pointer_cast<Shader>(std::make_shared<VulkanShader>(path));
+    default:
+        PS_FAIL("Vulkan is the only supported api")
+    }
+}
+
 } // namespace Phos
