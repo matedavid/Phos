@@ -18,6 +18,10 @@ class VulkanComputePipeline : public ComputePipeline {
     ~VulkanComputePipeline() override;
 
     void bind(const std::shared_ptr<CommandBuffer>& command_buffer) override;
+    void bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,
+                             std::string_view name,
+                             uint32_t size,
+                             const void* data) override;
     void execute(const std::shared_ptr<CommandBuffer>& command_buffer, glm::ivec3 work_groups) override;
 
     /// Builds the descriptor set

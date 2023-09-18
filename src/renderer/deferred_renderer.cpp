@@ -314,8 +314,23 @@ void DeferredRenderer::init() {
             .attachment = true,
         }));
 
-        m_albedo_texture = Texture::create(width, height);
+        m_albedo_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .attachment = true,
+        }));
+
         m_metallic_roughness_ao_texture = Texture::create(width, height);
+
+        m_emission_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .attachment = true,
+        }));
 
         const auto position_attachment = Framebuffer::Attachment{
             .image = m_position_texture->get_image(),
@@ -341,6 +356,12 @@ void DeferredRenderer::init() {
             .store_operation = StoreOperation::Store,
             .clear_value = glm::vec3(0.0f),
         };
+        const auto emission_attachment = Framebuffer::Attachment{
+            .image = m_emission_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(0.0f),
+        };
         const auto depth_attachment = Framebuffer::Attachment{
             .image = depth_image,
             .load_operation = LoadOperation::Clear,
@@ -353,6 +374,7 @@ void DeferredRenderer::init() {
                             normal_attachment,
                             albedo_attachment,
                             metallic_roughness_ao_attachment,
+                            emission_attachment,
                             depth_attachment},
         });
 
@@ -404,6 +426,7 @@ void DeferredRenderer::init() {
         m_lighting_pipeline->add_input("uNormalMap", m_normal_texture);
         m_lighting_pipeline->add_input("uAlbedoMap", m_albedo_texture);
         m_lighting_pipeline->add_input("uMetallicRoughnessAOMap", m_metallic_roughness_ao_texture);
+        m_lighting_pipeline->add_input("uEmissionMap", m_emission_texture);
         m_lighting_pipeline->add_input("uShadowMap", m_shadow_map_texture);
         PS_ASSERT(m_geometry_pipeline->bake(), "Failed to bake Lighting Pipeline")
 

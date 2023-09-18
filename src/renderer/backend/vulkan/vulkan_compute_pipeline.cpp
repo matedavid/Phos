@@ -44,6 +44,18 @@ void VulkanComputePipeline::bind(const std::shared_ptr<CommandBuffer>& command_b
                             nullptr);
 }
 
+void VulkanComputePipeline::bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,
+                                                std::string_view name,
+                                                uint32_t size,
+                                                const void* data) {
+    const auto& native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
+
+    // @TODO: Should check if push constant exists in Pipeline, using name
+
+    vkCmdPushConstants(
+        native_command_buffer->handle(), m_shader->get_pipeline_layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, size, data);
+}
+
 void VulkanComputePipeline::execute(const std::shared_ptr<CommandBuffer>& command_buffer, glm::ivec3 work_groups) {
     const auto native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
     vkCmdDispatch(native_cb->handle(), work_groups.x, work_groups.y, work_groups.z);

@@ -60,6 +60,7 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<Texture> m_normal_texture;
     std::shared_ptr<Texture> m_albedo_texture;
     std::shared_ptr<Texture> m_metallic_roughness_ao_texture;
+    std::shared_ptr<Texture> m_emission_texture;
 
     std::shared_ptr<Framebuffer> m_geometry_framebuffer;
 

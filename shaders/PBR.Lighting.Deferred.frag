@@ -12,7 +12,8 @@ layout (set = 1, binding = 0) uniform sampler2D uPositionMap;
 layout (set = 1, binding = 1) uniform sampler2D uNormalMap;
 layout (set = 1, binding = 2) uniform sampler2D uAlbedoMap;
 layout (set = 1, binding = 3) uniform sampler2D uMetallicRoughnessAOMap;
-layout (set = 1, binding = 4) uniform sampler2D uShadowMap;
+layout (set = 1, binding = 4) uniform sampler2D uEmissionMap;
+layout (set = 1, binding = 5) uniform sampler2D uShadowMap;
 
 // Constants
 const float PI = 3.14159265359;
@@ -119,6 +120,8 @@ void main() {
     float roughness = texture(uMetallicRoughnessAOMap, vTextureCoords).g;
     float ao = texture(uMetallicRoughnessAOMap, vTextureCoords).b;
 
+    vec3 emission = texture(uEmissionMap, vTextureCoords).rgb;
+
     PBRInformation info;
     info.position = position.xyz;
     info.N = N;
@@ -158,6 +161,9 @@ void main() {
         vec3 L = normalize(-light.direction);
         Lo += PBRCalculation(info, V, L, F0);
     }
+
+    // Add emission
+    Lo += emission;
 
     //
     // Ambient color

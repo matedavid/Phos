@@ -11,6 +11,7 @@ layout (location = 0) out vec4 outPosition;
 layout (location = 1) out vec4 outNormal;
 layout (location = 2) out vec4 outAlbedo;
 layout (location = 3) out vec4 outMetallicRoughnessAO;
+layout (location = 4) out vec4 outEmission;
 
 layout (set = 2, binding = 0) uniform sampler2D uAlbedoMap;
 layout (set = 2, binding = 1) uniform sampler2D uMetallicMap;
@@ -23,6 +24,9 @@ layout (set = 2, binding = 5) uniform PBRMaterialInfo {
     float metallic;
     float roughness;
     float ao;
+
+    float emissionIntensity;
+    vec3 emissionColor;
 } uMaterialInfo;
 
 void main() {
@@ -43,4 +47,5 @@ void main() {
     outMetallicRoughnessAO.r = texture(uMetallicMap, vTextureCoords).r * uMaterialInfo.metallic;
     outMetallicRoughnessAO.g = texture(uRoughnessMap, vTextureCoords).r * uMaterialInfo.roughness;
     outMetallicRoughnessAO.b = texture(uAOMap, vTextureCoords).r * uMaterialInfo.ao;
+    outEmission = vec4(uMaterialInfo.emissionColor * uMaterialInfo.emissionIntensity, 1.0f);
 }
