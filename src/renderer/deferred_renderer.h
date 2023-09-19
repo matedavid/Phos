@@ -93,9 +93,9 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<Material> m_cube_material;
 
     // Bloom pass
-    std::shared_ptr<ComputePipeline> m_compute_pipeline;
-    std::shared_ptr<Texture> m_compute_texture;
-    std::shared_ptr<Texture> m_compute_texture_2;
+    std::shared_ptr<ComputePipeline> m_bloom_pipeline;
+    std::shared_ptr<Texture> m_bloom_downsample_texture;
+    std::shared_ptr<Texture> m_bloom_upsample_texture;
 
     void init();
     [[nodiscard]] std::vector<std::shared_ptr<Light>> get_light_info() const;

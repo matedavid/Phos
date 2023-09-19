@@ -210,36 +210,36 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             // Prefilter
             bloom_constants.mode = MODE_PREFILTER;
 
-            m_compute_pipeline->set("uInputImage", m_lighting_texture);
-            m_compute_pipeline->set("uOutputImage", m_compute_texture, 1);
+            m_bloom_pipeline->set("uInputImage", m_lighting_texture);
+            m_bloom_pipeline->set("uOutputImage", m_bloom_downsample_texture, 1);
 
-            PS_ASSERT(m_compute_pipeline->bake(), "Could not bake ComputePipeline")
+            PS_ASSERT(m_bloom_pipeline->bake(), "Could not bake ComputePipeline")
 
-            auto work_groups_x = (m_compute_texture->get_image()->width() / 2) / 2;
-            auto work_groups_y = (m_compute_texture->get_image()->height() / 2) / 2;
+            auto work_groups_x = (m_bloom_downsample_texture->get_image()->width() / 2) / 2;
+            auto work_groups_y = (m_bloom_downsample_texture->get_image()->height() / 2) / 2;
 
-            m_compute_pipeline->bind(m_command_buffer);
-            m_compute_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
-            m_compute_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
+            m_bloom_pipeline->bind(m_command_buffer);
+            m_bloom_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
+            m_bloom_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
 
             // Down sampling
             constexpr uint32_t downsampling_range = 5;
-            const auto num_mips = m_compute_texture->get_image()->num_mips();
+            const auto num_mips = m_bloom_downsample_texture->get_image()->num_mips();
 
             bloom_constants.mode = MODE_DOWNSAMPLE;
 
             for (uint32_t i = 2; i < num_mips - downsampling_range; ++i) {
-                m_compute_pipeline->set("uInputImage", m_compute_texture, i - 1);
-                m_compute_pipeline->set("uOutputImage", m_compute_texture, i);
+                m_bloom_pipeline->set("uInputImage", m_bloom_downsample_texture, i - 1);
+                m_bloom_pipeline->set("uOutputImage", m_bloom_downsample_texture, i);
 
-                PS_ASSERT(m_compute_pipeline->bake(), "Could not bake ComputePipeline")
+                PS_ASSERT(m_bloom_pipeline->bake(), "Could not bake ComputePipeline")
 
                 work_groups_x /= 2;
                 work_groups_y /= 2;
 
-                m_compute_pipeline->bind(m_command_buffer);
-                m_compute_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
-                m_compute_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
+                m_bloom_pipeline->bind(m_command_buffer);
+                m_bloom_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
+                m_bloom_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
             }
 
             // Up sampling
@@ -247,17 +247,17 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
             const auto last_mip = num_mips - (downsampling_range + 1);
             for (uint32_t i = last_mip; i > 0; --i) {
-                m_compute_pipeline->set("uInputImage", m_compute_texture, i);
-                m_compute_pipeline->set("uOutputImage", m_compute_texture_2, i - 1);
+                m_bloom_pipeline->set("uInputImage", m_bloom_downsample_texture, i);
+                m_bloom_pipeline->set("uOutputImage", m_bloom_upsample_texture, i - 1);
 
-                PS_ASSERT(m_compute_pipeline->bake(), "Could not bake ComputePipeline")
+                PS_ASSERT(m_bloom_pipeline->bake(), "Could not bake ComputePipeline")
 
                 work_groups_x *= 2;
                 work_groups_y *= 2;
 
-                m_compute_pipeline->bind(m_command_buffer);
-                m_compute_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
-                m_compute_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
+                m_bloom_pipeline->bind(m_command_buffer);
+                m_bloom_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
+                m_bloom_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
             }
         }
 
@@ -279,7 +279,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
     Renderer::end_frame();
 
     Renderer::wait_idle();
-    m_compute_pipeline->invalidate();
+    m_bloom_pipeline->invalidate();
 }
 
 std::shared_ptr<Texture> DeferredRenderer::output_texture() const {
@@ -496,13 +496,13 @@ void DeferredRenderer::init() {
         PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
     }
 
-    // Test compute
+    // Bloom pass
     {
-        m_compute_pipeline = ComputePipeline::create(ComputePipeline::Description{
+        m_bloom_pipeline = ComputePipeline::create(ComputePipeline::Description{
             .shader = Shader::create("../shaders/build/Bloom.Compute.spv"),
         });
 
-        m_compute_texture = Texture::create(Image::create({
+        m_bloom_downsample_texture = Texture::create(Image::create({
             .width = width,
             .height = height,
             .type = Image::Type::Image2D,
@@ -512,7 +512,7 @@ void DeferredRenderer::init() {
             .storage = true,
         }));
 
-        m_compute_texture_2 = Texture::create(Image::create({
+        m_bloom_upsample_texture = Texture::create(Image::create({
             .width = width,
             .height = height,
             .type = Image::Type::Image2D,
@@ -550,7 +550,7 @@ void DeferredRenderer::init() {
         });
 
         m_tone_mapping_pipeline->add_input("uResultTexture", m_lighting_texture);
-        m_tone_mapping_pipeline->add_input("uBloomTexture", m_compute_texture_2);
+        m_tone_mapping_pipeline->add_input("uBloomTexture", m_bloom_upsample_texture);
         PS_ASSERT(m_tone_mapping_pipeline->bake(), "Could not bake ToneMapping pipeline")
 
         m_tone_mapping_pass = RenderPass::create({
