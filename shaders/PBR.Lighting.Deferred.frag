@@ -162,9 +162,6 @@ void main() {
         Lo += PBRCalculation(info, V, L, F0);
     }
 
-    // Add emission
-    Lo += emission;
-
     //
     // Ambient color
     //
@@ -173,6 +170,9 @@ void main() {
 
     vec3 ambient = vec3(0.001) * albedo * ao * (shadow == 1.0 ? vec3(0.04) : vec3(1.0));
     vec3 color = ambient + (1.0 - shadow) * Lo;
+
+    // Add emission
+    color += emission;
 
     outColor = vec4(color, 1.0);
 }

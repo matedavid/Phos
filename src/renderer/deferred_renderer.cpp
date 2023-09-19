@@ -223,7 +223,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             m_compute_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
 
             // Down sampling
-            constexpr uint32_t downsampling_range = 3;
+            constexpr uint32_t downsampling_range = 5;
             const auto num_mips = m_compute_texture->get_image()->num_mips();
 
             bloom_constants.mode = MODE_DOWNSAMPLE;
