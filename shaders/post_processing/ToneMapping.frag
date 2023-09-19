@@ -6,7 +6,8 @@ layout (location = 0) out vec4 outColor;
 
 #include "../include/LightInformation.glslh"
 
-layout (set = 1, binding = 0) uniform sampler2D uToneMappingTexture;
+layout (set = 1, binding = 0) uniform sampler2D uResultTexture;
+layout (set = 1, binding = 1) uniform sampler2D uBloomTexture;
 
 vec3 ReinhardToneMapping(vec3 color) {
     return color / (color + vec3(1.0f));
@@ -17,7 +18,10 @@ vec3 GammaCorrection(vec3 color) {
 }
 
 void main() {
-    vec3 color = texture(uToneMappingTexture, vTextureCoords).rgb;
+    vec3 color = texture(uResultTexture, vTextureCoords).rgb;
+
+    // Add Bloom Contribution
+    color += texture(uBloomTexture, vTextureCoords).rgb;
 
     // Tone Mapping
     color = ReinhardToneMapping(color);

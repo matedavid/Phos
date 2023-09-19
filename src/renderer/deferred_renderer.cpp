@@ -192,27 +192,72 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
         }
 
-        // Compute test pass
+        // Compute pass
+        // ==========================
         {
-            auto work_groups_x = m_lighting_texture->get_image()->width() / 2;
-            auto work_groups_y = m_lighting_texture->get_image()->height() / 2;
+            constexpr int32_t MODE_DOWNSAMPLE = 0;
+            constexpr int32_t MODE_UPSAMPLE = 1;
+            constexpr int32_t MODE_PREFILTER = 2;
 
-            const uint32_t num_mips = m_compute_output_texture->get_image()->num_mips();
-            for (uint32_t i = 1; i < num_mips - 3; ++i) {
-                if (i == 1)
-                    m_compute_pipeline->set("uInputImage", m_lighting_texture);
-                else
-                    m_compute_pipeline->set("uInputImage", m_compute_output_texture, i - 1);
+            struct BloomPushConstants {
+                int32_t mode;
+                float threshold;
+            };
 
-                m_compute_pipeline->set("uOutputImage", m_compute_output_texture, i);
+            auto bloom_constants = BloomPushConstants{};
+            bloom_constants.threshold = 1.0f;
+
+            // Prefilter
+            bloom_constants.mode = MODE_PREFILTER;
+
+            m_compute_pipeline->set("uInputImage", m_lighting_texture);
+            m_compute_pipeline->set("uOutputImage", m_compute_texture, 1);
+
+            PS_ASSERT(m_compute_pipeline->bake(), "Could not bake ComputePipeline")
+
+            auto work_groups_x = (m_compute_texture->get_image()->width() / 2) / 2;
+            auto work_groups_y = (m_compute_texture->get_image()->height() / 2) / 2;
+
+            m_compute_pipeline->bind(m_command_buffer);
+            m_compute_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
+            m_compute_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
+
+            // Down sampling
+            constexpr uint32_t downsampling_range = 3;
+            const auto num_mips = m_compute_texture->get_image()->num_mips();
+
+            bloom_constants.mode = MODE_DOWNSAMPLE;
+
+            for (uint32_t i = 2; i < num_mips - downsampling_range; ++i) {
+                m_compute_pipeline->set("uInputImage", m_compute_texture, i - 1);
+                m_compute_pipeline->set("uOutputImage", m_compute_texture, i);
 
                 PS_ASSERT(m_compute_pipeline->bake(), "Could not bake ComputePipeline")
 
-                m_compute_pipeline->bind(m_command_buffer);
-                m_compute_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
-
                 work_groups_x /= 2;
                 work_groups_y /= 2;
+
+                m_compute_pipeline->bind(m_command_buffer);
+                m_compute_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
+                m_compute_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
+            }
+
+            // Up sampling
+            bloom_constants.mode = MODE_UPSAMPLE;
+
+            const auto last_mip = num_mips - (downsampling_range + 1);
+            for (uint32_t i = last_mip; i > 0; --i) {
+                m_compute_pipeline->set("uInputImage", m_compute_texture, i);
+                m_compute_pipeline->set("uOutputImage", m_compute_texture_2, i - 1);
+
+                PS_ASSERT(m_compute_pipeline->bake(), "Could not bake ComputePipeline")
+
+                work_groups_x *= 2;
+                work_groups_y *= 2;
+
+                m_compute_pipeline->bind(m_command_buffer);
+                m_compute_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
+                m_compute_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
             }
         }
 
@@ -231,9 +276,10 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
     // Submit command buffer
     Renderer::submit_command_buffer(m_command_buffer);
 
-    m_compute_pipeline->invalidate();
-
     Renderer::end_frame();
+
+    Renderer::wait_idle();
+    m_compute_pipeline->invalidate();
 }
 
 std::shared_ptr<Texture> DeferredRenderer::output_texture() const {
@@ -436,6 +482,47 @@ void DeferredRenderer::init() {
         });
     }
 
+    // Cubemap pass
+    {
+        m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
+            .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
+            .target_framebuffer = m_lighting_framebuffer,
+
+            .front_face = FrontFace::Clockwise,
+            .depth_compare_op = DepthCompareOp::LessEq,
+        });
+
+        m_skybox_pipeline->add_input("uSkybox", m_skybox);
+        PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
+    }
+
+    // Test compute
+    {
+        m_compute_pipeline = ComputePipeline::create(ComputePipeline::Description{
+            .shader = Shader::create("../shaders/build/Bloom.Compute.spv"),
+        });
+
+        m_compute_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .generate_mips = true,
+            .attachment = true,
+            .storage = true,
+        }));
+
+        m_compute_texture_2 = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .generate_mips = true,
+            .attachment = true,
+            .storage = true,
+        }));
+    }
+
     // Tone Mapping pass
     {
         m_tone_mapping_texture = Texture::create(Image::create({
@@ -462,7 +549,8 @@ void DeferredRenderer::init() {
             .target_framebuffer = m_tone_mapping_framebuffer,
         });
 
-        m_tone_mapping_pipeline->add_input("uToneMappingTexture", m_lighting_texture);
+        m_tone_mapping_pipeline->add_input("uResultTexture", m_lighting_texture);
+        m_tone_mapping_pipeline->add_input("uBloomTexture", m_compute_texture_2);
         PS_ASSERT(m_tone_mapping_pipeline->bake(), "Could not bake ToneMapping pipeline")
 
         m_tone_mapping_pass = RenderPass::create({
@@ -470,35 +558,6 @@ void DeferredRenderer::init() {
             .target_framebuffer = m_tone_mapping_framebuffer,
         });
     }
-
-    // Cubemap pass
-    {
-        m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-            .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
-            .target_framebuffer = m_lighting_framebuffer,
-
-            .front_face = FrontFace::Clockwise,
-            .depth_compare_op = DepthCompareOp::LessEq,
-        });
-
-        m_skybox_pipeline->add_input("uSkybox", m_skybox);
-        PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
-    }
-
-    // Test compute
-    m_compute_pipeline = ComputePipeline::create(ComputePipeline::Description{
-        .shader = Shader::create("../shaders/build/Bloom.Compute.spv"),
-    });
-
-    m_compute_output_texture = Texture::create(Image::create({
-        .width = width,
-        .height = height,
-        .type = Image::Type::Image2D,
-        .format = Image::Format::R16G16B16A16_SFLOAT,
-        .generate_mips = true,
-        .attachment = true,
-        .storage = true,
-    }));
 }
 
 std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
