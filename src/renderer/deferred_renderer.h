@@ -97,7 +97,7 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<Texture> m_bloom_downsample_texture;
     std::shared_ptr<Texture> m_bloom_upsample_texture;
 
-    void init();
+    void init(uint32_t width, uint32_t height);
     [[nodiscard]] std::vector<std::shared_ptr<Light>> get_light_info() const;
 };
 

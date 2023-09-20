@@ -52,7 +52,7 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::
     m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
     m_cube_material->bake();
 
-    init();
+    init(Renderer::config().window->get_width(), Renderer::config().window->get_height());
 }
 
 DeferredRenderer::~DeferredRenderer() {
@@ -297,16 +297,13 @@ std::shared_ptr<Texture> DeferredRenderer::output_texture() const {
     return m_tone_mapping_texture;
 }
 
-void DeferredRenderer::window_resized([[maybe_unused]] uint32_t width, [[maybe_unused]] uint32_t height) {
+void DeferredRenderer::window_resized(uint32_t width, uint32_t height) {
     Renderer::wait_idle();
 
-    init();
+    init(width, height);
 }
 
-void DeferredRenderer::init() {
-    const auto width = Renderer::config().window->get_width();
-    const auto height = Renderer::config().window->get_height();
-
+void DeferredRenderer::init(uint32_t width, uint32_t height) {
     const Image::Description depth_image_description = {
         .width = width,
         .height = height,
