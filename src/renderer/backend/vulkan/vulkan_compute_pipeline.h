@@ -22,7 +22,7 @@ class VulkanComputePipeline : public ComputePipeline {
                              std::string_view name,
                              uint32_t size,
                              const void* data) override;
-    void execute(const std::shared_ptr<CommandBuffer>& command_buffer, glm::ivec3 work_groups) override;
+    void execute(const std::shared_ptr<CommandBuffer>& command_buffer, glm::uvec3 work_groups) override;
 
     /// Builds the descriptor set
     [[nodiscard]] bool bake() override;

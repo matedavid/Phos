@@ -26,7 +26,7 @@ class ComputePipeline {
                                      std::string_view name,
                                      uint32_t size,
                                      const void* data) = 0;
-    virtual void execute(const std::shared_ptr<CommandBuffer>& command_buffer, glm::ivec3 work_groups) = 0;
+    virtual void execute(const std::shared_ptr<CommandBuffer>& command_buffer, glm::uvec3 work_groups) = 0;
 
     template <typename T>
     void bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,

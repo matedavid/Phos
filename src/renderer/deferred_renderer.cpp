@@ -195,6 +195,20 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
         // Compute pass
         // ==========================
         {
+            const auto get_mip_size = [](const std::shared_ptr<Texture>& tex, uint32_t level) -> glm::uvec2 {
+                const auto& img = tex->get_image();
+
+                PS_ASSERT(level < img->num_mips(), "Mip level not valid")
+
+                const auto width = img->width();
+                const auto height = img->height();
+
+                const auto mip_width = (uint32_t)std::round((float)width / std::pow(2.0f, (float)level));
+                const auto mip_height = (uint32_t)std::round((float)height / std::pow(2.0f, (float)level));
+
+                return {mip_width, mip_height};
+            };
+
             constexpr int32_t MODE_DOWNSAMPLE = 0;
             constexpr int32_t MODE_UPSAMPLE = 1;
             constexpr int32_t MODE_PREFILTER = 2;
@@ -215,12 +229,11 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
             PS_ASSERT(m_bloom_pipeline->bake(), "Could not bake ComputePipeline")
 
-            auto work_groups_x = (m_bloom_downsample_texture->get_image()->width() / 2) / 2;
-            auto work_groups_y = (m_bloom_downsample_texture->get_image()->height() / 2) / 2;
+            auto work_groups = get_mip_size(m_bloom_downsample_texture, 1) / 2u;
 
             m_bloom_pipeline->bind(m_command_buffer);
             m_bloom_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
-            m_bloom_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
+            m_bloom_pipeline->execute(m_command_buffer, glm::ivec3(work_groups, 1));
 
             // Down sampling
             constexpr uint32_t downsampling_range = 5;
@@ -234,12 +247,11 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
                 PS_ASSERT(m_bloom_pipeline->bake(), "Could not bake ComputePipeline")
 
-                work_groups_x /= 2;
-                work_groups_y /= 2;
+                work_groups = get_mip_size(m_bloom_downsample_texture, i) / 2u;
 
                 m_bloom_pipeline->bind(m_command_buffer);
                 m_bloom_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
-                m_bloom_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
+                m_bloom_pipeline->execute(m_command_buffer, glm::vec3(work_groups, 1));
             }
 
             // Up sampling
@@ -252,12 +264,11 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
                 PS_ASSERT(m_bloom_pipeline->bake(), "Could not bake ComputePipeline")
 
-                work_groups_x *= 2;
-                work_groups_y *= 2;
+                work_groups = get_mip_size(m_bloom_upsample_texture, i - 1) / 2u;
 
                 m_bloom_pipeline->bind(m_command_buffer);
                 m_bloom_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
-                m_bloom_pipeline->execute(m_command_buffer, {work_groups_x, work_groups_y, 1});
+                m_bloom_pipeline->execute(m_command_buffer, glm::vec3(work_groups, 1));
             }
         }
 
@@ -286,7 +297,7 @@ std::shared_ptr<Texture> DeferredRenderer::output_texture() const {
     return m_tone_mapping_texture;
 }
 
-void DeferredRenderer::window_resized(uint32_t width, uint32_t height) {
+void DeferredRenderer::window_resized([[maybe_unused]] uint32_t width, [[maybe_unused]] uint32_t height) {
     Renderer::wait_idle();
 
     init();

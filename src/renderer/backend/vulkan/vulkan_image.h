@@ -26,8 +26,7 @@ class VulkanImage : public Image {
     [[nodiscard]] VkImage handle() const { return m_image; }
     [[nodiscard]] VkImageView view() const { return m_image_view; }
     [[nodiscard]] VkImageView mip_view(uint32_t mip_level) const {
-        PS_ASSERT(m_description.generate_mips && mip_level >= 0 && mip_level < m_num_mips,
-                  "Mip level not valid or mips not requested")
+        PS_ASSERT(m_description.generate_mips && mip_level < m_num_mips, "Mip level not valid or mips not requested")
         return m_mip_image_views[mip_level];
     }
 
