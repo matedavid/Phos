@@ -126,6 +126,9 @@ class EditorLayer : public Phos::Layer {
                 if (ImGui::MenuItem("Open Project...", "Ctrl+O"))
                     open_project();
 
+                if (ImGui::MenuItem("Save Project", "Ctrl+S"))
+                    save_project();
+
                 ImGui::EndMenu();
             }
 
@@ -221,6 +224,8 @@ class EditorLayer : public Phos::Layer {
         // TODO:
         fmt::print("Open new project...\n");
     }
+
+    void save_project() { Phos::SceneSerializer::serialize(m_project->scene(), "../projects/project1/scene.pssc"); }
 
     void on_mouse_moved(Phos::MouseMovedEvent& mouse_moved) override {
         m_viewport_panel->on_mouse_moved(mouse_moved, m_dockspace_id);
