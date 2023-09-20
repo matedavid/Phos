@@ -218,6 +218,10 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
     descriptor.sampler = native_texture->sampler();
     descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
+    // @TODO: UGLY :)
+    if (native_image->description().storage && !native_image->description().attachment)
+        descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
     m_image_descriptor_info.emplace_back(info.value(), descriptor);
 }
 

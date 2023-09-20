@@ -30,6 +30,8 @@ class VulkanImage : public Image {
         return m_mip_image_views[mip_level];
     }
 
+    [[nodiscard]] const Description& description() const { return m_description; }
+
     // @NOTE: Helper methods, maybe move to another place
     [[nodiscard]] static VkImageType get_image_type(Type type);
     [[nodiscard]] static VkFormat get_image_format(Format format);

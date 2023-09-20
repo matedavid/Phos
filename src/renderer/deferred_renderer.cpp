@@ -516,7 +516,7 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
             .type = Image::Type::Image2D,
             .format = Image::Format::R16G16B16A16_SFLOAT,
             .generate_mips = true,
-            .attachment = true,
+            .attachment = false,
             .storage = true,
         }));
 
@@ -526,7 +526,7 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
             .type = Image::Type::Image2D,
             .format = Image::Format::R16G16B16A16_SFLOAT,
             .generate_mips = true,
-            .attachment = true,
+            .attachment = false,
             .storage = true,
         }));
     }

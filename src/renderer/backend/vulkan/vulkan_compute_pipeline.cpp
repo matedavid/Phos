@@ -105,6 +105,10 @@ void VulkanComputePipeline::set(std::string_view name, const std::shared_ptr<Tex
     descriptor.sampler = native_texture->sampler();
     descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL; // @TODO
 
+    // @TODO: UGLY :)
+    if (native_image->description().attachment)
+        descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
     m_image_descriptor_info.emplace_back(info.value(), descriptor);
 }
 
