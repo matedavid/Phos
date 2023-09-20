@@ -9,6 +9,7 @@ class Shader {
     virtual ~Shader() = default;
 
     static std::shared_ptr<Shader> create(const std::string& vertex_path, const std::string& fragment_path);
+    static std::shared_ptr<Shader> create(const std::string& path);
 };
 
 } // namespace Phos

@@ -12,7 +12,8 @@ layout (set = 1, binding = 0) uniform sampler2D uPositionMap;
 layout (set = 1, binding = 1) uniform sampler2D uNormalMap;
 layout (set = 1, binding = 2) uniform sampler2D uAlbedoMap;
 layout (set = 1, binding = 3) uniform sampler2D uMetallicRoughnessAOMap;
-layout (set = 1, binding = 4) uniform sampler2D uShadowMap;
+layout (set = 1, binding = 4) uniform sampler2D uEmissionMap;
+layout (set = 1, binding = 5) uniform sampler2D uShadowMap;
 
 // Constants
 const float PI = 3.14159265359;
@@ -97,7 +98,7 @@ vec3 PBRCalculation(PBRInformation info, vec3 V, vec3 L, vec3 F0) {
 
     // Cook-Torrence BRDF
     vec3 numerator = NDF * G * F;
-    float denominator = 4.0 * max(dot(info.N, V), 0.0) * max(dot(info.N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
+    float denominator = 4.0 * max(dot(info.N, V), 0.0) * max(dot(info.N, L), 0.0) + 0.0001;// + 0.0001 to prevent divide by zero
     vec3 specular = numerator / denominator;
 
     vec3 kS = F;
@@ -118,6 +119,8 @@ void main() {
     float metallic = texture(uMetallicRoughnessAOMap, vTextureCoords).r;
     float roughness = texture(uMetallicRoughnessAOMap, vTextureCoords).g;
     float ao = texture(uMetallicRoughnessAOMap, vTextureCoords).b;
+
+    vec3 emission = texture(uEmissionMap, vTextureCoords).rgb;
 
     PBRInformation info;
     info.position = position.xyz;
@@ -168,10 +171,8 @@ void main() {
     vec3 ambient = vec3(0.001) * albedo * ao * (shadow == 1.0 ? vec3(0.04) : vec3(1.0));
     vec3 color = ambient + (1.0 - shadow) * Lo;
 
-    // HDR tonemapping
-    color = color / (color + vec3(1.0));
-    // Gamma correction
-    color = pow(color, vec3(1.0 / 2.2));
+    // Add emission
+    color += emission;
 
     outColor = vec4(color, 1.0);
 }

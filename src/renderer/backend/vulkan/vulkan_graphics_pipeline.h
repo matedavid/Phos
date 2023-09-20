@@ -21,8 +21,9 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
 
     void bind(const std::shared_ptr<CommandBuffer>& command_buffer);
 
-    // Builds the descriptor sets
+    /// Builds the descriptor sets
     [[nodiscard]] bool bake() override;
+
     [[nodiscard]] std::shared_ptr<Framebuffer> target_framebuffer() const override;
 
     void add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) override;

@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Create executable
 add_library(${PROJECT_NAME})
 
-# target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
+target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
@@ -64,6 +64,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/material.cpp
         src/renderer/backend/cubemap.cpp
         src/renderer/backend/presenter.cpp
+        src/renderer/backend/compute_pipeline.cpp
 
         # Vulkan Backend
         src/renderer/backend/vulkan/vulkan_renderer.cpp
@@ -89,7 +90,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/renderer/backend/vulkan/vulkan_material.cpp
         src/renderer/backend/vulkan/vulkan_cubemap.cpp
         src/renderer/backend/vulkan/vulkan_presenter.cpp
-
+        src/renderer/backend/vulkan/vulkan_compute_pipeline.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)

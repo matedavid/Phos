@@ -17,7 +17,9 @@ VulkanImage::VulkanImage(const Description& description) : m_description(descrip
     image_create_info.extent.height = description.height;
     image_create_info.extent.depth = 1;
 
-    image_create_info.mipLevels = 1;
+    m_num_mips = description.generate_mips ? compute_num_mips() : 1;
+
+    image_create_info.mipLevels = m_num_mips;
     image_create_info.arrayLayers = description.num_layers;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -34,6 +36,9 @@ VulkanImage::VulkanImage(const Description& description) : m_description(descrip
         image_create_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     else if (description.attachment)
         image_create_info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    if (description.storage)
+        image_create_info.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
 
     // Flags
     if (description.type == Image::Type::Cubemap)
@@ -73,7 +78,13 @@ VulkanImage::~VulkanImage() {
         vkDestroyImage(VulkanContext::device->handle(), m_image, nullptr);
         vkFreeMemory(VulkanContext::device->handle(), m_memory, nullptr);
     }
+
+    // Destroy main image_view
     vkDestroyImageView(VulkanContext::device->handle(), m_image_view, nullptr);
+
+    // Destroy mip image_views
+    for (const auto& view : m_mip_image_views)
+        vkDestroyImageView(VulkanContext::device->handle(), view, nullptr);
 }
 
 void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_layout) const {
@@ -88,7 +99,7 @@ void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_
             barrier.image = m_image;
             barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             barrier.subresourceRange.baseMipLevel = 0;
-            barrier.subresourceRange.levelCount = 1;
+            barrier.subresourceRange.levelCount = m_num_mips;
             barrier.subresourceRange.baseArrayLayer = 0;
             barrier.subresourceRange.layerCount = m_description.num_layers;
 
@@ -115,6 +126,12 @@ void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_
 
                 source_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
                 destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            } else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_GENERAL) {
+                barrier.srcAccessMask = 0;
+                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+
+                source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                destination_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
             } else {
                 PS_FAIL("Unsupported layout transition")
             }
@@ -180,11 +197,29 @@ void VulkanImage::create_image_view(const Description& description) {
         view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     view_create_info.subresourceRange.baseMipLevel = 0;
-    view_create_info.subresourceRange.levelCount = 1;
+    view_create_info.subresourceRange.levelCount = m_num_mips;
     view_create_info.subresourceRange.baseArrayLayer = 0;
     view_create_info.subresourceRange.layerCount = m_description.num_layers;
 
     VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &view_create_info, nullptr, &m_image_view))
+
+    // Create mip image views
+    if (m_description.generate_mips) {
+        view_create_info.subresourceRange.levelCount = 1;
+
+        for (uint32_t i = 0; i < m_num_mips; ++i) {
+            view_create_info.subresourceRange.baseMipLevel = i;
+
+            VkImageView image_view;
+            VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &view_create_info, nullptr, &image_view))
+
+            m_mip_image_views.push_back(image_view);
+        }
+    }
+}
+
+uint32_t VulkanImage::compute_num_mips() const {
+    return static_cast<uint32_t>(std::floor(std::log2(std::max(m_description.width, m_description.height)))) + 1;
 }
 
 } // namespace Phos

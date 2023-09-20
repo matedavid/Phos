@@ -14,6 +14,7 @@ class CommandBuffer;
 class Texture;
 class Framebuffer;
 class GraphicsPipeline;
+class ComputePipeline;
 class RenderPass;
 class VertexBuffer;
 class IndexBuffer;
@@ -59,6 +60,7 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<Texture> m_normal_texture;
     std::shared_ptr<Texture> m_albedo_texture;
     std::shared_ptr<Texture> m_metallic_roughness_ao_texture;
+    std::shared_ptr<Texture> m_emission_texture;
 
     std::shared_ptr<Framebuffer> m_geometry_framebuffer;
 
@@ -75,6 +77,13 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<GraphicsPipeline> m_lighting_pipeline;
     std::shared_ptr<RenderPass> m_lighting_pass;
 
+    // Tone mapping Pass
+    std::shared_ptr<Texture> m_tone_mapping_texture;
+    std::shared_ptr<Framebuffer> m_tone_mapping_framebuffer;
+
+    std::shared_ptr<GraphicsPipeline> m_tone_mapping_pipeline;
+    std::shared_ptr<RenderPass> m_tone_mapping_pass;
+
     // Cubemap pipeline
     std::shared_ptr<Cubemap> m_skybox;
     std::shared_ptr<GraphicsPipeline> m_skybox_pipeline;
@@ -83,7 +92,12 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<Mesh> m_cube_mesh;
     std::shared_ptr<Material> m_cube_material;
 
-    void init();
+    // Bloom pass
+    std::shared_ptr<ComputePipeline> m_bloom_pipeline;
+    std::shared_ptr<Texture> m_bloom_downsample_texture;
+    std::shared_ptr<Texture> m_bloom_upsample_texture;
+
+    void init(uint32_t width, uint32_t height);
     [[nodiscard]] std::vector<std::shared_ptr<Light>> get_light_info() const;
 };
 

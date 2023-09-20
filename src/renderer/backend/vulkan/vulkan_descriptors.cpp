@@ -147,7 +147,7 @@ VkDescriptorSetLayout VulkanDescriptorLayoutCache::create_descriptor_layout(
     }
 
     VkDescriptorSetLayout layout;
-    vkCreateDescriptorSetLayout(VulkanContext::device->handle(), &info, nullptr, &layout);
+    VK_CHECK(vkCreateDescriptorSetLayout(VulkanContext::device->handle(), &info, nullptr, &layout))
 
     m_layout_cache[layout_info] = layout;
     return layout;

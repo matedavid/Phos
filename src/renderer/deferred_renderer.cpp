@@ -22,6 +22,7 @@
 #include "renderer/backend/framebuffer.h"
 #include "renderer/backend/shader.h"
 #include "renderer/backend/graphics_pipeline.h"
+#include "renderer/backend/compute_pipeline.h"
 #include "renderer/backend/render_pass.h"
 #include "renderer/backend/buffers.h"
 #include "renderer/backend/material.h"
@@ -51,7 +52,7 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::
     m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
     m_cube_material->bake();
 
-    init();
+    init(Renderer::config().window->get_width(), Renderer::config().window->get_height());
 }
 
 DeferredRenderer::~DeferredRenderer() {
@@ -190,28 +191,119 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
             Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
         }
+
+        // Compute pass
+        // ==========================
+        {
+            const auto get_mip_size = [](const std::shared_ptr<Texture>& tex, uint32_t level) -> glm::uvec2 {
+                const auto& img = tex->get_image();
+
+                PS_ASSERT(level < img->num_mips(), "Mip level not valid")
+
+                const auto width = img->width();
+                const auto height = img->height();
+
+                const auto mip_width = (uint32_t)std::round((float)width / std::pow(2.0f, (float)level));
+                const auto mip_height = (uint32_t)std::round((float)height / std::pow(2.0f, (float)level));
+
+                return {mip_width, mip_height};
+            };
+
+            constexpr int32_t MODE_DOWNSAMPLE = 0;
+            constexpr int32_t MODE_UPSAMPLE = 1;
+            constexpr int32_t MODE_PREFILTER = 2;
+
+            struct BloomPushConstants {
+                int32_t mode;
+                float threshold;
+            };
+
+            auto bloom_constants = BloomPushConstants{};
+            bloom_constants.threshold = 1.0f;
+
+            // Prefilter
+            bloom_constants.mode = MODE_PREFILTER;
+
+            m_bloom_pipeline->set("uInputImage", m_lighting_texture);
+            m_bloom_pipeline->set("uOutputImage", m_bloom_downsample_texture, 1);
+
+            PS_ASSERT(m_bloom_pipeline->bake(), "Could not bake ComputePipeline")
+
+            auto work_groups = get_mip_size(m_bloom_downsample_texture, 1) / 2u;
+
+            m_bloom_pipeline->bind(m_command_buffer);
+            m_bloom_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
+            m_bloom_pipeline->execute(m_command_buffer, glm::ivec3(work_groups, 1));
+
+            // Down sampling
+            constexpr uint32_t downsampling_range = 5;
+            const auto num_mips = m_bloom_downsample_texture->get_image()->num_mips();
+
+            bloom_constants.mode = MODE_DOWNSAMPLE;
+
+            for (uint32_t i = 2; i < num_mips - downsampling_range; ++i) {
+                m_bloom_pipeline->set("uInputImage", m_bloom_downsample_texture, i - 1);
+                m_bloom_pipeline->set("uOutputImage", m_bloom_downsample_texture, i);
+
+                PS_ASSERT(m_bloom_pipeline->bake(), "Could not bake ComputePipeline")
+
+                work_groups = get_mip_size(m_bloom_downsample_texture, i) / 2u;
+
+                m_bloom_pipeline->bind(m_command_buffer);
+                m_bloom_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
+                m_bloom_pipeline->execute(m_command_buffer, glm::vec3(work_groups, 1));
+            }
+
+            // Up sampling
+            bloom_constants.mode = MODE_UPSAMPLE;
+
+            const auto last_mip = num_mips - (downsampling_range + 1);
+            for (uint32_t i = last_mip; i > 0; --i) {
+                m_bloom_pipeline->set("uInputImage", m_bloom_downsample_texture, i);
+                m_bloom_pipeline->set("uOutputImage", m_bloom_upsample_texture, i - 1);
+
+                PS_ASSERT(m_bloom_pipeline->bake(), "Could not bake ComputePipeline")
+
+                work_groups = get_mip_size(m_bloom_upsample_texture, i - 1) / 2u;
+
+                m_bloom_pipeline->bind(m_command_buffer);
+                m_bloom_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
+                m_bloom_pipeline->execute(m_command_buffer, glm::vec3(work_groups, 1));
+            }
+        }
+
+        // Tone Mapping pass
+        // ==========================
+        {
+            Renderer::begin_render_pass(m_command_buffer, m_tone_mapping_pass);
+
+            Renderer::bind_graphics_pipeline(m_command_buffer, m_tone_mapping_pipeline);
+            Renderer::draw_screen_quad(m_command_buffer);
+
+            Renderer::end_render_pass(m_command_buffer, m_tone_mapping_pass);
+        }
     });
 
     // Submit command buffer
     Renderer::submit_command_buffer(m_command_buffer);
 
     Renderer::end_frame();
+
+    Renderer::wait_idle();
+    m_bloom_pipeline->invalidate();
 }
 
 std::shared_ptr<Texture> DeferredRenderer::output_texture() const {
-    return m_lighting_texture;
+    return m_tone_mapping_texture;
 }
 
 void DeferredRenderer::window_resized(uint32_t width, uint32_t height) {
     Renderer::wait_idle();
 
-    init();
+    init(width, height);
 }
 
-void DeferredRenderer::init() {
-    const auto width = Renderer::config().window->get_width();
-    const auto height = Renderer::config().window->get_height();
-
+void DeferredRenderer::init(uint32_t width, uint32_t height) {
     const Image::Description depth_image_description = {
         .width = width,
         .height = height,
@@ -276,8 +368,23 @@ void DeferredRenderer::init() {
             .attachment = true,
         }));
 
-        m_albedo_texture = Texture::create(width, height);
+        m_albedo_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .attachment = true,
+        }));
+
         m_metallic_roughness_ao_texture = Texture::create(width, height);
+
+        m_emission_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .attachment = true,
+        }));
 
         const auto position_attachment = Framebuffer::Attachment{
             .image = m_position_texture->get_image(),
@@ -303,6 +410,12 @@ void DeferredRenderer::init() {
             .store_operation = StoreOperation::Store,
             .clear_value = glm::vec3(0.0f),
         };
+        const auto emission_attachment = Framebuffer::Attachment{
+            .image = m_emission_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(0.0f),
+        };
         const auto depth_attachment = Framebuffer::Attachment{
             .image = depth_image,
             .load_operation = LoadOperation::Clear,
@@ -315,6 +428,7 @@ void DeferredRenderer::init() {
                             normal_attachment,
                             albedo_attachment,
                             metallic_roughness_ao_attachment,
+                            emission_attachment,
                             depth_attachment},
         });
 
@@ -331,7 +445,14 @@ void DeferredRenderer::init() {
 
     // Lighting pass
     {
-        m_lighting_texture = Texture::create(width, height);
+        m_lighting_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .attachment = true,
+            .storage = true,
+        }));
 
         const auto lighting_attachment = Framebuffer::Attachment{
             .image = m_lighting_texture->get_image(),
@@ -359,6 +480,7 @@ void DeferredRenderer::init() {
         m_lighting_pipeline->add_input("uNormalMap", m_normal_texture);
         m_lighting_pipeline->add_input("uAlbedoMap", m_albedo_texture);
         m_lighting_pipeline->add_input("uMetallicRoughnessAOMap", m_metallic_roughness_ao_texture);
+        m_lighting_pipeline->add_input("uEmissionMap", m_emission_texture);
         m_lighting_pipeline->add_input("uShadowMap", m_shadow_map_texture);
         PS_ASSERT(m_geometry_pipeline->bake(), "Failed to bake Lighting Pipeline")
 
@@ -380,6 +502,69 @@ void DeferredRenderer::init() {
 
         m_skybox_pipeline->add_input("uSkybox", m_skybox);
         PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
+    }
+
+    // Bloom pass
+    {
+        m_bloom_pipeline = ComputePipeline::create(ComputePipeline::Description{
+            .shader = Shader::create("../shaders/build/Bloom.Compute.spv"),
+        });
+
+        m_bloom_downsample_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .generate_mips = true,
+            .attachment = false,
+            .storage = true,
+        }));
+
+        m_bloom_upsample_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .generate_mips = true,
+            .attachment = false,
+            .storage = true,
+        }));
+    }
+
+    // Tone Mapping pass
+    {
+        m_tone_mapping_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::B8G8R8A8_SRGB,
+            .attachment = true,
+        }));
+
+        const auto tone_mapping_attachment = Framebuffer::Attachment{
+            .image = m_tone_mapping_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(0.0f),
+        };
+
+        m_tone_mapping_framebuffer = Framebuffer::create({
+            .attachments = {tone_mapping_attachment},
+        });
+
+        m_tone_mapping_pipeline = GraphicsPipeline::create({
+            .shader = Renderer::shader_manager()->get_builtin_shader("ToneMapping"),
+            .target_framebuffer = m_tone_mapping_framebuffer,
+        });
+
+        m_tone_mapping_pipeline->add_input("uResultTexture", m_lighting_texture);
+        m_tone_mapping_pipeline->add_input("uBloomTexture", m_bloom_upsample_texture);
+        PS_ASSERT(m_tone_mapping_pipeline->bake(), "Could not bake ToneMapping pipeline")
+
+        m_tone_mapping_pass = RenderPass::create({
+            .debug_name = "ToneMappingPass",
+            .target_framebuffer = m_tone_mapping_framebuffer,
+        });
     }
 }
 

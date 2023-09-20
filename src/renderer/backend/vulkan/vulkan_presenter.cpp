@@ -95,7 +95,7 @@ void VulkanPresenter::present() {
     }
 }
 
-void VulkanPresenter::window_resized(uint32_t width, uint32_t height) {
+void VulkanPresenter::window_resized([[maybe_unused]] uint32_t width, [[maybe_unused]] uint32_t height) {
     Renderer::wait_idle();
     vkQueueWaitIdle(m_presentation_queue->handle());
 

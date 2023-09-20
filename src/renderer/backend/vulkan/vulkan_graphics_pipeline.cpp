@@ -21,10 +21,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     const auto target_framebuffer = std::dynamic_pointer_cast<VulkanFramebuffer>(description.target_framebuffer);
 
     // Shaders
-    const std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
-        m_shader->get_vertex_create_info(),
-        m_shader->get_fragment_create_info(),
-    };
+    const std::vector<VkPipelineShaderStageCreateInfo> shader_stages = m_shader->get_shader_stage_create_infos();
 
     // Vertex input
     const auto binding_description = m_shader->get_binding_description();
@@ -220,6 +217,10 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
     descriptor.imageView = native_image->view();
     descriptor.sampler = native_texture->sampler();
     descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    // @TODO: UGLY :)
+    if (native_image->description().storage && !native_image->description().attachment)
+        descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     m_image_descriptor_info.emplace_back(info.value(), descriptor);
 }

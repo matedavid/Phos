@@ -166,6 +166,10 @@ VulkanTexture::VulkanTexture(const std::vector<char>& data, uint32_t width, uint
 VulkanTexture::VulkanTexture(const std::shared_ptr<Image>& image) {
     m_image = std::dynamic_pointer_cast<VulkanImage>(image);
 
+    // @TODO: UGLY :)
+    if (m_image->description().storage)
+        m_image->transition_layout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+
     // Create sampler
     VkSamplerCreateInfo sampler_info{};
     sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

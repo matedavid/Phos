@@ -13,6 +13,7 @@ Project::Project(std::string name, std::shared_ptr<Scene> scene, std::shared_ptr
       : m_name(std::move(name)), m_scene(std::move(scene)), m_asset_manager(std::move(asset_manager)) {}
 
 std::shared_ptr<Project> Project::create(const std::string& path) {
+    (void)path;
     PS_FAIL("Unimplemented");
     return nullptr;
 }
@@ -39,6 +40,7 @@ std::shared_ptr<Project> Project::open(const std::string& path) {
 }
 
 std::shared_ptr<Project> Project::load(const std::string& path) {
+    (void)path;
     PS_FAIL("Unimplemented")
 }
 

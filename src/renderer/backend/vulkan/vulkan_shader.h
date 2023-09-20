@@ -12,7 +12,7 @@
 
 // Forward declarations
 struct SpvReflectShaderModule;
-struct SpvReflectDescriptorBinding;
+struct SpvReflectDescriptorSet;
 
 namespace Phos {
 
@@ -39,11 +39,13 @@ struct VulkanDescriptorInfo {
 
 class VulkanShader : public Shader {
   public:
-    VulkanShader(const std::string& vertex_path, const std::string& fragment_path);
+    explicit VulkanShader(const std::string& vertex_path, const std::string& fragment_path);
+    explicit VulkanShader(const std::string& path);
     ~VulkanShader() override;
 
-    [[nodiscard]] VkPipelineShaderStageCreateInfo get_vertex_create_info() const;
-    [[nodiscard]] VkPipelineShaderStageCreateInfo get_fragment_create_info() const;
+    [[nodiscard]] std::vector<VkPipelineShaderStageCreateInfo> get_shader_stage_create_infos() const {
+        return m_shader_stage_create_infos;
+    }
 
     [[nodiscard]] std::optional<VulkanDescriptorInfo> descriptor_info(std::string_view name) const;
     [[nodiscard]] std::vector<VulkanDescriptorInfo> descriptors_in_set(uint32_t set) const;
@@ -58,25 +60,36 @@ class VulkanShader : public Shader {
     [[nodiscard]] VkPipelineLayout get_pipeline_layout() const { return m_pipeline_layout; }
 
   private:
-    VkShaderModule m_vertex_shader{};
-    VkShaderModule m_fragment_shader{};
+    std::vector<VkPipelineShaderStageCreateInfo> m_shader_stage_create_infos;
 
     std::optional<VkVertexInputBindingDescription> m_binding_description;
     std::vector<VkVertexInputAttributeDescription> m_attribute_descriptions;
     std::vector<VkDescriptorSetLayout> m_descriptor_set_layouts;
     std::vector<VkPushConstantRange> m_push_constant_ranges;
 
-    VkPipelineLayout m_pipeline_layout;
+    VkPipelineLayout m_pipeline_layout{};
 
     std::unordered_map<std::string, VulkanDescriptorInfo> m_descriptor_info;
+
+    static constexpr uint32_t MAX_DESCRIPTOR_SET = 4;
 
     [[nodiscard]] std::vector<char> read_shader_file(const std::string& path) const;
 
     void retrieve_vertex_input_info(const SpvReflectShaderModule& module);
+
+    // Descriptor set functions
     void retrieve_descriptor_sets_info(const SpvReflectShaderModule& vertex_module,
                                        const SpvReflectShaderModule& fragment_module);
+    void retrieve_descriptor_sets_info(const SpvReflectShaderModule& reflect_module);
+    void retrieve_set_bindings(const std::vector<SpvReflectDescriptorSet*>& descriptor_sets,
+                               VkShaderStageFlags stage,
+                               std::vector<std::vector<VkDescriptorSetLayoutBinding>>& set_bindings);
+
+    // Push constant functions
     void retrieve_push_constants(const SpvReflectShaderModule& vertex_module,
                                  const SpvReflectShaderModule& fragment_module);
+    void retrieve_push_constants(const SpvReflectShaderModule& reflect_module);
+    void retrieve_push_constant_ranges(const SpvReflectShaderModule& module, VkShaderStageFlags stage);
 
     void create_pipeline_layout();
 };

@@ -20,6 +20,7 @@ void VulkanContext::init(std::shared_ptr<Window> wnd) {
 
     const auto device_requirements = VulkanPhysicalDevice::Requirements{
         .graphics = true,
+        .compute = true,
         .transfer = true,
         .presentation = true,
         .surface = instance->get_surface(),

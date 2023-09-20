@@ -29,6 +29,11 @@ ShaderManager::ShaderManager() {
     m_builtin_shaders.insert(std::make_pair("Skybox", skybox));
     m_builtin_shaders.insert(std::make_pair("Blending", blending));
     m_builtin_shaders.insert(std::make_pair("ShadowMap", shadow_map));
+
+    // Post Processing
+    const auto tone_mapping = Shader::create(SHADER_PATH("ToneMapping.Vert.spv"), SHADER_PATH("ToneMapping.Frag.spv"));
+
+    m_builtin_shaders.insert(std::make_pair("ToneMapping", tone_mapping));
 }
 
 std::shared_ptr<Shader> ShaderManager::get_builtin_shader(const std::string& name) const {
