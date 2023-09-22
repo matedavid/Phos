@@ -68,6 +68,7 @@ std::shared_ptr<IAsset> AssetLoader::load(const std::string& path) const {
 
     auto asset = (*it)->parse(node, path);
     asset->id = id;
+    asset->asset_name = std::filesystem::path(path).filename();
 
     return asset;
 }

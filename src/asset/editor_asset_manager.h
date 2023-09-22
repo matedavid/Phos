@@ -9,8 +9,10 @@ class EditorAssetManager : public AssetManagerBase {
     explicit EditorAssetManager(std::string path);
     ~EditorAssetManager() override = default;
 
-    std::shared_ptr<IAsset> load(const std::string& path) override;
-    std::shared_ptr<IAsset> load_by_id(UUID id) override;
+    [[nodiscard]] std::shared_ptr<IAsset> load(const std::string& path) override;
+    [[nodiscard]] std::shared_ptr<IAsset> load_by_id(UUID id) override;
+
+    [[nodiscard]] AssetType get_asset_type(UUID id) const;
 
     [[nodiscard]] std::string path() const { return m_path; }
 

@@ -3,10 +3,23 @@
 #include <misc/cpp/imgui_stdlib.h>
 
 #include "scene/scene.h"
+#include "asset/editor_asset_manager.h"
+
+#include "renderer/mesh.h"
 #include "renderer/backend/material.h"
 
-ComponentsPanel::ComponentsPanel(std::string name, std::shared_ptr<Phos::Scene> scene)
-      : m_name(std::move(name)), m_scene(std::move(scene)) {}
+static std::shared_ptr<Phos::EditorAssetManager> s_asset_manager;
+
+ComponentsPanel::ComponentsPanel(std::string name,
+                                 std::shared_ptr<Phos::Scene> scene,
+                                 std::shared_ptr<Phos::EditorAssetManager> asset_manager)
+      : m_name(std::move(name)), m_scene(std::move(scene)) {
+    s_asset_manager = std::move(asset_manager);
+}
+
+ComponentsPanel::~ComponentsPanel() {
+    s_asset_manager.reset();
+}
 
 void ComponentsPanel::set_selected_entity(const Phos::Entity& entity) {
     m_selected_entity = entity;
@@ -156,6 +169,8 @@ void render_component<Phos::TransformComponent>(Phos::TransformComponent& compon
     ImGui::EndTable();
 }
 
+#define VALUE_OR(opt, default_value) opt.has_value() ? (*opt) : default_value
+
 template <>
 void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& component) {
     ImGui::AlignTextToFramePadding();
@@ -171,7 +186,21 @@ void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& 
     ImGui::Text("Mesh:");
 
     ImGui::TableSetColumnIndex(1);
-    ImGui::Text("-");
+
+    auto mesh_name = component.mesh != nullptr ? component.mesh->asset_name : "";
+    ImGui::InputText("##MeshInput", mesh_name.data(), mesh_name.length(), ImGuiInputTextFlags_ReadOnly);
+
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_PANEL_ITEM")) {
+            const auto uuid = Phos::UUID(*(uint64_t*)payload->Data);
+
+            const auto asset_type = s_asset_manager->get_asset_type(uuid);
+            if (asset_type == Phos::AssetType::Mesh)
+                component.mesh = s_asset_manager->load_by_id_type<Phos::Mesh>(uuid);
+        }
+
+        ImGui::EndDragDropTarget();
+    }
 
     ImGui::TableNextRow();
 
@@ -180,7 +209,21 @@ void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& 
     ImGui::Text("Material:");
 
     ImGui::TableSetColumnIndex(1);
-    ImGui::Text("%s", component.material->name().c_str());
+
+    auto material_name = component.material != nullptr ? component.material->asset_name : "";
+    ImGui::InputText("##MaterialInput", material_name.data(), material_name.length(), ImGuiInputTextFlags_ReadOnly);
+
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_PANEL_ITEM")) {
+            const auto uuid = Phos::UUID(*(uint64_t*)payload->Data);
+
+            const auto asset_type = s_asset_manager->get_asset_type(uuid);
+            if (asset_type == Phos::AssetType::Material)
+                component.material = s_asset_manager->load_by_id_type<Phos::Material>(uuid);
+        }
+
+        ImGui::EndDragDropTarget();
+    }
 
     ImGui::EndTable();
 }

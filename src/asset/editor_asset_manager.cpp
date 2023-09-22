@@ -35,6 +35,11 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id(UUID id) {
     return asset;
 }
 
+AssetType EditorAssetManager::get_asset_type(Phos::UUID id) const {
+    const auto asset = load_by_id_r(id, m_path);
+    return asset->asset_type();
+}
+
 std::shared_ptr<IAsset> EditorAssetManager::load_by_id_r(UUID id, const std::string& folder) const {
     std::queue<std::string> pending_directories;
 

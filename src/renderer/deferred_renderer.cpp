@@ -108,6 +108,9 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                     const auto& mr_component = entity.get_component<MeshRendererComponent>();
                     const auto& transform = entity.get_component<TransformComponent>();
 
+                    if (mr_component.mesh == nullptr || mr_component.material == nullptr)
+                        continue;
+
                     glm::mat4 model{1.0f};
                     model = glm::translate(model, transform.position);
                     model = glm::rotate(model, transform.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -140,6 +143,9 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             for (const auto& entity : entities) {
                 const auto& mr_component = entity.get_component<MeshRendererComponent>();
                 const auto& transform = entity.get_component<TransformComponent>();
+
+                if (mr_component.mesh == nullptr || mr_component.material == nullptr)
+                    continue;
 
                 glm::mat4 model{1.0f};
                 model = glm::translate(model, transform.position);

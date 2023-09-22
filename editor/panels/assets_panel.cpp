@@ -7,11 +7,8 @@
 #include "asset/editor_asset_manager.h"
 #include "renderer/backend/texture.h"
 
-AssetsPanel::AssetsPanel(std::string name, const std::shared_ptr<Phos::AssetManagerBase>& asset_manager)
-      : m_name(std::move(name)) {
-    m_asset_manager = std::dynamic_pointer_cast<Phos::EditorAssetManager>(asset_manager);
-    PS_ASSERT(m_asset_manager != nullptr, "AssetManagerBase should be of subtype EditorAssetManager")
-
+AssetsPanel::AssetsPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager)
+      : m_name(std::move(name)), m_asset_manager(std::move(asset_manager)) {
     m_file_texture = Phos::Texture::create("../editor/icons/file_icon.png");
     m_directory_texture = Phos::Texture::create("../editor/icons/directory_icon.png");
 
@@ -88,6 +85,14 @@ void AssetsPanel::on_imgui_render() {
             ImGui::SetCursorPosX(current_cursor_x);
         }
         ImGui::EndGroup();
+
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+            ImGui::Image(m_file_icon, {thumbnail_size / 2.0f, thumbnail_size / 2.0f}, {0, 0}, {1, 1});
+
+            const auto uuid = (uint64_t)asset.uuid;
+            ImGui::SetDragDropPayload("ASSET_PANEL_ITEM", &uuid, sizeof(uint64_t));
+            ImGui::EndDragDropSource();
+        }
 
         asset_hovered |= ImGui::IsItemHovered();
 

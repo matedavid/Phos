@@ -8,7 +8,6 @@
 namespace Phos {
 
 // Forward declarations
-class AssetManagerBase;
 class EditorAssetManager;
 class Texture;
 
@@ -16,7 +15,7 @@ class Texture;
 
 class AssetsPanel : public IImGuiPanel {
   public:
-    AssetsPanel(std::string name, const std::shared_ptr<Phos::AssetManagerBase>& asset_manager);
+    AssetsPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager);
     ~AssetsPanel() override = default;
 
     void on_imgui_render() override;

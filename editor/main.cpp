@@ -47,11 +47,15 @@ class EditorLayer : public Phos::Layer {
         // Editor State Manager
         m_state_manager = std::make_shared<EditorStateManager>();
 
+        const auto editor_asset_manager =
+            std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
+        PS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager")
+
         // Panels
         m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_project->scene(), m_state_manager);
         m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_project->scene());
-        m_components_panel = std::make_unique<ComponentsPanel>("Components", m_project->scene());
-        m_assets_panel = std::make_unique<AssetsPanel>("Assets", m_project->asset_manager());
+        m_components_panel = std::make_unique<ComponentsPanel>("Components", m_project->scene(), editor_asset_manager);
+        m_assets_panel = std::make_unique<AssetsPanel>("Assets", editor_asset_manager);
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }

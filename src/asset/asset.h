@@ -21,6 +21,7 @@ class IAsset {
   public:
     virtual AssetType asset_type() = 0;
     UUID id{};
+    std::string asset_name;
 };
 
 } // namespace Phos
