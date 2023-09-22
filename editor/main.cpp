@@ -1,5 +1,4 @@
 #include <ranges>
-#include <algorithm>
 #include <fstream>
 
 #include <imgui.h>
@@ -16,28 +15,21 @@
 #include "panels/viewport_panel.h"
 #include "panels/entity_hierarchy_panel.h"
 #include "panels/components_panel.h"
+#include "panels/assets_panel.h"
 
 #include "asset/editor_asset_manager.h"
 
 #include "scene/scene_renderer.h"
-#include "scene/scene.h"
 #include "scene/scene_serializer.h"
-#include "scene/scene_deserializer.h"
 
-#include "managers/shader_manager.h"
-
-#include "renderer/camera.h"
 #include "renderer/mesh.h"
 #include "renderer/deferred_renderer.h"
 
-#include "renderer/backend/renderer.h"
 #include "renderer/backend/material.h"
 #include "renderer/backend/shader.h"
 #include "renderer/backend/texture.h"
 
 #include "editor_state_manager.h"
-
-#include <yaml-cpp/yaml.h>
 
 constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 960;
@@ -59,6 +51,7 @@ class EditorLayer : public Phos::Layer {
         m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_project->scene(), m_state_manager);
         m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_project->scene());
         m_components_panel = std::make_unique<ComponentsPanel>("Components", m_project->scene());
+        m_assets_panel = std::make_unique<AssetsPanel>("Assets", m_project->asset_manager());
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
@@ -110,7 +103,7 @@ class EditorLayer : public Phos::Layer {
                 ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Up, 0.04f, nullptr, &m_dockspace_id);
 
             // we now dock our windows into the docking node we made above
-            ImGui::DockBuilderDockWindow("Down", dock_id_down);
+            ImGui::DockBuilderDockWindow("Assets", dock_id_down);
             ImGui::DockBuilderDockWindow("Entities", dock_id_left);
             ImGui::DockBuilderDockWindow("Components", dock_id_left_down);
             ImGui::DockBuilderDockWindow("ViewportControls", dock_id_viewport_up);
@@ -154,9 +147,7 @@ class EditorLayer : public Phos::Layer {
         //
         // Down Panel
         //
-        ImGui::Begin("Down");
-        ImGui::Text("Hello, down!");
-        ImGui::End();
+        m_assets_panel->on_imgui_render();
 
         //
         // Viewport
@@ -215,6 +206,7 @@ class EditorLayer : public Phos::Layer {
     std::unique_ptr<ViewportPanel> m_viewport_panel;
     std::unique_ptr<EntityHierarchyPanel> m_entity_panel;
     std::unique_ptr<ComponentsPanel> m_components_panel;
+    std::unique_ptr<AssetsPanel> m_assets_panel;
 
     ImGuiID m_dockspace_id{0};
 
