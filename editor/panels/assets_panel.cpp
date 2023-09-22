@@ -41,7 +41,7 @@ void AssetsPanel::on_imgui_render() {
     if (column_count < 1)
         column_count = 1;
 
-    if (!ImGui::BeginTable("AssetsTable", column_count, ImGuiTableFlags_Borders)) {
+    if (!ImGui::BeginTable("AssetsTable", column_count)) {
         ImGui::End();
         return;
     }
@@ -50,19 +50,16 @@ void AssetsPanel::on_imgui_render() {
 
     bool change_directory = false;
     int32_t current_column = 0;
+    bool asset_hovered = false;
 
     for (const auto& asset : m_assets) {
         const auto name = asset.path.stem();
         ImGui::TableSetColumnIndex(current_column);
-        ImGui::NextColumn();
 
         ImGui::BeginGroup();
         {
             const auto current_cursor_x = ImGui::GetCursorPosX();
             ImGui::SetCursorPosX(current_cursor_x + (cell_size - thumbnail_size) * 0.5f);
-
-            // Asset icon
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1, 0, 0, 0));
 
             const auto icon = asset.is_directory ? m_directory_icon : m_file_icon;
             ImGui::Image(icon, {thumbnail_size, thumbnail_size}, {0, 0}, {1, 1});
@@ -73,30 +70,29 @@ void AssetsPanel::on_imgui_render() {
             const auto text_length = ImGui::CalcTextSize(name.c_str()).x;
             float text_cursor_x = current_cursor_x + (cell_size - text_length) * 0.5f;
 
+            // If text does not fit in cell, cut and add ".." to the end
             std::string label_name = name;
             if (text_length > cell_size) {
                 text_cursor_x = current_cursor_x;
 
-                while (ImGui::CalcTextSize((label_name + "..").c_str()).x >= cell_size) {
+                while (ImGui::CalcTextSize((label_name + "..").c_str()).x >= cell_size)
                     label_name.pop_back();
-                }
 
                 label_name += "..";
             }
 
             ImGui::SetCursorPosX(text_cursor_x);
+
             ImGui::Text("%s", label_name.c_str());
 
             ImGui::SetCursorPosX(current_cursor_x);
-            ImGui::PopStyleColor();
         }
         ImGui::EndGroup();
 
-        // Select asset
-        if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {}
+        asset_hovered |= ImGui::IsItemHovered();
 
-        // Double-click on directory to enter
         if (asset.is_directory && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            // Double-click on directory to enter
             m_current_path /= name;
             change_directory = true;
         }
@@ -116,6 +112,11 @@ void AssetsPanel::on_imgui_render() {
     }
 
     ImGui::EndTable();
+
+    //    // Left click on blank = deselect asset
+    //    if (!asset_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left) && ImGui::IsWindowHovered()) {
+    //    }
+
     ImGui::End();
 
     if (change_directory)
@@ -130,6 +131,7 @@ void AssetsPanel::update() {
             m_assets.push_back({
                 .is_directory = true,
                 .path = path.path(),
+                .uuid = Phos::UUID(0),
             });
 
             continue;
@@ -142,6 +144,7 @@ void AssetsPanel::update() {
         m_assets.push_back({
             .type = asset->asset_type(),
             .path = path.path(),
+            .uuid = asset->id,
         });
     }
 

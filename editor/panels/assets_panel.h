@@ -37,6 +37,7 @@ class AssetsPanel : public IImGuiPanel {
         bool is_directory = false;
         Phos::AssetType type;
         std::filesystem::path path;
+        Phos::UUID uuid;
     };
 
     std::vector<EditorAsset> m_assets;
