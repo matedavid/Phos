@@ -111,7 +111,7 @@ void main() {
     if (uInfo.mode == MODE_DOWNSAMPLE) {
         color = DownsampleBox13(uInputImage, texCoords, 1.0f / texSize);
     } else if (uInfo.mode == MODE_UPSAMPLE) {
-        float sampleScale = 3.0f;
+        float sampleScale = 2.0f;
 
         vec2 bloomTexSize = vec2(textureSize(uInputImage, 0));
         color = UpsampleTent9(uInputImage, texCoords, 1.0f / bloomTexSize, sampleScale);
