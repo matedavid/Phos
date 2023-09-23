@@ -29,16 +29,22 @@ Scene::~Scene() {
 Entity Scene::create_entity() {
     const auto num_entities = m_uuid_to_entity.size();
     const std::string default_name = "Entity " + std::to_string(num_entities);
-    return create_entity(default_name);
+    return create_entity(default_name, UUID());
 }
 
-Entity Scene::create_entity(const std::string& name) {
+Entity Scene::create_entity(const UUID uuid) {
+    const auto num_entities = m_uuid_to_entity.size();
+    const std::string default_name = "Entity " + std::to_string(num_entities);
+    return create_entity(default_name, uuid);
+}
+
+Entity Scene::create_entity(const std::string& name, const UUID uuid) {
     auto* entity = new Entity(m_registry->create(), this);
     m_id_to_entity[entity->id()] = entity;
 
     // Default components
     entity->add_component<TransformComponent>();
-    entity->add_component<UUIDComponent>({.uuid = UUID()});
+    entity->add_component<UUIDComponent>({.uuid = uuid});
     entity->add_component<RelationshipComponent>();
     entity->add_component<NameComponent>({.name = name});
 

@@ -25,6 +25,6 @@ class EntityHierarchyPanel : public IImGuiPanel {
 
     std::optional<Phos::Entity> m_selected_entity;
 
-    void render_entity_r(const Phos::Entity& entity);
+    bool render_entity_r(const Phos::Entity& entity);
     void select_entity(const Phos::Entity& entity);
 };

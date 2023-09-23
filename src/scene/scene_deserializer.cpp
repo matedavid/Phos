@@ -7,10 +7,7 @@
 
 #include "asset/asset_manager.h"
 
-#include "managers/shader_manager.h"
-
 #include "renderer/mesh.h"
-#include "renderer/backend/renderer.h"
 #include "renderer/backend/material.h"
 #include "renderer/backend/shader.h"
 
@@ -30,11 +27,9 @@ std::shared_ptr<Scene> SceneDeserializer::deserialize(const std::string& path,
 
     const auto entities = node["entities"];
     for (const auto& it : entities) {
-        auto entity = scene->create_entity();
+        const auto uuid = UUID(it.first.as<std::size_t>());
 
-        const auto uuid = it.first.as<std::size_t>();
-        entity.get_component<UUIDComponent>().uuid = UUID(uuid);
-
+        auto entity = scene->create_entity(uuid);
         deserialize_entity(entities[it.first], entity);
     }
 

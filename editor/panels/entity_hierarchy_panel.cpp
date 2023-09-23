@@ -17,8 +17,9 @@ void EntityHierarchyPanel::on_imgui_render() {
                              return !relationship.parent.has_value();
                          });
 
+    bool entity_hovered = false;
     for (const auto& entity : parent_entities) {
-        render_entity_r(entity);
+        entity_hovered |= render_entity_r(entity);
     }
 
     // Left click on blank = deselect entity
@@ -27,7 +28,8 @@ void EntityHierarchyPanel::on_imgui_render() {
     }
 
     // Right click on blank
-    if (ImGui::BeginPopupContextWindow("##RightClickEntityHierarchy", ImGuiPopupFlags_MouseButtonRight)) {
+    if (!entity_hovered &&
+        ImGui::BeginPopupContextWindow("##RightClickEntityHierarchy", ImGuiPopupFlags_MouseButtonRight)) {
         if (ImGui::MenuItem("Create Empty Entity")) {
             m_scene->create_entity();
         }
@@ -38,7 +40,7 @@ void EntityHierarchyPanel::on_imgui_render() {
     ImGui::End();
 }
 
-void EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
+bool EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (m_selected_entity.has_value() && m_selected_entity.value().uuid() == entity.uuid())
         flags |= ImGuiTreeNodeFlags_Selected;
@@ -48,9 +50,21 @@ void EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
     if (children.empty())
         flags |= ImGuiTreeNodeFlags_Leaf;
 
-    const bool opened = ImGui::TreeNodeEx((void*)(uint64_t)entity.uuid(), flags, name.c_str());
-    if (ImGui::IsItemClicked()) {
+    const bool opened = ImGui::TreeNodeEx((void*)(uint64_t)entity.uuid(), flags, "%s", name.c_str());
+    const bool hovered = ImGui::IsItemHovered();
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
         select_entity(entity);
+    }
+
+    bool delete_entity = false;
+    if (ImGui::BeginPopupContextItem()) {
+        select_entity(entity);
+
+        if (ImGui::MenuItem("Remove Entity")) {
+            delete_entity = true;
+        }
+
+        ImGui::EndPopup();
     }
 
     if (opened) {
@@ -61,6 +75,15 @@ void EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
 
         ImGui::TreePop();
     }
+
+    if (delete_entity) {
+        if (m_selected_entity == entity)
+            m_selected_entity = {};
+
+        m_scene->destroy_entity(entity);
+    }
+
+    return hovered;
 }
 
 void EntityHierarchyPanel::select_entity(const Phos::Entity& entity) {

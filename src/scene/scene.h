@@ -17,7 +17,9 @@ class Scene {
     ~Scene();
 
     Entity create_entity();
-    Entity create_entity(const std::string& name);
+    Entity create_entity(UUID uuid);
+    Entity create_entity(const std::string& name, UUID uuid);
+
     void destroy_entity(Entity entity);
 
     [[nodiscard]] Entity get_entity_with_uuid(const UUID& uuid);
