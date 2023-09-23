@@ -103,13 +103,9 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                 m_light_space_matrix = light_projection * light_view;
 
                 // Render models
-                const auto entities = m_scene->get_entities_with<MeshRendererComponent>();
-                for (const auto& entity : entities) {
+                for (const auto& entity : get_renderable_entities()) {
                     const auto& mr_component = entity.get_component<MeshRendererComponent>();
                     const auto& transform = entity.get_component<TransformComponent>();
-
-                    if (mr_component.mesh == nullptr || mr_component.material == nullptr)
-                        continue;
 
                     glm::mat4 model{1.0f};
                     model = glm::translate(model, transform.position);
@@ -139,13 +135,9 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             // Draw model
             Renderer::bind_graphics_pipeline(m_command_buffer, m_geometry_pipeline);
 
-            const auto entities = m_scene->get_entities_with<MeshRendererComponent>();
-            for (const auto& entity : entities) {
+            for (const auto& entity : get_renderable_entities()) {
                 const auto& mr_component = entity.get_component<MeshRendererComponent>();
                 const auto& transform = entity.get_component<TransformComponent>();
-
-                if (mr_component.mesh == nullptr || mr_component.material == nullptr)
-                    continue;
 
                 glm::mat4 model{1.0f};
                 model = glm::translate(model, transform.position);
@@ -600,6 +592,18 @@ std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
     }
 
     return lights;
+}
+
+std::vector<Entity> DeferredRenderer::get_renderable_entities() const {
+    std::vector<Entity> entities;
+    for (const auto& entity : m_scene->get_entities_with<MeshRendererComponent>()) {
+        const auto& mesh_renderer = entity.get_component<MeshRendererComponent>();
+
+        if (mesh_renderer.mesh != nullptr && mesh_renderer.material != nullptr)
+            entities.push_back(entity);
+    }
+
+    return entities;
 }
 
 } // namespace Phos

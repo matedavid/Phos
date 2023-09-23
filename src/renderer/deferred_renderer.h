@@ -24,6 +24,7 @@ class Material;
 class Light;
 class Cubemap;
 class Event;
+class Entity;
 
 struct ModelInfoPushConstant {
     glm::mat4 model;
@@ -99,6 +100,7 @@ class DeferredRenderer : public ISceneRenderer {
 
     void init(uint32_t width, uint32_t height);
     [[nodiscard]] std::vector<std::shared_ptr<Light>> get_light_info() const;
+    [[nodiscard]] std::vector<Entity> get_renderable_entities() const;
 };
 
 } // namespace Phos
