@@ -42,4 +42,5 @@ class AssetsPanel : public IImGuiPanel {
     std::vector<EditorAsset> m_assets;
 
     void update();
+    [[nodiscard]] std::vector<std::string> get_path_components() const;
 };

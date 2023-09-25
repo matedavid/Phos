@@ -22,12 +22,31 @@ AssetsPanel::AssetsPanel(std::string name, std::shared_ptr<Phos::EditorAssetMana
 void AssetsPanel::on_imgui_render() {
     ImGui::Begin(m_name.c_str());
 
-    if (m_current_path != m_asset_manager->path()) {
-        if (ImGui::Button("<-")) {
-            m_current_path = m_current_path.parent_path();
-            update();
+    // Print current path components
+    const auto components = get_path_components();
+
+    for (auto i = (int32_t)components.size() - 1; i >= 0; --i) {
+        if (i == 0)
+            ImGui::Text("%s", components[i].c_str());
+        else {
+            if (ImGui::Button(components[i].c_str())) {
+                m_current_path = m_asset_manager->path();
+                for (auto j = (int32_t)components.size() - 1; j > i; --j) {
+                    m_current_path /= components[j];
+                }
+
+                update();
+            }
+        }
+
+        if (i != 0) {
+            ImGui::SameLine();
+            ImGui::Text(">");
+            ImGui::SameLine();
         }
     }
+
+    ImGui::Separator();
 
     constexpr uint32_t padding = 16.0f;
     constexpr uint32_t thumbnail_size = 64.0f;
@@ -161,4 +180,20 @@ void AssetsPanel::update() {
         else
             return a.path.stem() < b.path.stem();
     });
+}
+
+std::vector<std::string> AssetsPanel::get_path_components() const {
+    std::vector<std::string> components;
+
+    const auto parent_path = m_asset_manager->path();
+    auto current = m_current_path;
+
+    while (current != parent_path) {
+        components.push_back(current.filename());
+        current = current.parent_path();
+    }
+
+    components.push_back(current.filename());
+
+    return components;
 }
