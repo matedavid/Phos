@@ -48,6 +48,7 @@ void AssetsPanel::on_imgui_render() {
 
     ImGui::Separator();
 
+    // Print assets
     constexpr uint32_t padding = 16.0f;
     constexpr uint32_t thumbnail_size = 64.0f;
     constexpr uint32_t cell_size = thumbnail_size + padding;

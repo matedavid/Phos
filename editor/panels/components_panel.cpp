@@ -50,12 +50,33 @@ template <typename T>
 void render_component(T& component);
 
 template <typename T>
-void render_component(Phos::Entity& entity) {
+void render_component(Phos::Entity& entity, bool right_click = true) {
     if (!entity.has_component<T>())
         return;
 
+    ImGui::BeginGroup();
+
     render_component<T>(entity.get_component<T>());
     ImGui::Separator();
+
+    ImGui::EndGroup();
+
+    if (!right_click)
+        return;
+
+    const std::string id = "##RightClickComponent" + std::string(typeid(T).name());
+    if (ImGui::BeginPopupContextItem(id.c_str(), ImGuiPopupFlags_MouseButtonRight)) {
+        if (ImGui::MenuItem("Delete Component")) {
+            entity.remove_component<T>();
+        }
+
+        if (ImGui::MenuItem("Reset Component")) {
+            entity.remove_component<T>();
+            entity.add_component<T>({});
+        }
+
+        ImGui::EndPopup();
+    }
 }
 
 #define ADD_COMPONENT_POPUP_ITEM(T, name)                                \
@@ -69,8 +90,8 @@ void ComponentsPanel::on_imgui_render() {
         auto& entity = *m_selected_entity;
 
         // Components
-        render_component<Phos::NameComponent>(entity);
-        render_component<Phos::TransformComponent>(entity);
+        render_component<Phos::NameComponent>(entity, false);
+        render_component<Phos::TransformComponent>(entity, false);
         render_component<Phos::MeshRendererComponent>(entity);
         render_component<Phos::LightComponent>(entity);
         render_component<Phos::CameraComponent>(entity);
@@ -168,8 +189,6 @@ void render_component<Phos::TransformComponent>(Phos::TransformComponent& compon
 
     ImGui::EndTable();
 }
-
-#define VALUE_OR(opt, default_value) opt.has_value() ? (*opt) : default_value
 
 template <>
 void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& component) {
