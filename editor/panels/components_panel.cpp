@@ -66,7 +66,7 @@ void render_component(Phos::Entity& entity, bool right_click = true) {
 
     const std::string id = "##RightClickComponent" + std::string(typeid(T).name());
     if (ImGui::BeginPopupContextItem(id.c_str(), ImGuiPopupFlags_MouseButtonRight)) {
-        if (ImGui::MenuItem("Delete Component")) {
+        if (ImGui::MenuItem("Remove Component")) {
             entity.remove_component<T>();
         }
 

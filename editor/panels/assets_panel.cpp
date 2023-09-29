@@ -69,7 +69,9 @@ void AssetsPanel::on_imgui_render() {
     int32_t current_column = 0;
     bool asset_hovered = false;
 
-    for (const auto& asset : m_assets) {
+    for (std::size_t i = 0; i < m_assets.size(); ++i) {
+        const auto asset = m_assets[i];
+
         const auto name = asset.path.stem();
         ImGui::TableSetColumnIndex(current_column);
 
@@ -116,10 +118,23 @@ void AssetsPanel::on_imgui_render() {
 
         asset_hovered |= ImGui::IsItemHovered();
 
+        // Double-click on directory to enter
         if (asset.is_directory && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-            // Double-click on directory to enter
             m_current_path /= name;
             change_directory = true;
+        }
+
+        // Single click to select entity
+        if (ImGui::IsItemHovered() && m_partial_select_idx == i && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+            fmt::print("Clicked asset: {}\n", asset.path.filename().c_str());
+            m_selected_asset_idx = i;
+        }
+
+        // Using partially selected variable to emulate the click and release movement
+        if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            m_partial_select_idx = i;
+        } else if (ImGui::IsItemHovered() && m_partial_select_idx == i && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+            m_partial_select_idx = {};
         }
 
         // Hover on icon tooltip with asset name
@@ -138,9 +153,16 @@ void AssetsPanel::on_imgui_render() {
 
     ImGui::EndTable();
 
-    //    // Left click on blank = deselect asset
-    //    if (!asset_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left) && ImGui::IsWindowHovered()) {
-    //    }
+    if (!asset_hovered & m_partial_select_idx.has_value()) {
+        m_partial_select_idx = {};
+        m_selected_asset_idx = {};
+    }
+
+    // Left click on blank = deselect asset
+    if (!asset_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left) && ImGui::IsWindowHovered()) {
+        m_partial_select_idx = {};
+        m_selected_asset_idx = {};
+    }
 
     ImGui::End();
 
@@ -149,6 +171,8 @@ void AssetsPanel::on_imgui_render() {
 }
 
 void AssetsPanel::update() {
+    m_partial_select_idx = {};
+    m_selected_asset_idx = {};
     m_assets.clear();
 
     for (const auto& path : std::filesystem::directory_iterator(m_current_path)) {

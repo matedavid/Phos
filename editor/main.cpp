@@ -103,6 +103,9 @@ class EditorLayer : public Phos::Layer {
             auto dock_id_down =
                 ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Down, 0.20f, nullptr, &m_dockspace_id);
 
+            auto dock_id_right =
+                ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Right, 0.20f, nullptr, &m_dockspace_id);
+
             auto dock_id_viewport_up =
                 ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Up, 0.04f, nullptr, &m_dockspace_id);
 
@@ -110,6 +113,7 @@ class EditorLayer : public Phos::Layer {
             ImGui::DockBuilderDockWindow("Assets", dock_id_down);
             ImGui::DockBuilderDockWindow("Entities", dock_id_left);
             ImGui::DockBuilderDockWindow("Components", dock_id_left_down);
+            ImGui::DockBuilderDockWindow("Inspector", dock_id_right);
             ImGui::DockBuilderDockWindow("ViewportControls", dock_id_viewport_up);
             ImGui::DockBuilderDockWindow("Viewport", m_dockspace_id);
             ImGui::DockBuilderFinish(m_dockspace_id);
@@ -149,9 +153,21 @@ class EditorLayer : public Phos::Layer {
         m_components_panel->on_imgui_render();
 
         //
-        // Down Panel
+        // Asset Browser
         //
         m_assets_panel->on_imgui_render();
+
+        //
+        // Inspector Panel
+        //
+        ImGui::Begin("Inspector");
+
+        const auto selected_asset = m_assets_panel->get_selected_asset();
+        if (selected_asset.has_value()) {
+            ImGui::Text("%s", selected_asset->path.filename().c_str());
+        }
+
+        ImGui::End();
 
         //
         // Viewport
