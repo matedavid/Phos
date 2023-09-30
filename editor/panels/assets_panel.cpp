@@ -126,7 +126,6 @@ void AssetsPanel::on_imgui_render() {
 
         // Single click to select entity
         if (ImGui::IsItemHovered() && m_partial_select_idx == i && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
-            fmt::print("Clicked asset: {}\n", asset.path.filename().c_str());
             m_selected_asset_idx = i;
         }
 

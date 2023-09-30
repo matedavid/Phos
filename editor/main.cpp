@@ -16,6 +16,7 @@
 #include "panels/entity_hierarchy_panel.h"
 #include "panels/components_panel.h"
 #include "panels/assets_panel.h"
+#include "panels/asset_inspector_panel.h"
 
 #include "asset/editor_asset_manager.h"
 
@@ -56,6 +57,7 @@ class EditorLayer : public Phos::Layer {
         m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_project->scene());
         m_components_panel = std::make_unique<ComponentsPanel>("Components", m_project->scene(), editor_asset_manager);
         m_assets_panel = std::make_unique<AssetsPanel>("Assets", editor_asset_manager);
+        m_asset_inspector_panel = std::make_unique<AssetInspectorPanel>("Inspector", editor_asset_manager);
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
@@ -104,7 +106,7 @@ class EditorLayer : public Phos::Layer {
                 ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Down, 0.20f, nullptr, &m_dockspace_id);
 
             auto dock_id_right =
-                ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Right, 0.20f, nullptr, &m_dockspace_id);
+                ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Right, 0.30f, nullptr, &m_dockspace_id);
 
             auto dock_id_viewport_up =
                 ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Up, 0.04f, nullptr, &m_dockspace_id);
@@ -113,7 +115,10 @@ class EditorLayer : public Phos::Layer {
             ImGui::DockBuilderDockWindow("Assets", dock_id_down);
             ImGui::DockBuilderDockWindow("Entities", dock_id_left);
             ImGui::DockBuilderDockWindow("Components", dock_id_left_down);
+
             ImGui::DockBuilderDockWindow("Inspector", dock_id_right);
+            ImGui::DockBuilderDockWindow("Configuration", dock_id_right);
+
             ImGui::DockBuilderDockWindow("ViewportControls", dock_id_viewport_up);
             ImGui::DockBuilderDockWindow("Viewport", m_dockspace_id);
             ImGui::DockBuilderFinish(m_dockspace_id);
@@ -160,12 +165,15 @@ class EditorLayer : public Phos::Layer {
         //
         // Inspector Panel
         //
-        ImGui::Begin("Inspector");
+        m_asset_inspector_panel->set_selected_asset(m_assets_panel->get_selected_asset());
+        m_asset_inspector_panel->on_imgui_render();
 
-        const auto selected_asset = m_assets_panel->get_selected_asset();
-        if (selected_asset.has_value()) {
-            ImGui::Text("%s", selected_asset->path.filename().c_str());
-        }
+        //
+        // Configuration Panel
+        //
+        ImGui::Begin("Configuration");
+
+        ImGui::Text("Configuration");
 
         ImGui::End();
 
@@ -227,6 +235,7 @@ class EditorLayer : public Phos::Layer {
     std::unique_ptr<EntityHierarchyPanel> m_entity_panel;
     std::unique_ptr<ComponentsPanel> m_components_panel;
     std::unique_ptr<AssetsPanel> m_assets_panel;
+    std::unique_ptr<AssetInspectorPanel> m_asset_inspector_panel;
 
     ImGuiID m_dockspace_id{0};
 
