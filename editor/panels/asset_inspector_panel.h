@@ -32,6 +32,8 @@ class AssetInspectorPanel : public IImGuiPanel {
 
     std::shared_ptr<Phos::EditorAssetManager> m_asset_manager;
 
+    bool m_locked = false;
+
     // Texture type
     std::shared_ptr<Phos::Texture> m_texture;
     ImTextureID m_imgui_texture_id{};

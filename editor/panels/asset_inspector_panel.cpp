@@ -26,6 +26,10 @@ void AssetInspectorPanel::on_imgui_render() {
         return;
     }
 
+    const std::string lock_text = m_locked ? "Unlock" : "Lock";
+    if (ImGui::Button(lock_text.c_str()))
+        m_locked = !m_locked;
+
     switch (m_selected_asset->type) {
     case Phos::AssetType::Texture:
         render_texture_asset();
@@ -47,7 +51,7 @@ void AssetInspectorPanel::on_imgui_render() {
 }
 
 void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
-    if (m_selected_asset->uuid == asset->uuid)
+    if ((m_selected_asset.has_value() && m_selected_asset->uuid == asset->uuid) || m_locked)
         return;
 
     m_selected_asset = std::move(asset);
