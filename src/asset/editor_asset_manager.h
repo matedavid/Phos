@@ -9,8 +9,8 @@ class EditorAssetManager : public AssetManagerBase {
     explicit EditorAssetManager(std::string path);
     ~EditorAssetManager() override = default;
 
-    [[nodiscard]] std::shared_ptr<IAsset> load(const std::string& path) override;
-    [[nodiscard]] std::shared_ptr<IAsset> load_by_id(UUID id) override;
+    [[nodiscard]] std::shared_ptr<IAssetDescription> load(const std::string& path) override;
+    [[nodiscard]] std::shared_ptr<IAssetDescription> load_by_id(UUID id) override;
 
     [[nodiscard]] AssetType get_asset_type(UUID id) const;
 
@@ -20,9 +20,9 @@ class EditorAssetManager : public AssetManagerBase {
     std::string m_path;
     std::unique_ptr<AssetLoader> m_loader;
 
-    std::unordered_map<UUID, std::shared_ptr<IAsset>> m_id_to_asset;
+    std::unordered_map<UUID, std::shared_ptr<IAssetDescription>> m_id_to_asset;
 
-    std::shared_ptr<IAsset> load_by_id_r(UUID id, const std::string& folder) const;
+    std::shared_ptr<IAssetDescription> load_by_id_r(UUID id, const std::string& folder) const;
 };
 
 } // namespace Phos

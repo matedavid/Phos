@@ -16,8 +16,11 @@ class Scene;
 class ModelAsset : public IAsset {
   public:
     struct Node {
-        std::optional<std::shared_ptr<Mesh>> mesh;
-        std::optional<std::shared_ptr<Material>> material;
+        // std::optional<std::shared_ptr<Mesh>> mesh;
+        // std::optional<std::shared_ptr<Material>> material;
+
+        std::optional<UUID> mesh_id;
+        std::optional<UUID> material_id;
 
         std::vector<Node*> children;
     };

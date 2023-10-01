@@ -8,7 +8,7 @@ RuntimeAssetManager::RuntimeAssetManager(std::shared_ptr<AssetPack> asset_pack) 
     m_loader = std::make_unique<AssetLoader>(this);
 }
 
-std::shared_ptr<IAsset> RuntimeAssetManager::load(const std::string& path) {
+std::shared_ptr<IAssetDescription> RuntimeAssetManager::load(const std::string& path) {
     const auto id = m_loader->get_id(path);
 
     if (m_id_to_asset.contains(id)) {
@@ -20,7 +20,7 @@ std::shared_ptr<IAsset> RuntimeAssetManager::load(const std::string& path) {
     return asset;
 }
 
-std::shared_ptr<IAsset> RuntimeAssetManager::load_by_id(UUID id) {
+std::shared_ptr<IAssetDescription> RuntimeAssetManager::load_by_id(UUID id) {
     if (m_id_to_asset.contains(id)) {
         return m_id_to_asset[id];
     }

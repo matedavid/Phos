@@ -10,7 +10,7 @@ EditorAssetManager::EditorAssetManager(std::string path) : m_path(std::move(path
     m_loader = std::make_unique<AssetLoader>(this);
 }
 
-std::shared_ptr<IAsset> EditorAssetManager::load(const std::string& path) {
+std::shared_ptr<IAssetDescription> EditorAssetManager::load(const std::string& path) {
     const auto id = m_loader->get_id(path);
 
     if (m_id_to_asset.contains(id)) {
@@ -22,7 +22,7 @@ std::shared_ptr<IAsset> EditorAssetManager::load(const std::string& path) {
     return asset;
 }
 
-std::shared_ptr<IAsset> EditorAssetManager::load_by_id(UUID id) {
+std::shared_ptr<IAssetDescription> EditorAssetManager::load_by_id(UUID id) {
     if (m_id_to_asset.contains(id)) {
         return m_id_to_asset[id];
     }
@@ -37,10 +37,10 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id(UUID id) {
 
 AssetType EditorAssetManager::get_asset_type(Phos::UUID id) const {
     const auto asset = load_by_id_r(id, m_path);
-    return asset->asset_type();
+    return asset->type();
 }
 
-std::shared_ptr<IAsset> EditorAssetManager::load_by_id_r(UUID id, const std::string& folder) const {
+std::shared_ptr<IAssetDescription> EditorAssetManager::load_by_id_r(UUID id, const std::string& folder) const {
     std::queue<std::string> pending_directories;
 
     for (const auto& entry : std::filesystem::directory_iterator(folder)) {

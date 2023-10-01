@@ -4,14 +4,15 @@
 #include <ranges>
 #include <filesystem>
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+// #include <assimp/Importer.hpp>
+// #include <assimp/scene.h>
+// #include <assimp/postprocess.h>
 
 #include "managers/shader_manager.h"
 
 #include "asset/asset_manager.h"
 #include "asset/model_asset.h"
+#include "asset/asset_description.h"
 
 #include "renderer/backend/renderer.h"
 
@@ -55,7 +56,7 @@ UUID AssetLoader::get_id(const std::string& path) const {
     return UUID(node["id"].as<uint64_t>());
 }
 
-std::shared_ptr<IAsset> AssetLoader::load(const std::string& path) const {
+std::shared_ptr<IAssetDescription> AssetLoader::load(const std::string& path) const {
     const YAML::Node node = YAML::LoadFile(path);
 
     const auto type_str = node["assetType"].as<std::string>();
@@ -77,18 +78,25 @@ std::shared_ptr<IAsset> AssetLoader::load(const std::string& path) const {
 // TextureParser
 //
 
-std::shared_ptr<IAsset> TextureParser::parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) {
+std::shared_ptr<IAssetDescription> TextureParser::parse(const YAML::Node& node,
+                                                        [[maybe_unused]] const std::string& path) {
     const auto containing_folder = std::filesystem::path(path).parent_path();
     const auto texture_path = containing_folder / node["path"].as<std::string>();
 
-    return Texture::create(texture_path);
+    auto description = std::make_shared<TextureAssetDescription>();
+    description->path = texture_path;
+
+    return description;
+
+    // return Texture::create(texture_path);
 }
 
 //
 // CubemapParser
 //
 
-std::shared_ptr<IAsset> CubemapParser::parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) {
+std::shared_ptr<IAssetDescription> CubemapParser::parse(const YAML::Node& node,
+                                                        [[maybe_unused]] const std::string& path) {
     const auto containing_folder = std::filesystem::path(path).parent_path();
 
     const auto faces_node = node["faces"];
@@ -100,30 +108,48 @@ std::shared_ptr<IAsset> CubemapParser::parse(const YAML::Node& node, [[maybe_unu
     const auto front = faces_node["front"].as<std::string>();
     const auto back = faces_node["back"].as<std::string>();
 
-    const Cubemap::Faces faces = {
-        .right = right,
-        .left = left,
-        .top = top,
-        .bottom = bottom,
-        .front = front,
-        .back = back,
-    };
-    return Cubemap::create(faces, containing_folder);
+    auto description = std::make_shared<CubemapAssetDescription>();
+    description->left = left;
+    description->right = right;
+    description->top = top;
+    description->bottom = bottom;
+    description->front = front;
+    description->back = back;
+
+    return description;
+
+    //    const Cubemap::Faces faces = {
+    //        .right = right,
+    //        .left = left,
+    //        .top = top,
+    //        .bottom = bottom,
+    //        .front = front,
+    //        .back = back,
+    //    };
+    //    return Cubemap::create(faces, containing_folder);
 }
 
 //
 // MaterialParser
 //
 
-std::shared_ptr<IAsset> MaterialParser::parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) {
+std::shared_ptr<IAssetDescription> MaterialParser::parse(const YAML::Node& node,
+                                                         [[maybe_unused]] const std::string& path) {
     const auto material_name = node["name"].as<std::string>();
 
-    std::shared_ptr<Material> material;
+    // std::shared_ptr<Material> material;
+
+    auto description = std::make_shared<MaterialAssetDescription>();
+    description->name = material_name;
 
     const auto shader_node = node["shader"];
     if (shader_node["type"].as<std::string>() == "builtin") {
         const auto shader_name = shader_node["name"].as<std::string>();
-        material = Material::create(Renderer::shader_manager()->get_builtin_shader(shader_name), material_name);
+
+        description->shader_builtin = true;
+        description->builtin_shader_name = shader_name;
+
+        // material = Material::create(Renderer::shader_manager()->get_builtin_shader(shader_name), material_name);
     } else {
         PS_FAIL("At the moment, only builtin shaders supported")
     }
@@ -137,32 +163,37 @@ std::shared_ptr<IAsset> MaterialParser::parse(const YAML::Node& node, [[maybe_un
 
         if (property_type == "texture") {
             const auto texture = parse_texture(data_node);
-            material->set(property_name, texture);
+            description->texture_properties[property_name] = texture;
+            // material->set(property_name, texture);
         } else if (property_type == "vec3") {
             const auto data = parse_vec3(data_node);
-            material->set(property_name, data);
+            description->vec3_properties[property_name] = data;
+            // material->set(property_name, data);
         } else if (property_type == "vec4") {
             const auto data = parse_vec4(data_node);
-            material->set(property_name, data);
+            description->vec4_properties[property_name] = data;
+            // material->set(property_name, data);
         } else if (property_type == "float") {
             const auto data = parse_float(data_node);
-            material->set(property_name, data);
+            description->float_properties[property_name] = data;
+            // material->set(property_name, data);
         } else {
             PS_WARNING("Property type '{}' is not valid", property_type);
         }
     }
 
-    PS_ASSERT(material->bake(), "Could not bake material")
+    return description;
 
-    return material;
+    // PS_ASSERT(material->bake(), "Could not bake material")
+    // return material;
 }
 
-std::shared_ptr<Texture> MaterialParser::parse_texture(const YAML::Node& node) const {
-    const auto id = UUID(node.as<uint64_t>());
-    return m_manager->load_by_id_type<Texture>(id);
+std::shared_ptr<TextureAssetDescription> MaterialParser::parse_texture(const YAML::Node& node) {
+    const auto texture_id = UUID(node.as<uint64_t>());
+    return m_manager->load_by_id_type<TextureAssetDescription>(texture_id);
 }
 
-glm::vec3 MaterialParser::parse_vec3(const YAML::Node& node) const {
+glm::vec3 MaterialParser::parse_vec3(const YAML::Node& node) {
     return {
         node["x"].as<float>(),
         node["y"].as<float>(),
@@ -170,7 +201,7 @@ glm::vec3 MaterialParser::parse_vec3(const YAML::Node& node) const {
     };
 }
 
-glm::vec4 MaterialParser::parse_vec4(const YAML::Node& node) const {
+glm::vec4 MaterialParser::parse_vec4(const YAML::Node& node) {
     return {
         node["x"].as<float>(),
         node["y"].as<float>(),
@@ -179,7 +210,7 @@ glm::vec4 MaterialParser::parse_vec4(const YAML::Node& node) const {
     };
 }
 
-float MaterialParser::parse_float(const YAML::Node& node) const {
+float MaterialParser::parse_float(const YAML::Node& node) {
     return node.as<float>();
 }
 
@@ -187,13 +218,20 @@ float MaterialParser::parse_float(const YAML::Node& node) const {
 // MeshParser
 //
 
-std::shared_ptr<IAsset> MeshParser::parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) {
+std::shared_ptr<IAssetDescription> MeshParser::parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) {
     const auto model_path = node["path"].as<std::string>();
     const auto index = node["index"].as<uint32_t>();
 
     const auto containing_folder = std::filesystem::path(path).parent_path();
     const auto real_model_path = containing_folder / model_path;
 
+    auto description = std::make_shared<MeshAssetDescription>();
+    description->index = index;
+    description->model_path = real_model_path;
+
+    return description;
+
+    /*
     constexpr uint32_t import_flags = aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes;
 
     Assimp::Importer importer;
@@ -254,17 +292,24 @@ std::shared_ptr<IAsset> MeshParser::parse(const YAML::Node& node, [[maybe_unused
     }
 
     return std::make_shared<Mesh>(vertices, indices);
+    */
 }
 
 //
 // ModelParser
 //
 
-std::shared_ptr<IAsset> ModelParser::parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) {
+std::shared_ptr<IAssetDescription> ModelParser::parse(const YAML::Node& node,
+                                                      [[maybe_unused]] const std::string& path) {
     const auto& parent_node = node["node_0"];
     auto* node_parent = parse_node_r(parent_node);
 
-    return std::make_shared<ModelAsset>(node_parent);
+    auto description = std::make_shared<ModelAssetDescription>();
+    description->parent_node = node_parent;
+
+    return description;
+
+    // return std::make_shared<ModelAssetDescription>(node_parent);
 }
 
 ModelAsset::Node* ModelParser::parse_node_r(const YAML::Node& node) const {
@@ -272,16 +317,18 @@ ModelAsset::Node* ModelParser::parse_node_r(const YAML::Node& node) const {
 
     if (const auto mesh_node = node["mesh"]) {
         const auto mesh_id = UUID(mesh_node.as<uint64_t>());
+        n->mesh_id = mesh_id;
 
-        const auto mesh = m_manager->load_by_id_type<Mesh>(mesh_id);
-        n->mesh = mesh;
+        // const auto mesh = m_manager->load_by_id_type<Mesh>(mesh_id);
+        // n->mesh = mesh;
     }
 
     if (const auto material_node = node["material"]) {
         const auto material_id = UUID(material_node.as<uint64_t>());
+        n->material_id = material_id;
 
-        const auto material = m_manager->load_by_id_type<Material>(material_id);
-        n->material = material;
+        // const auto material = m_manager->load_by_id_type<Material>(material_id);
+        // n->material = material;
     }
 
     if (auto children_node = node["children"]) {

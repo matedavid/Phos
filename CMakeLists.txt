@@ -28,6 +28,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/asset/model_asset.cpp
         src/asset/runtime_asset_manager.cpp
         src/asset/editor_asset_manager.cpp
+        src/asset/asset_description.cpp
 
         # Scene
         src/scene/registry.cpp
