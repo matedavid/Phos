@@ -26,6 +26,7 @@ class AssetLoader {
     ~AssetLoader() = default;
 
     [[nodiscard]] UUID get_id(const std::string& path) const;
+    [[nodiscard]] AssetType get_type(const std::string& path) const;
     [[nodiscard]] std::shared_ptr<IAsset> load(const std::string& path) const;
 
   private:

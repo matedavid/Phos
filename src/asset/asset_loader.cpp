@@ -55,6 +55,11 @@ UUID AssetLoader::get_id(const std::string& path) const {
     return UUID(node["id"].as<uint64_t>());
 }
 
+AssetType AssetLoader::get_type(const std::string& path) const {
+    const YAML::Node node = YAML::LoadFile(path);
+    return string_to_asset_type(node["assetType"].as<std::string>());
+}
+
 std::shared_ptr<IAsset> AssetLoader::load(const std::string& path) const {
     const YAML::Node node = YAML::LoadFile(path);
 

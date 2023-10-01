@@ -2,8 +2,12 @@
 
 #include "core.h"
 
+#include <glm/glm.hpp>
+
 #include "imgui_panel.h"
 #include "assets_panel.h"
+
+#include "core/uuid.h"
 
 namespace Phos {
 
@@ -27,4 +31,27 @@ class AssetInspectorPanel : public IImGuiPanel {
     std::optional<EditorAsset> m_selected_asset;
 
     std::shared_ptr<Phos::EditorAssetManager> m_asset_manager;
+
+    // Texture type
+    std::shared_ptr<Phos::Texture> m_texture;
+    ImTextureID m_imgui_texture_id{};
+
+    // Material type
+    struct MaterialInfo {
+        std::string name;
+        std::string shader_name;
+
+        std::unordered_map<std::string, float> float_properties;
+        std::unordered_map<std::string, glm::vec3> vec3_properties;
+        std::unordered_map<std::string, glm::vec4> vec4_properties;
+        std::unordered_map<std::string, std::pair<Phos::UUID, std::string>> texture_properties;
+    };
+
+    MaterialInfo m_material_info;
+
+    MaterialInfo parse_material_info(const std::filesystem::path& path);
+
+    // Render functions
+    void render_texture_asset() const;
+    void render_material_asset() const;
 };
