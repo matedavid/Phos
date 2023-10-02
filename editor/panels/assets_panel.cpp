@@ -152,11 +152,6 @@ void AssetsPanel::on_imgui_render() {
 
     ImGui::EndTable();
 
-    if (!asset_hovered & m_partial_select_idx.has_value()) {
-        m_partial_select_idx = {};
-        m_selected_asset_idx = {};
-    }
-
     // Left click on blank = deselect asset
     if (!asset_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left) && ImGui::IsWindowHovered()) {
         m_partial_select_idx = {};
