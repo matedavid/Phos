@@ -51,9 +51,6 @@ class AssetInspectorPanel : public IImGuiPanel {
 
     MaterialInfo m_material_info;
 
-    MaterialInfo parse_material_info(const std::filesystem::path& path);
-
     // Render functions
     void render_texture_asset() const;
-    void render_material_asset() const;
 };

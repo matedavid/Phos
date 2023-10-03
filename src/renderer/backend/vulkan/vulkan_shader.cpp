@@ -136,6 +136,38 @@ std::vector<VulkanDescriptorInfo> VulkanShader::descriptors_in_set(uint32_t set)
     return descriptors;
 }
 
+std::vector<ShaderProperty> VulkanShader::get_shader_properties() const {
+    std::vector<ShaderProperty> properties;
+
+    const auto& descriptors = descriptors_in_set(2);
+    for (const auto& info : descriptors) {
+        if (info.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+            properties.push_back({
+                .type = ShaderProperty::Type::Texture,
+                .name = info.name,
+            });
+        } else if (info.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+            for (const auto& member : info.members) {
+                ShaderProperty::Type type;
+                if (member.size == sizeof(float))
+                    type = ShaderProperty::Type::Float;
+                else if (member.size == sizeof(glm::vec3))
+                    type = ShaderProperty::Type::Vec3;
+                else if (member.size == sizeof(glm::vec4))
+                    type = ShaderProperty::Type::Vec4;
+
+                const auto member_name = info.name + "." + member.name;
+                properties.push_back({
+                    .type = type,
+                    .name = member_name,
+                });
+            }
+        }
+    }
+
+    return properties;
+}
+
 std::vector<char> VulkanShader::read_shader_file(const std::string& path) const {
     std::ifstream file(path, std::ios::ate | std::ios::binary);
     PS_ASSERT(file.is_open(), "Failed to open shader module file: {}", path)
@@ -355,4 +387,5 @@ void VulkanShader::create_pipeline_layout() {
     VK_CHECK(vkCreatePipelineLayout(
         VulkanContext::device->handle(), &pipeline_layout_create_info, nullptr, &m_pipeline_layout))
 }
+
 } // namespace Phos

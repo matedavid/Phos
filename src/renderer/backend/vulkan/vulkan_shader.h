@@ -59,6 +59,8 @@ class VulkanShader : public Shader {
 
     [[nodiscard]] VkPipelineLayout get_pipeline_layout() const { return m_pipeline_layout; }
 
+    [[nodiscard]] std::vector<ShaderProperty> get_shader_properties() const override;
+
   private:
     std::vector<VkPipelineShaderStageCreateInfo> m_shader_stage_create_infos;
 
