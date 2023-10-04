@@ -143,6 +143,21 @@ void ContentBrowserPanel::on_imgui_render() {
             m_partial_select_idx = {};
         }
 
+        // Right click to open asset context menu
+        if ((ImGui::IsItemHovered() || m_selected_asset_idx == i) &&
+            ImGui::BeginPopupContextItem("##RightClickAsset", ImGuiMouseButton_Right)) {
+            m_selected_asset_idx = i;
+            if (ImGui::MenuItem("Rename")) {
+                // @TODO:
+            }
+
+            if (ImGui::MenuItem("Delete")) {
+                // @TODO:
+            }
+
+            ImGui::EndPopup();
+        }
+
         // Hover on icon tooltip with asset name
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
             ImGui::BeginTooltip();
