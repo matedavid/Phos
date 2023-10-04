@@ -9,6 +9,7 @@
 #include <assimp/postprocess.h>
 
 #include "managers/shader_manager.h"
+#include "managers/texture_manager.h"
 
 #include "asset/asset_manager.h"
 #include "asset/model_asset.h"
@@ -164,6 +165,9 @@ std::shared_ptr<IAsset> MaterialParser::parse(const YAML::Node& node, [[maybe_un
 
 std::shared_ptr<Texture> MaterialParser::parse_texture(const YAML::Node& node) const {
     const auto id = UUID(node.as<uint64_t>());
+    if (id == UUID(0))
+        return Phos::Renderer::texture_manager()->get_white_texture();
+
     return m_manager->load_by_id_type<Texture>(id);
 }
 

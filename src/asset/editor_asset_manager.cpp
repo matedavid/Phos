@@ -28,8 +28,6 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id(UUID id) {
         return m_id_to_asset[id];
     }
 
-    // const auto asset = load_by_id_r(id, m_path);
-
     const auto path = get_path_from_id_r(id, m_path);
     PS_ASSERT(std::filesystem::exists(path), "No asset with id {} found in path: {}", (uint64_t)id, m_path)
 

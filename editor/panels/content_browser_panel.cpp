@@ -2,10 +2,17 @@
 
 #include <algorithm>
 #include <ranges>
+#include <fstream>
+#include <yaml-cpp/yaml.h>
 
 #include "imgui/imgui_impl.h"
 #include "asset/editor_asset_manager.h"
+
+#include "managers/shader_manager.h"
+
+#include "renderer/backend/renderer.h"
 #include "renderer/backend/texture.h"
+#include "renderer/backend/shader.h"
 
 ContentBrowserPanel::ContentBrowserPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager)
       : m_name(std::move(name)), m_asset_manager(std::move(asset_manager)) {
@@ -158,6 +165,24 @@ void ContentBrowserPanel::on_imgui_render() {
         m_selected_asset_idx = {};
     }
 
+    if (!asset_hovered && ImGui::BeginPopupContextWindow("##RightClickPanel", ImGuiPopupFlags_MouseButtonRight)) {
+        if (ImGui::BeginMenu("Create")) {
+            if (ImGui::MenuItem("Folder")) {
+                // @TODO:
+                PS_FAIL("Unimplemented")
+            }
+
+            if (ImGui::MenuItem("Material")) {
+                create_material("NewMaterial");
+                update();
+            }
+
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndPopup();
+    }
+
     ImGui::End();
 
     if (change_directory)
@@ -183,12 +208,16 @@ void ContentBrowserPanel::update() {
         if (path.path().extension() != ".psa")
             continue;
 
-        const auto asset = m_asset_manager->load(path.path());
-        m_assets.push_back({
-            .type = asset->asset_type(),
-            .path = path.path(),
-            .uuid = asset->id,
-        });
+        try {
+            const auto asset = m_asset_manager->load(path.path());
+            m_assets.push_back({
+                .type = asset->asset_type(),
+                .path = path.path(),
+                .uuid = asset->id,
+            });
+        } catch (std::exception&) {
+            PS_ERROR("Error loading asset with path: {}\n", path.path().string());
+        }
     }
 
     std::ranges::sort(m_assets, [](const EditorAsset& a, const EditorAsset& b) {
@@ -215,4 +244,79 @@ std::vector<std::string> ContentBrowserPanel::get_path_components() const {
     components.push_back(current.filename());
 
     return components;
+}
+
+void ContentBrowserPanel::create_material(const std::string& name) {
+    // @NOTE: Default shader, don't know if the user should be able to select shader beforehand
+    const auto shader = Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred");
+
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+
+    out << YAML::Key << "assetType" << YAML::Value << "material";
+    out << YAML::Key << "id" << YAML::Value << (uint64_t)Phos::UUID();
+
+    out << YAML::Key << "name" << YAML::Value << name;
+
+    out << YAML::Key << "shader";
+    out << YAML::BeginMap;
+    {
+        out << YAML::Key << "type" << YAML::Value << "builtin";
+        out << YAML::Key << "name" << YAML::Value << "PBR.Geometry.Deferred";
+    }
+    out << YAML::EndMap;
+
+    out << YAML::Key << "properties";
+    out << YAML::BeginMap;
+
+    const auto properties = shader->get_shader_properties();
+    for (const auto& property : properties) {
+        out << YAML::Key << property.name << YAML::BeginMap;
+
+        constexpr float DEFAULT_FLOAT_VALUE = 1.0f;
+
+        if (property.type == Phos::ShaderProperty::Type::Float) {
+            out << YAML::Key << "type" << YAML::Value << "float";
+            out << YAML::Key << "data" << YAML::Value << DEFAULT_FLOAT_VALUE;
+        } else if (property.type == Phos::ShaderProperty::Type::Vec3) {
+            out << YAML::Key << "type" << YAML::Value << "vec3";
+
+            out << YAML::Key << "data" << YAML::BeginMap;
+            {
+                out << YAML::Key << "x" << YAML::Value << DEFAULT_FLOAT_VALUE;
+                out << YAML::Key << "y" << YAML::Value << DEFAULT_FLOAT_VALUE;
+                out << YAML::Key << "z" << YAML::Value << DEFAULT_FLOAT_VALUE;
+            }
+            out << YAML::EndMap;
+        } else if (property.type == Phos::ShaderProperty::Type::Vec4) {
+            out << YAML::Key << "type" << YAML::Value << "vec3";
+
+            out << YAML::Key << "data" << YAML::BeginMap;
+            {
+                out << YAML::Key << "x" << YAML::Value << DEFAULT_FLOAT_VALUE;
+                out << YAML::Key << "y" << YAML::Value << DEFAULT_FLOAT_VALUE;
+                out << YAML::Key << "z" << YAML::Value << DEFAULT_FLOAT_VALUE;
+                out << YAML::Key << "w" << YAML::Value << DEFAULT_FLOAT_VALUE;
+            }
+            out << YAML::EndMap;
+        } else if (property.type == Phos::ShaderProperty::Type::Texture) {
+            out << YAML::Key << "type" << YAML::Value << "texture";
+            out << YAML::Key << "data" << YAML::Value << (uint64_t)0;
+        }
+
+        out << YAML::EndMap;
+    }
+
+    out << YAML::EndMap << YAML::EndMap;
+
+    // Find available path for material
+    auto material_path = m_current_path / (name + ".psa");
+    uint32_t i = 1;
+    while (std::filesystem::exists(material_path)) {
+        material_path = m_current_path / (name + std::to_string(i) + ".psa");
+        ++i;
+    }
+
+    std::ofstream output_file(material_path);
+    output_file << out.c_str();
 }
