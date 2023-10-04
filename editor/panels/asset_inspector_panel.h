@@ -17,6 +17,9 @@ class Material;
 
 } // namespace Phos
 
+// Forward declarations
+class EditorMaterialHelper;
+
 class AssetInspectorPanel : public IImGuiPanel {
   public:
     AssetInspectorPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager);
@@ -39,17 +42,7 @@ class AssetInspectorPanel : public IImGuiPanel {
     ImTextureID m_imgui_texture_id{};
 
     // Material type
-    struct MaterialInfo {
-        std::string name;
-        std::string shader_name;
-
-        std::unordered_map<std::string, float> float_properties;
-        std::unordered_map<std::string, glm::vec3> vec3_properties;
-        std::unordered_map<std::string, glm::vec4> vec4_properties;
-        std::unordered_map<std::string, std::pair<Phos::UUID, std::string>> texture_properties;
-    };
-
-    MaterialInfo m_material_info;
+    std::shared_ptr<EditorMaterialHelper> m_material_helper;
 
     // Render functions
     void render_texture_asset() const;

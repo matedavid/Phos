@@ -155,6 +155,8 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/Catch2)
 add_executable(PhosEditor
         editor/main.cpp
 
+        editor/asset_tools/editor_material_helper.cpp
+
         editor/panels/viewport_panel.cpp
         editor/panels/entity_hierarchy_panel.cpp
         editor/panels/components_panel.cpp

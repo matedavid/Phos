@@ -4,6 +4,8 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "asset_tools/editor_material_helper.h"
+
 #include "asset/asset.h"
 #include "asset/editor_asset_manager.h"
 
@@ -60,7 +62,7 @@ void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
 
     // Clear not used asset helpers
     m_texture.reset();
-    m_material_info = {};
+    m_material_helper.reset();
 
     // Action based on asset type
     if (m_selected_asset->is_directory)
@@ -70,7 +72,7 @@ void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
         m_texture = m_asset_manager->load_by_id_type<Phos::Texture>(m_selected_asset->uuid);
         m_imgui_texture_id = ImGuiImpl::add_texture(m_texture);
     } else if (m_selected_asset->type == Phos::AssetType::Material) {
-        // @TODO:
+        m_material_helper = EditorMaterialHelper::open(m_selected_asset->path);
     } else {
         PS_FAIL("Not implemented")
     }

@@ -6,6 +6,8 @@
 #include <yaml-cpp/yaml.h>
 
 #include "imgui/imgui_impl.h"
+#include "asset_tools/editor_material_helper.h"
+
 #include "asset/editor_asset_manager.h"
 
 #include "managers/shader_manager.h"
@@ -265,65 +267,6 @@ void ContentBrowserPanel::create_material(const std::string& name) {
     // @NOTE: Default shader, don't know if the user should be able to select shader beforehand
     const auto shader = Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred");
 
-    YAML::Emitter out;
-    out << YAML::BeginMap;
-
-    out << YAML::Key << "assetType" << YAML::Value << "material";
-    out << YAML::Key << "id" << YAML::Value << (uint64_t)Phos::UUID();
-
-    out << YAML::Key << "name" << YAML::Value << name;
-
-    out << YAML::Key << "shader";
-    out << YAML::BeginMap;
-    {
-        out << YAML::Key << "type" << YAML::Value << "builtin";
-        out << YAML::Key << "name" << YAML::Value << "PBR.Geometry.Deferred";
-    }
-    out << YAML::EndMap;
-
-    out << YAML::Key << "properties";
-    out << YAML::BeginMap;
-
-    const auto properties = shader->get_shader_properties();
-    for (const auto& property : properties) {
-        out << YAML::Key << property.name << YAML::BeginMap;
-
-        constexpr float DEFAULT_FLOAT_VALUE = 1.0f;
-
-        if (property.type == Phos::ShaderProperty::Type::Float) {
-            out << YAML::Key << "type" << YAML::Value << "float";
-            out << YAML::Key << "data" << YAML::Value << DEFAULT_FLOAT_VALUE;
-        } else if (property.type == Phos::ShaderProperty::Type::Vec3) {
-            out << YAML::Key << "type" << YAML::Value << "vec3";
-
-            out << YAML::Key << "data" << YAML::BeginMap;
-            {
-                out << YAML::Key << "x" << YAML::Value << DEFAULT_FLOAT_VALUE;
-                out << YAML::Key << "y" << YAML::Value << DEFAULT_FLOAT_VALUE;
-                out << YAML::Key << "z" << YAML::Value << DEFAULT_FLOAT_VALUE;
-            }
-            out << YAML::EndMap;
-        } else if (property.type == Phos::ShaderProperty::Type::Vec4) {
-            out << YAML::Key << "type" << YAML::Value << "vec3";
-
-            out << YAML::Key << "data" << YAML::BeginMap;
-            {
-                out << YAML::Key << "x" << YAML::Value << DEFAULT_FLOAT_VALUE;
-                out << YAML::Key << "y" << YAML::Value << DEFAULT_FLOAT_VALUE;
-                out << YAML::Key << "z" << YAML::Value << DEFAULT_FLOAT_VALUE;
-                out << YAML::Key << "w" << YAML::Value << DEFAULT_FLOAT_VALUE;
-            }
-            out << YAML::EndMap;
-        } else if (property.type == Phos::ShaderProperty::Type::Texture) {
-            out << YAML::Key << "type" << YAML::Value << "texture";
-            out << YAML::Key << "data" << YAML::Value << (uint64_t)0;
-        }
-
-        out << YAML::EndMap;
-    }
-
-    out << YAML::EndMap << YAML::EndMap;
-
     // Find available path for material
     auto material_path = m_current_path / (name + ".psa");
     uint32_t i = 1;
@@ -332,6 +275,6 @@ void ContentBrowserPanel::create_material(const std::string& name) {
         ++i;
     }
 
-    std::ofstream output_file(material_path);
-    output_file << out.c_str();
+    const auto helper = EditorMaterialHelper::create(shader);
+    helper->save(material_path);
 }
