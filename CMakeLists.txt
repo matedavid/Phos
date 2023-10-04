@@ -158,7 +158,7 @@ add_executable(PhosEditor
         editor/panels/viewport_panel.cpp
         editor/panels/entity_hierarchy_panel.cpp
         editor/panels/components_panel.cpp
-        editor/panels/assets_panel.cpp
+        editor/panels/content_browser_panel.cpp
         editor/panels/asset_inspector_panel.cpp
 
         editor/imgui/imgui_impl.cpp

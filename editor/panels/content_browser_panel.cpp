@@ -1,4 +1,4 @@
-#include "assets_panel.h"
+#include "content_browser_panel.h"
 
 #include <algorithm>
 #include <ranges>
@@ -7,7 +7,7 @@
 #include "asset/editor_asset_manager.h"
 #include "renderer/backend/texture.h"
 
-AssetsPanel::AssetsPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager)
+ContentBrowserPanel::ContentBrowserPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager)
       : m_name(std::move(name)), m_asset_manager(std::move(asset_manager)) {
     m_file_texture = Phos::Texture::create("../editor/icons/file_icon.png");
     m_directory_texture = Phos::Texture::create("../editor/icons/directory_icon.png");
@@ -19,7 +19,7 @@ AssetsPanel::AssetsPanel(std::string name, std::shared_ptr<Phos::EditorAssetMana
     update();
 }
 
-void AssetsPanel::on_imgui_render() {
+void ContentBrowserPanel::on_imgui_render() {
     ImGui::Begin(m_name.c_str());
 
     // Print current path components
@@ -164,7 +164,7 @@ void AssetsPanel::on_imgui_render() {
         update();
 }
 
-void AssetsPanel::update() {
+void ContentBrowserPanel::update() {
     m_partial_select_idx = {};
     m_selected_asset_idx = {};
     m_assets.clear();
@@ -201,7 +201,7 @@ void AssetsPanel::update() {
     });
 }
 
-std::vector<std::string> AssetsPanel::get_path_components() const {
+std::vector<std::string> ContentBrowserPanel::get_path_components() const {
     std::vector<std::string> components;
 
     const auto parent_path = m_asset_manager->path();

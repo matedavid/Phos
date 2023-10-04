@@ -22,10 +22,10 @@ struct EditorAsset {
     Phos::UUID uuid;
 };
 
-class AssetsPanel : public IImGuiPanel {
+class ContentBrowserPanel : public IImGuiPanel {
   public:
-    AssetsPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager);
-    ~AssetsPanel() override = default;
+    ContentBrowserPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager);
+    ~ContentBrowserPanel() override = default;
 
     void on_imgui_render() override;
 

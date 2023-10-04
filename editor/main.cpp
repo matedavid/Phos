@@ -15,7 +15,7 @@
 #include "panels/viewport_panel.h"
 #include "panels/entity_hierarchy_panel.h"
 #include "panels/components_panel.h"
-#include "panels/assets_panel.h"
+#include "panels/content_browser_panel.h"
 #include "panels/asset_inspector_panel.h"
 
 #include "asset/editor_asset_manager.h"
@@ -56,7 +56,7 @@ class EditorLayer : public Phos::Layer {
         m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_project->scene(), m_state_manager);
         m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_project->scene());
         m_components_panel = std::make_unique<ComponentsPanel>("Components", m_project->scene(), editor_asset_manager);
-        m_assets_panel = std::make_unique<AssetsPanel>("Assets", editor_asset_manager);
+        m_content_browser_panel = std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager);
         m_asset_inspector_panel = std::make_unique<AssetInspectorPanel>("Inspector", editor_asset_manager);
     }
 
@@ -112,7 +112,7 @@ class EditorLayer : public Phos::Layer {
                 ImGui::DockBuilderSplitNode(m_dockspace_id, ImGuiDir_Up, 0.04f, nullptr, &m_dockspace_id);
 
             // we now dock our windows into the docking node we made above
-            ImGui::DockBuilderDockWindow("Assets", dock_id_down);
+            ImGui::DockBuilderDockWindow("Content", dock_id_down);
             ImGui::DockBuilderDockWindow("Entities", dock_id_left);
             ImGui::DockBuilderDockWindow("Components", dock_id_left_down);
 
@@ -160,12 +160,12 @@ class EditorLayer : public Phos::Layer {
         //
         // Asset Browser
         //
-        m_assets_panel->on_imgui_render();
+        m_content_browser_panel->on_imgui_render();
 
         //
         // Inspector Panel
         //
-        m_asset_inspector_panel->set_selected_asset(m_assets_panel->get_selected_asset());
+        m_asset_inspector_panel->set_selected_asset(m_content_browser_panel->get_selected_asset());
         m_asset_inspector_panel->on_imgui_render();
 
         //
@@ -234,7 +234,7 @@ class EditorLayer : public Phos::Layer {
     std::unique_ptr<ViewportPanel> m_viewport_panel;
     std::unique_ptr<EntityHierarchyPanel> m_entity_panel;
     std::unique_ptr<ComponentsPanel> m_components_panel;
-    std::unique_ptr<AssetsPanel> m_assets_panel;
+    std::unique_ptr<ContentBrowserPanel> m_content_browser_panel;
     std::unique_ptr<AssetInspectorPanel> m_asset_inspector_panel;
 
     ImGuiID m_dockspace_id{0};

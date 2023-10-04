@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 
 #include "imgui_panel.h"
-#include "assets_panel.h"
+#include "content_browser_panel.h"
 
 #include "core/uuid.h"
 
