@@ -121,7 +121,7 @@ void ContentBrowserPanel::on_imgui_render() {
             ImGui::Image(m_file_icon, {thumbnail_size / 2.0f, thumbnail_size / 2.0f}, {0, 0}, {1, 1});
 
             const auto uuid = (uint64_t)asset.uuid;
-            ImGui::SetDragDropPayload("ASSET_PANEL_ITEM", &uuid, sizeof(uint64_t));
+            ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", &uuid, sizeof(uint64_t));
             ImGui::EndDragDropSource();
         }
 
@@ -275,6 +275,6 @@ void ContentBrowserPanel::create_material(const std::string& name) {
         ++i;
     }
 
-    const auto helper = EditorMaterialHelper::create(shader);
+    const auto helper = EditorMaterialHelper::create(shader, material_path.stem());
     helper->save(material_path);
 }

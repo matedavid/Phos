@@ -210,7 +210,7 @@ void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& 
     ImGui::InputText("##MeshInput", mesh_name.data(), mesh_name.length(), ImGuiInputTextFlags_ReadOnly);
 
     if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_PANEL_ITEM")) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
             const auto uuid = Phos::UUID(*(uint64_t*)payload->Data);
 
             const auto asset_type = s_asset_manager->get_asset_type(uuid);
@@ -233,7 +233,7 @@ void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& 
     ImGui::InputText("##MaterialInput", material_name.data(), material_name.length(), ImGuiInputTextFlags_ReadOnly);
 
     if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_PANEL_ITEM")) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
             const auto uuid = Phos::UUID(*(uint64_t*)payload->Data);
 
             const auto asset_type = s_asset_manager->get_asset_type(uuid);

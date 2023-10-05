@@ -6,33 +6,19 @@
 #include "core/uuid.h"
 #include "managers/shader_manager.h"
 
-#include "renderer/backend/shader.h"
 #include "renderer/backend/renderer.h"
 
-std::shared_ptr<EditorMaterialHelper> EditorMaterialHelper::create(const std::shared_ptr<Phos::Shader>& shader) {
-    return std::shared_ptr<EditorMaterialHelper>(new EditorMaterialHelper(shader));
+std::shared_ptr<EditorMaterialHelper> EditorMaterialHelper::create(const std::shared_ptr<Phos::Shader>& shader,
+                                                                   std::string name) {
+    return std::shared_ptr<EditorMaterialHelper>(new EditorMaterialHelper(shader, std::move(name)));
 }
 
 // create constructor
-EditorMaterialHelper::EditorMaterialHelper(const std::shared_ptr<Phos::Shader>& shader) {
-    constexpr float DEFAULT_FLOAT_VALUE = 1.0f;
-
+EditorMaterialHelper::EditorMaterialHelper(const std::shared_ptr<Phos::Shader>& shader, std::string name)
+      : m_material_name(std::move(name)) {
     m_properties = shader->get_shader_properties();
     for (const auto& property : m_properties) {
-        switch (property.type) {
-        case Phos::ShaderProperty::Type::Float:
-            m_float_properties[property.name] = DEFAULT_FLOAT_VALUE;
-            break;
-        case Phos::ShaderProperty::Type::Vec3:
-            m_vec3_properties[property.name] = glm::vec3(DEFAULT_FLOAT_VALUE);
-            break;
-        case Phos::ShaderProperty::Type::Vec4:
-            m_vec4_properties[property.name] = glm::vec4(DEFAULT_FLOAT_VALUE);
-            break;
-        case Phos::ShaderProperty::Type::Texture:
-            m_texture_properties[property.name] = Phos::UUID(0);
-            break;
-        }
+        input_default_value(property.name, property.type);
     }
 }
 
@@ -44,6 +30,8 @@ std::shared_ptr<EditorMaterialHelper> EditorMaterialHelper::open(const std::file
 EditorMaterialHelper::EditorMaterialHelper(const std::filesystem::path& path) {
     const auto node = YAML::LoadFile(path);
 
+    m_material_name = path.stem();
+
     const auto shader_type = node["shader"]["type"].as<std::string>();
     PS_ASSERT(shader_type == "builtin", "Only builtin shaders supported at the moment")
 
@@ -54,6 +42,13 @@ EditorMaterialHelper::EditorMaterialHelper(const std::filesystem::path& path) {
 
     m_properties = shader->get_shader_properties();
     for (const auto& property : m_properties) {
+        if (!properties_node[property.name]) {
+            input_default_value(property.name, property.type);
+            continue;
+        }
+
+        m_name_to_type[property.name] = property.type;
+
         const auto data_node = properties_node[property.name]["data"];
 
         switch (property.type) {
@@ -80,7 +75,7 @@ void EditorMaterialHelper::save(const std::filesystem::path& path) const {
     out << YAML::Key << "assetType" << YAML::Value << "material";
     out << YAML::Key << "id" << YAML::Value << (uint64_t)Phos::UUID();
 
-    out << YAML::Key << "name" << YAML::Value << path.stem().string();
+    out << YAML::Key << "name" << YAML::Value << m_material_name;
 
     out << YAML::Key << "shader";
     out << YAML::BeginMap;
@@ -136,6 +131,27 @@ void EditorMaterialHelper::save(const std::filesystem::path& path) const {
 
     std::ofstream output_file(path);
     output_file << out.c_str();
+}
+
+void EditorMaterialHelper::input_default_value(const std::string& property_name, Phos::ShaderProperty::Type type) {
+    constexpr float DEFAULT_FLOAT_VALUE = 1.0f;
+
+    m_name_to_type[property_name] = type;
+
+    switch (type) {
+    case Phos::ShaderProperty::Type::Float:
+        m_float_properties[property_name] = DEFAULT_FLOAT_VALUE;
+        break;
+    case Phos::ShaderProperty::Type::Vec3:
+        m_vec3_properties[property_name] = glm::vec3(DEFAULT_FLOAT_VALUE);
+        break;
+    case Phos::ShaderProperty::Type::Vec4:
+        m_vec4_properties[property_name] = glm::vec4(DEFAULT_FLOAT_VALUE);
+        break;
+    case Phos::ShaderProperty::Type::Texture:
+        m_texture_properties[property_name] = Phos::UUID(0);
+        break;
+    }
 }
 
 float EditorMaterialHelper::parse_float(const YAML::Node& node) {

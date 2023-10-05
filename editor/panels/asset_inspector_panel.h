@@ -46,4 +46,5 @@ class AssetInspectorPanel : public IImGuiPanel {
 
     // Render functions
     void render_texture_asset() const;
+    void render_material_asset() const;
 };
