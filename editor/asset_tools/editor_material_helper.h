@@ -41,6 +41,7 @@ class EditorMaterialHelper {
         }
     }
 
+    void save() const;
     void save(const std::filesystem::path& path) const;
 
     [[nodiscard]] std::string get_material_name() const { return m_material_name; }
@@ -48,8 +49,10 @@ class EditorMaterialHelper {
 
   private:
     std::string m_material_name;
-    std::vector<Phos::ShaderProperty> m_properties;
+    std::filesystem::path m_path;
+    Phos::UUID m_material_id;
 
+    std::vector<Phos::ShaderProperty> m_properties;
     std::unordered_map<std::string, Phos::ShaderProperty::Type> m_name_to_type;
 
     std::unordered_map<std::string, float> m_float_properties;

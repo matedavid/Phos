@@ -173,4 +173,9 @@ void AssetInspectorPanel::render_material_asset() const {
     }
 
     ImGui::EndTable();
+
+    // @TODO: Temporal button...??
+    if (ImGui::Button("Save")) {
+        m_material_helper->save();
+    }
 }

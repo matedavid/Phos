@@ -15,7 +15,7 @@ std::shared_ptr<EditorMaterialHelper> EditorMaterialHelper::create(const std::sh
 
 // create constructor
 EditorMaterialHelper::EditorMaterialHelper(const std::shared_ptr<Phos::Shader>& shader, std::string name)
-      : m_material_name(std::move(name)) {
+      : m_material_name(std::move(name)), m_material_id(Phos::UUID()) {
     m_properties = shader->get_shader_properties();
     for (const auto& property : m_properties) {
         input_default_value(property.name, property.type);
@@ -27,10 +27,11 @@ std::shared_ptr<EditorMaterialHelper> EditorMaterialHelper::open(const std::file
 }
 
 // open constructor
-EditorMaterialHelper::EditorMaterialHelper(const std::filesystem::path& path) {
-    const auto node = YAML::LoadFile(path);
+EditorMaterialHelper::EditorMaterialHelper(const std::filesystem::path& path) : m_path(path) {
+    const auto node = YAML::LoadFile(m_path);
 
     m_material_name = path.stem();
+    m_material_id = Phos::UUID(node["id"].as<uint64_t>());
 
     const auto shader_type = node["shader"]["type"].as<std::string>();
     PS_ASSERT(shader_type == "builtin", "Only builtin shaders supported at the moment")
@@ -68,12 +69,21 @@ EditorMaterialHelper::EditorMaterialHelper(const std::filesystem::path& path) {
     }
 }
 
+void EditorMaterialHelper::save() const {
+    if (!std::filesystem::exists(m_path)) {
+        PS_ERROR("Could not save material {} because path is not set");
+        return;
+    }
+
+    save(m_path);
+}
+
 void EditorMaterialHelper::save(const std::filesystem::path& path) const {
     YAML::Emitter out;
     out << YAML::BeginMap;
 
     out << YAML::Key << "assetType" << YAML::Value << "material";
-    out << YAML::Key << "id" << YAML::Value << (uint64_t)Phos::UUID();
+    out << YAML::Key << "id" << YAML::Value << (uint64_t)m_material_id;
 
     out << YAML::Key << "name" << YAML::Value << m_material_name;
 
