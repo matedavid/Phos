@@ -177,5 +177,6 @@ void AssetInspectorPanel::render_material_asset() const {
     // @TODO: Temporal button...??
     if (ImGui::Button("Save")) {
         m_material_helper->save();
+        m_asset_modified_callback(m_selected_asset->uuid);
     }
 }

@@ -154,6 +154,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/Catch2)
 #
 add_executable(PhosEditor
         editor/main.cpp
+        editor/asset_watcher.cpp
 
         editor/asset_tools/editor_material_helper.cpp
 

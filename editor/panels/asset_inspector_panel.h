@@ -28,12 +28,17 @@ class AssetInspectorPanel : public IImGuiPanel {
     void on_imgui_render() override;
 
     void set_selected_asset(std::optional<EditorAsset> asset);
+    void set_asset_modified_callback(std::function<void(const Phos::UUID&)> func) {
+        m_asset_modified_callback = std::move(func);
+    }
 
   private:
     std::string m_name;
     std::optional<EditorAsset> m_selected_asset;
 
     std::shared_ptr<Phos::EditorAssetManager> m_asset_manager;
+
+    std::function<void(const Phos::UUID&)> m_asset_modified_callback;
 
     bool m_locked = false;
 

@@ -31,6 +31,7 @@
 #include "renderer/backend/texture.h"
 
 #include "editor_state_manager.h"
+#include "asset_watcher.h"
 
 constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 960;
@@ -52,12 +53,17 @@ class EditorLayer : public Phos::Layer {
             std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
         PS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager")
 
+        m_asset_watcher = std::make_unique<AssetWatcher>(m_project->scene(), editor_asset_manager);
+
         // Panels
         m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_project->scene(), m_state_manager);
         m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_project->scene());
         m_components_panel = std::make_unique<ComponentsPanel>("Components", m_project->scene(), editor_asset_manager);
         m_content_browser_panel = std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager);
         m_asset_inspector_panel = std::make_unique<AssetInspectorPanel>("Inspector", editor_asset_manager);
+
+        m_asset_inspector_panel->set_asset_modified_callback(
+            [&](const Phos::UUID& id) { m_asset_watcher->asset_modified(id); });
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
@@ -236,6 +242,8 @@ class EditorLayer : public Phos::Layer {
     std::unique_ptr<ComponentsPanel> m_components_panel;
     std::unique_ptr<ContentBrowserPanel> m_content_browser_panel;
     std::unique_ptr<AssetInspectorPanel> m_asset_inspector_panel;
+
+    std::unique_ptr<AssetWatcher> m_asset_watcher;
 
     ImGuiID m_dockspace_id{0};
 
