@@ -223,6 +223,14 @@ class EditorLayer : public Phos::Layer {
 
         ImGui::End();
 
+        ImGui::Begin("Statistics");
+
+        const double fps = 1.0 / ts;
+        const std::string fps_text = "fps = " + std::to_string(fps);
+        ImGui::Text("%s", fps_text.c_str());
+
+        ImGui::End();
+
         // Rendering
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
