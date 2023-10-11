@@ -16,6 +16,7 @@ Application::Application(std::string_view title, uint32_t width, uint32_t height
     Renderer::initialize(RendererConfig{
         .graphics_api = GraphicsAPI::Vulkan,
         .window = m_window,
+        .num_frames = 2,
     });
 
     m_instance = this;

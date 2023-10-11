@@ -44,7 +44,8 @@ class DeferredRenderer : public ISceneRenderer {
 
   private:
     std::shared_ptr<Scene> m_scene;
-    std::shared_ptr<CommandBuffer> m_command_buffer;
+
+    std::vector<std::shared_ptr<CommandBuffer>> m_command_buffers;
 
     // Shadow mapping pass
     std::shared_ptr<Texture> m_shadow_map_texture;

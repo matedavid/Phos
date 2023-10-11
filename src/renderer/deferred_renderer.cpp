@@ -6,6 +6,7 @@
 #include "core/window.h"
 
 #include "managers/shader_manager.h"
+#include "managers/texture_manager.h"
 
 #include "scene/scene.h"
 #include "scene/entity.h"
@@ -31,7 +32,8 @@
 namespace Phos {
 
 DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::move(scene)) {
-    m_command_buffer = CommandBuffer::create();
+    for (uint32_t i = 0; i < Renderer::config().num_frames; ++i)
+        m_command_buffers.push_back(CommandBuffer::create());
 
     m_shadow_map_material =
         Material::create(Renderer::shader_manager()->get_builtin_shader("ShadowMap"), "ShadowMap Material");
@@ -77,11 +79,13 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
     Renderer::begin_frame(frame_info);
 
-    m_command_buffer->record([&]() {
+    const auto command_buffer = m_command_buffers[Renderer::current_frame()];
+
+    command_buffer->record([&]() {
         // ShadowMapping pass
         // ==================
         {
-            Renderer::begin_render_pass(m_command_buffer, m_shadow_map_pass);
+            Renderer::begin_render_pass(command_buffer, m_shadow_map_pass);
 
             const auto it = std::ranges::find_if(frame_info.lights, [](const std::shared_ptr<Light>& light) {
                 return light->type() == Light::Type::Directional && light->shadow_type != Light::ShadowType::None;
@@ -90,7 +94,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             if (it != frame_info.lights.end()) {
                 const auto directional_light = std::dynamic_pointer_cast<DirectionalLight>(*it);
 
-                Renderer::bind_graphics_pipeline(m_command_buffer, m_shadow_map_pipeline);
+                Renderer::bind_graphics_pipeline(command_buffer, m_shadow_map_pipeline);
 
                 // Prepare light space matrix
                 constexpr float znear = 0.01f, zfar = 40.0f;
@@ -119,21 +123,21 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                         .model = model,
                     };
 
-                    Renderer::bind_push_constant(m_command_buffer, m_shadow_map_pipeline, constants);
-                    Renderer::submit_static_mesh(m_command_buffer, mr_component.mesh, m_shadow_map_material);
+                    Renderer::bind_push_constant(command_buffer, m_shadow_map_pipeline, constants);
+                    Renderer::submit_static_mesh(command_buffer, mr_component.mesh, m_shadow_map_material);
                 }
             }
 
-            Renderer::end_render_pass(m_command_buffer, m_shadow_map_pass);
+            Renderer::end_render_pass(command_buffer, m_shadow_map_pass);
         }
 
         // Geometry pass
         // =============
         {
-            Renderer::begin_render_pass(m_command_buffer, m_geometry_pass);
+            Renderer::begin_render_pass(command_buffer, m_geometry_pass);
 
             // Draw model
-            Renderer::bind_graphics_pipeline(m_command_buffer, m_geometry_pipeline);
+            Renderer::bind_graphics_pipeline(command_buffer, m_geometry_pipeline);
 
             for (const auto& entity : get_renderable_entities()) {
                 const auto& mr_component = entity.get_component<MeshRendererComponent>();
@@ -151,31 +155,31 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                     .color = glm::vec4(1.0f),
                 };
 
-                Renderer::bind_push_constant(m_command_buffer, m_geometry_pipeline, constants);
-                Renderer::submit_static_mesh(m_command_buffer, mr_component.mesh, mr_component.material);
+                Renderer::bind_push_constant(command_buffer, m_geometry_pipeline, constants);
+                Renderer::submit_static_mesh(command_buffer, mr_component.mesh, mr_component.material);
             }
 
-            Renderer::end_render_pass(m_command_buffer, m_geometry_pass);
+            Renderer::end_render_pass(command_buffer, m_geometry_pass);
         }
 
         // Lighting pass
         // ==========================
         {
-            Renderer::begin_render_pass(m_command_buffer, m_lighting_pass);
+            Renderer::begin_render_pass(command_buffer, m_lighting_pass);
 
             // Draw quad
-            Renderer::bind_graphics_pipeline(m_command_buffer, m_lighting_pipeline);
+            Renderer::bind_graphics_pipeline(command_buffer, m_lighting_pipeline);
 
             auto lighting_constants = ShadowMappingPushConstants{
                 .light_space_matrix = m_light_space_matrix,
                 .model = glm::mat4(1.0f),
             };
-            Renderer::bind_push_constant(m_command_buffer, m_lighting_pipeline, lighting_constants);
+            Renderer::bind_push_constant(command_buffer, m_lighting_pipeline, lighting_constants);
 
-            Renderer::draw_screen_quad(m_command_buffer);
+            Renderer::draw_screen_quad(command_buffer);
 
             // Draw skybox
-            Renderer::bind_graphics_pipeline(m_command_buffer, m_skybox_pipeline);
+            Renderer::bind_graphics_pipeline(command_buffer, m_skybox_pipeline);
 
             glm::mat4 model{1.0f};
             model = glm::scale(model, glm::vec3(1.0f));
@@ -184,10 +188,10 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                 .model = model,
                 .color = glm::vec4{1.0f},
             };
-            Renderer::bind_push_constant(m_command_buffer, m_skybox_pipeline, constants);
-            Renderer::submit_static_mesh(m_command_buffer, m_cube_mesh, m_cube_material);
+            Renderer::bind_push_constant(command_buffer, m_skybox_pipeline, constants);
+            Renderer::submit_static_mesh(command_buffer, m_cube_mesh, m_cube_material);
 
-            Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
+            Renderer::end_render_pass(command_buffer, m_lighting_pass);
         }
 
         // Bloom pass
@@ -197,17 +201,17 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
         // Tone Mapping pass
         // ==========================
         {
-            Renderer::begin_render_pass(m_command_buffer, m_tone_mapping_pass);
+            Renderer::begin_render_pass(command_buffer, m_tone_mapping_pass);
 
-            Renderer::bind_graphics_pipeline(m_command_buffer, m_tone_mapping_pipeline);
-            Renderer::draw_screen_quad(m_command_buffer);
+            Renderer::bind_graphics_pipeline(command_buffer, m_tone_mapping_pipeline);
+            Renderer::draw_screen_quad(command_buffer);
 
-            Renderer::end_render_pass(m_command_buffer, m_tone_mapping_pass);
+            Renderer::end_render_pass(command_buffer, m_tone_mapping_pass);
         }
     });
 
     // Submit command buffer
-    Renderer::submit_command_buffer(m_command_buffer);
+    Renderer::submit_command_buffer(command_buffer);
 
     Renderer::end_frame();
 

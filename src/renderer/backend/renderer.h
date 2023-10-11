@@ -25,6 +25,8 @@ enum class GraphicsAPI {
 struct RendererConfig {
     GraphicsAPI graphics_api = GraphicsAPI::Vulkan; // Vulkan API by default
     std::shared_ptr<Window> window;
+
+    uint32_t num_frames;
 };
 
 struct FrameInformation {
@@ -61,6 +63,8 @@ class INativeRenderer {
     virtual void submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer) = 0;
 
     virtual void draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer) = 0;
+
+    [[nodiscard]] virtual uint32_t current_frame() = 0;
 };
 
 class Renderer {
@@ -96,6 +100,7 @@ class Renderer {
 
     static void draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer);
 
+    [[nodiscard]] static uint32_t current_frame();
     static GraphicsAPI graphics_api() { return m_config.graphics_api; }
 
     static const RendererConfig& config() { return m_config; }

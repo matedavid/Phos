@@ -52,10 +52,14 @@ class VulkanRenderer : public INativeRenderer {
 
     void draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer) override;
 
+    [[nodiscard]] uint32_t current_frame() override { return m_current_frame; }
+
   private:
     std::shared_ptr<VulkanQueue> m_graphics_queue;
 
-    VkFence m_in_flight_fence{VK_NULL_HANDLE};
+    uint32_t m_current_frame = 0;
+
+    std::vector<VkFence> m_in_flight_fences;
 
     // Frame descriptors
     struct CameraUniformBuffer {
@@ -85,10 +89,10 @@ class VulkanRenderer : public INativeRenderer {
 
     std::shared_ptr<VulkanDescriptorAllocator> m_allocator;
 
-    std::shared_ptr<VulkanUniformBuffer> m_camera_ubo;
-    std::shared_ptr<VulkanUniformBuffer> m_lights_ubo;
+    std::vector<std::shared_ptr<VulkanUniformBuffer>> m_camera_ubos;
+    std::vector<std::shared_ptr<VulkanUniformBuffer>> m_lights_ubos;
 
-    VkDescriptorSet m_frame_descriptor_set{VK_NULL_HANDLE};
+    std::vector<VkDescriptorSet> m_frame_descriptor_sets;
 
     // Screen quad info
     struct ScreenQuadVertex {
