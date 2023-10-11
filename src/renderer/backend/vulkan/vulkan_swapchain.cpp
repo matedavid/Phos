@@ -3,7 +3,6 @@
 #include "core/window.h"
 #include "renderer/backend/vulkan/vulkan_instance.h"
 #include "renderer/backend/vulkan/vulkan_device.h"
-#include "renderer/backend/vulkan/vulkan_render_pass.h"
 #include "renderer/backend/vulkan/vulkan_framebuffer.h"
 #include "renderer/backend/vulkan/vulkan_context.h"
 #include "renderer/backend/vulkan/vulkan_image.h"
