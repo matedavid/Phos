@@ -136,6 +136,14 @@ std::vector<VulkanDescriptorInfo> VulkanShader::descriptors_in_set(uint32_t set)
     return descriptors;
 }
 
+std::optional<VulkanPushConstantInfo> VulkanShader::push_constant_info(std::string_view name) const {
+    const auto result = m_push_constant_info.find(std::string(name));
+    if (result == m_push_constant_info.end())
+        return {};
+
+    return result->second;
+}
+
 std::vector<ShaderProperty> VulkanShader::get_shader_properties() const {
     std::vector<ShaderProperty> properties;
 
@@ -373,6 +381,13 @@ void VulkanShader::retrieve_push_constant_ranges(const SpvReflectShaderModule& m
         range.stageFlags = stage;
 
         m_push_constant_ranges.push_back(range);
+
+        VulkanPushConstantInfo push_constant_info{};
+        push_constant_info.name = push_constant_block->name;
+        push_constant_info.size = push_constant_block->size;
+        push_constant_info.stage = stage;
+
+        m_push_constant_info.insert({push_constant_block->name, push_constant_info});
     }
 }
 

@@ -37,6 +37,12 @@ struct VulkanDescriptorInfo {
     std::vector<VulkanUniformBufferMember> members;
 };
 
+struct VulkanPushConstantInfo {
+    std::string name;
+    uint32_t size;
+    VkShaderStageFlags stage;
+};
+
 class VulkanShader : public Shader {
   public:
     explicit VulkanShader(const std::string& vertex_path, const std::string& fragment_path);
@@ -49,6 +55,8 @@ class VulkanShader : public Shader {
 
     [[nodiscard]] std::optional<VulkanDescriptorInfo> descriptor_info(std::string_view name) const;
     [[nodiscard]] std::vector<VulkanDescriptorInfo> descriptors_in_set(uint32_t set) const;
+
+    [[nodiscard]] std::optional<VulkanPushConstantInfo> push_constant_info(std::string_view name) const;
 
     [[nodiscard]] std::optional<VkVertexInputBindingDescription> get_binding_description() const {
         return m_binding_description;
@@ -72,6 +80,7 @@ class VulkanShader : public Shader {
     VkPipelineLayout m_pipeline_layout{};
 
     std::unordered_map<std::string, VulkanDescriptorInfo> m_descriptor_info;
+    std::unordered_map<std::string, VulkanPushConstantInfo> m_push_constant_info;
 
     static constexpr uint32_t MAX_DESCRIPTOR_SET = 4;
 

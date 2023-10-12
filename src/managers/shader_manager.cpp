@@ -32,8 +32,10 @@ ShaderManager::ShaderManager() {
 
     // Post Processing
     const auto tone_mapping = Shader::create(SHADER_PATH("ToneMapping.Vert.spv"), SHADER_PATH("ToneMapping.Frag.spv"));
+    const auto bloom = Shader::create(SHADER_PATH("Bloom.Compute.spv"));
 
     m_builtin_shaders.insert(std::make_pair("ToneMapping", tone_mapping));
+    m_builtin_shaders.insert(std::make_pair("Bloom", bloom));
 }
 
 std::shared_ptr<Shader> ShaderManager::get_builtin_shader(const std::string& name) const {

@@ -33,11 +33,6 @@ class VulkanRenderer : public INativeRenderer {
     void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
                                 const std::shared_ptr<GraphicsPipeline>& pipeline) override;
 
-    void bind_push_constant(const std::shared_ptr<CommandBuffer>& command_buffer,
-                            const std::shared_ptr<GraphicsPipeline>& pipeline,
-                            uint32_t size,
-                            const void* data) override;
-
     void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
                             const std::shared_ptr<Mesh>& mesh,
                             const std::shared_ptr<Material>& material) override;

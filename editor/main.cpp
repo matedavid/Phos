@@ -41,7 +41,14 @@ class EditorLayer : public Phos::Layer {
     EditorLayer() {
         m_project = Phos::Project::open("../projects/project1/project1.psproj");
 
-        m_renderer = std::make_shared<Phos::DeferredRenderer>(m_project->scene());
+        const auto config = Phos::SceneRendererConfig{
+            .bloom_config =
+                Phos::BloomConfig{
+                    .enabled = true,
+                    .threshold = 1.0f,
+                },
+        };
+        m_renderer = std::make_shared<Phos::DeferredRenderer>(m_project->scene(), config);
 
         // Initialize ImGui backend
         ImGuiImpl::initialize(Phos::Application::instance()->get_window());

@@ -31,7 +31,8 @@
 
 namespace Phos {
 
-DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::move(scene)) {
+DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererConfig config)
+      : m_scene(std::move(scene)), m_config(config) {
     for (uint32_t i = 0; i < Renderer::config().num_frames; ++i)
         m_command_buffers.push_back(CommandBuffer::create());
 
@@ -61,15 +62,17 @@ DeferredRenderer::~DeferredRenderer() {
     Renderer::wait_idle();
 }
 
+void DeferredRenderer::change_config(SceneRendererConfig config) {
+    m_config = config;
+
+    Renderer::wait_idle();
+    init_bloom_pipeline(m_config.bloom_config);
+}
+
 void DeferredRenderer::set_scene(std::shared_ptr<Scene> scene) {
     (void)scene;
     PS_FAIL("Unimplemented")
 }
-
-struct ShadowMappingPushConstants {
-    glm::mat4 light_space_matrix;
-    glm::mat4 model;
-};
 
 void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
     const FrameInformation frame_info = {
@@ -80,6 +83,11 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
     Renderer::begin_frame(frame_info);
 
     const auto command_buffer = m_command_buffers[Renderer::current_frame()];
+
+    struct ShadowMappingPushConstants {
+        glm::mat4 light_space_matrix;
+        glm::mat4 model;
+    };
 
     command_buffer->record([&]() {
         // ShadowMapping pass
@@ -123,7 +131,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                         .model = model,
                     };
 
-                    Renderer::bind_push_constant(command_buffer, m_shadow_map_pipeline, constants);
+                    m_shadow_map_pipeline->bind_push_constants(command_buffer, "ShadowMapPushConstants", constants);
                     Renderer::submit_static_mesh(command_buffer, mr_component.mesh, m_shadow_map_material);
                 }
             }
@@ -155,7 +163,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                     .color = glm::vec4(1.0f),
                 };
 
-                Renderer::bind_push_constant(command_buffer, m_geometry_pipeline, constants);
+                m_geometry_pipeline->bind_push_constants(command_buffer, "ModelInfoPushConstants", constants);
                 Renderer::submit_static_mesh(command_buffer, mr_component.mesh, mr_component.material);
             }
 
@@ -174,7 +182,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                 .light_space_matrix = m_light_space_matrix,
                 .model = glm::mat4(1.0f),
             };
-            Renderer::bind_push_constant(command_buffer, m_lighting_pipeline, lighting_constants);
+            m_lighting_pipeline->bind_push_constants(command_buffer, "LightingPassPushConstants", lighting_constants);
 
             Renderer::draw_screen_quad(command_buffer);
 
@@ -188,7 +196,8 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                 .model = model,
                 .color = glm::vec4{1.0f},
             };
-            Renderer::bind_push_constant(command_buffer, m_skybox_pipeline, constants);
+            m_skybox_pipeline->bind_push_constants(command_buffer, "ModelInfoPushConstants", constants);
+
             Renderer::submit_static_mesh(command_buffer, m_cube_mesh, m_cube_material);
 
             Renderer::end_render_pass(command_buffer, m_lighting_pass);
@@ -196,14 +205,25 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
         // Bloom pass
         // ==========================
-        m_bloom_pipeline->execute(command_buffer);
+        if (m_config.bloom_config.enabled)
+            m_bloom_pipeline->execute(command_buffer);
 
         // Tone Mapping pass
         // ==========================
         {
+            struct ToneMappingPushConstants {
+                int32_t bloom_enabled{};
+                int32_t _padding[3]{};
+            };
+
+            const auto constants = ToneMappingPushConstants{
+                .bloom_enabled = static_cast<int32_t>(m_config.bloom_config.enabled),
+            };
+
             Renderer::begin_render_pass(command_buffer, m_tone_mapping_pass);
 
             Renderer::bind_graphics_pipeline(command_buffer, m_tone_mapping_pipeline);
+            m_tone_mapping_pipeline->bind_push_constants(command_buffer, "ToneMappingConfig", constants);
             Renderer::draw_screen_quad(command_buffer);
 
             Renderer::end_render_pass(command_buffer, m_tone_mapping_pass);
@@ -214,10 +234,6 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
     Renderer::submit_command_buffer(command_buffer);
 
     Renderer::end_frame();
-
-    // @TODO: Should rethink
-    //    Renderer::wait_idle();
-    //    m_bloom_pipeline->invalidate();
 }
 
 std::shared_ptr<Texture> DeferredRenderer::output_texture() const {
@@ -453,80 +469,7 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
             .storage = true,
         }));
 
-        m_bloom_pipeline = ComputePipeline::create(ComputePipeline::Description{
-            .shader = Shader::create("../shaders/build/Bloom.Compute.spv"),
-        });
-
-        const auto get_mip_size = [](const std::shared_ptr<Texture>& tex, uint32_t level) -> glm::uvec2 {
-            const auto& img = tex->get_image();
-
-            PS_ASSERT(level < img->num_mips(), "Mip level not valid")
-
-            const auto img_width = img->width();
-            const auto img_height = img->height();
-
-            const auto mip_width = (uint32_t)std::round((float)img_width / std::pow(2.0f, (float)level));
-            const auto mip_height = (uint32_t)std::round((float)img_height / std::pow(2.0f, (float)level));
-
-            return {mip_width, mip_height};
-        };
-
-        constexpr int32_t MODE_DOWNSAMPLE = 0;
-        constexpr int32_t MODE_UPSAMPLE = 1;
-        constexpr int32_t MODE_PREFILTER = 2;
-
-        struct BloomPushConstants {
-            int32_t mode;
-            float threshold;
-        };
-
-        auto bloom_constants = BloomPushConstants{};
-        bloom_constants.threshold = 1.0f;
-
-        // Prefilter step
-        bloom_constants.mode = MODE_PREFILTER;
-        auto work_groups = get_mip_size(m_bloom_downsample_texture, 1) / 2u;
-        m_bloom_pipeline->add_step(
-            [&](ComputePipeline::StepBuilder& builder) {
-                builder.set("uInputImage", m_lighting_texture);
-                builder.set("uOutputImage", m_bloom_downsample_texture, 1);
-                builder.set_push_constants("uInfo", bloom_constants);
-            },
-            {work_groups, 1});
-
-        // Down sampling
-        constexpr uint32_t downsampling_range = 5;
-        const auto num_mips = m_bloom_downsample_texture->get_image()->num_mips();
-
-        bloom_constants.mode = MODE_DOWNSAMPLE;
-
-        for (uint32_t i = 2; i < num_mips - downsampling_range; ++i) {
-            work_groups = get_mip_size(m_bloom_downsample_texture, i) / 2u;
-
-            m_bloom_pipeline->add_step(
-                [&](ComputePipeline::StepBuilder& builder) {
-                    builder.set("uInputImage", m_bloom_downsample_texture, i - 1);
-                    builder.set("uOutputImage", m_bloom_downsample_texture, i);
-                    builder.set_push_constants("uInfo", bloom_constants);
-                },
-                {work_groups, 1});
-        }
-
-        // Up sampling
-        bloom_constants.mode = MODE_UPSAMPLE;
-
-        const auto last_mip = num_mips - (downsampling_range + 1);
-        for (uint32_t i = last_mip; i > 0; --i) {
-            work_groups = get_mip_size(m_bloom_upsample_texture, i - 1) / 2u;
-
-            m_bloom_pipeline->add_step(
-                [&](ComputePipeline::StepBuilder& builder) {
-                    builder.set("uInputImage", m_bloom_downsample_texture, i);
-                    builder.set("uOutputImage", m_bloom_upsample_texture, i - 1);
-                    builder.set_push_constants("uInfo", bloom_constants);
-                },
-                {work_groups, 1});
-        }
+        init_bloom_pipeline(m_config.bloom_config);
     }
 
     // Tone Mapping pass
@@ -563,6 +506,84 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
             .debug_name = "ToneMappingPass",
             .target_framebuffer = m_tone_mapping_framebuffer,
         });
+    }
+}
+
+void DeferredRenderer::init_bloom_pipeline(const BloomConfig& config) {
+    m_bloom_pipeline = ComputePipeline::create(ComputePipeline::Description{
+        .shader = Renderer::shader_manager()->get_builtin_shader("Bloom"),
+    });
+
+    const auto get_mip_size = [](const std::shared_ptr<Texture>& tex, uint32_t level) -> glm::uvec2 {
+        const auto& img = tex->get_image();
+
+        PS_ASSERT(level < img->num_mips(), "Mip level not valid")
+
+        const auto img_width = img->width();
+        const auto img_height = img->height();
+
+        const auto mip_width = (uint32_t)std::round((float)img_width / std::pow(2.0f, (float)level));
+        const auto mip_height = (uint32_t)std::round((float)img_height / std::pow(2.0f, (float)level));
+
+        return {mip_width, mip_height};
+    };
+
+    constexpr int32_t MODE_DOWNSAMPLE = 0;
+    constexpr int32_t MODE_UPSAMPLE = 1;
+    constexpr int32_t MODE_PREFILTER = 2;
+
+    struct BloomPushConstants {
+        int32_t mode{};
+        float threshold{};
+        int32_t _padding[2]{};
+    };
+
+    auto bloom_constants = BloomPushConstants{};
+    bloom_constants.threshold = config.threshold;
+
+    // Prefilter step
+    bloom_constants.mode = MODE_PREFILTER;
+    auto work_groups = get_mip_size(m_bloom_downsample_texture, 1) / 2u;
+    m_bloom_pipeline->add_step(
+        [&](ComputePipeline::StepBuilder& builder) {
+            builder.set("uInputImage", m_lighting_texture);
+            builder.set("uOutputImage", m_bloom_downsample_texture, 1);
+            builder.set_push_constants("BloomInformation", bloom_constants);
+        },
+        {work_groups, 1});
+
+    // Down sampling
+    constexpr uint32_t downsampling_range = 5;
+    const auto num_mips = m_bloom_downsample_texture->get_image()->num_mips();
+
+    bloom_constants.mode = MODE_DOWNSAMPLE;
+
+    for (uint32_t i = 2; i < num_mips - downsampling_range; ++i) {
+        work_groups = get_mip_size(m_bloom_downsample_texture, i) / 2u;
+
+        m_bloom_pipeline->add_step(
+            [&](ComputePipeline::StepBuilder& builder) {
+                builder.set("uInputImage", m_bloom_downsample_texture, i - 1);
+                builder.set("uOutputImage", m_bloom_downsample_texture, i);
+                builder.set_push_constants("BloomInformation", bloom_constants);
+            },
+            {work_groups, 1});
+    }
+
+    // Up sampling
+    bloom_constants.mode = MODE_UPSAMPLE;
+
+    const auto last_mip = num_mips - (downsampling_range + 1);
+    for (uint32_t i = last_mip; i > 0; --i) {
+        work_groups = get_mip_size(m_bloom_upsample_texture, i - 1) / 2u;
+
+        m_bloom_pipeline->add_step(
+            [&](ComputePipeline::StepBuilder& builder) {
+                builder.set("uInputImage", m_bloom_downsample_texture, i);
+                builder.set("uOutputImage", m_bloom_upsample_texture, i - 1);
+                builder.set_push_constants("BloomInformation", bloom_constants);
+            },
+            {work_groups, 1});
     }
 }
 

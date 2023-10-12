@@ -26,6 +26,11 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
 
     [[nodiscard]] std::shared_ptr<Framebuffer> target_framebuffer() const override;
 
+    void bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,
+                             std::string_view name,
+                             uint32_t size,
+                             const void* data) override;
+
     void add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) override;
     void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) override;
     void add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) override;

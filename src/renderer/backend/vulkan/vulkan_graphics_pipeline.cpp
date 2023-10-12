@@ -188,6 +188,19 @@ std::shared_ptr<Framebuffer> VulkanGraphicsPipeline::target_framebuffer() const 
     return m_target_framebuffer;
 }
 
+void VulkanGraphicsPipeline::bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,
+                                                 std::string_view name,
+                                                 uint32_t size,
+                                                 const void* data) {
+    const auto& native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
+
+    const auto info = m_shader->push_constant_info(name);
+    PS_ASSERT(info.has_value(), "GraphicsPipeline does not contain push constant with name: {}", name)
+    PS_ASSERT(info->size == size, "Push constant with name: {} has incorrect size ({} != {})", name, size, info->size)
+
+    vkCmdPushConstants(native_cb->handle(), m_shader->get_pipeline_layout(), info->stage, 0, size, data);
+}
+
 void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) {
     const auto native_ubo = std::dynamic_pointer_cast<VulkanUniformBuffer>(ubo);
 

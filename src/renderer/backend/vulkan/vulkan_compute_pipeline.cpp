@@ -25,8 +25,9 @@ VulkanComputePipelineStepBuilder::VulkanComputePipelineStepBuilder(std::shared_p
       : m_shader(std::move(shader)), m_allocator(std::move(allocator)) {}
 
 void VulkanComputePipelineStepBuilder::set_push_constants(std::string_view name, uint32_t size, const void* data) {
-    // @TODO: Should check if push constant exists in Pipeline, using name
-    (void)name;
+    const auto info = m_shader->push_constant_info(name);
+    PS_ASSERT(info.has_value(), "Compute Pipeline does not contain push constant with name: {}", name)
+    PS_ASSERT(info->size == size, "Push constant with name: {} has incorrect size ({} != {})", name, size, info->size)
 
     std::vector<unsigned char> vec_data(size);
     std::memcpy(vec_data.data(), data, size);
