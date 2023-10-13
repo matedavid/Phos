@@ -25,6 +25,8 @@ enum class GraphicsAPI {
 struct RendererConfig {
     GraphicsAPI graphics_api = GraphicsAPI::Vulkan; // Vulkan API by default
     std::shared_ptr<Window> window;
+
+    uint32_t num_frames;
 };
 
 struct FrameInformation {
@@ -47,11 +49,6 @@ class INativeRenderer {
     virtual void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
                                         const std::shared_ptr<GraphicsPipeline>& pipeline) = 0;
 
-    virtual void bind_push_constant(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                    const std::shared_ptr<GraphicsPipeline>& pipeline,
-                                    uint32_t size,
-                                    const void* data) = 0;
-
     virtual void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                    const std::shared_ptr<RenderPass>& render_pass) = 0;
 
@@ -61,6 +58,8 @@ class INativeRenderer {
     virtual void submit_command_buffer(const std::shared_ptr<CommandBuffer>& command_buffer) = 0;
 
     virtual void draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer) = 0;
+
+    [[nodiscard]] virtual uint32_t current_frame() = 0;
 };
 
 class Renderer {
@@ -79,13 +78,6 @@ class Renderer {
     static void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
                                        const std::shared_ptr<GraphicsPipeline>& pipeline);
 
-    template <typename T>
-    static void bind_push_constant(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                   const std::shared_ptr<GraphicsPipeline>& pipeline,
-                                   const T& data) {
-        m_native_renderer->bind_push_constant(command_buffer, pipeline, sizeof(T), &data);
-    }
-
     static void begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
                                   const std::shared_ptr<RenderPass>& render_pass);
 
@@ -96,6 +88,7 @@ class Renderer {
 
     static void draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer);
 
+    [[nodiscard]] static uint32_t current_frame();
     static GraphicsAPI graphics_api() { return m_config.graphics_api; }
 
     static const RendererConfig& config() { return m_config; }

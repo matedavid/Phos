@@ -23,7 +23,11 @@ class VulkanCubemap : public Cubemap {
     VkSampler m_sampler{VK_NULL_HANDLE};
 
     void init(const Faces& faces);
-    static void load_face(const std::string& path, std::vector<char>& data, int32_t& width, int32_t& height);
+    static void load_face(const std::string& path,
+                          std::vector<unsigned char>& data,
+                          int32_t& width,
+                          int32_t& height,
+                          uint32_t idx);
 };
 
 } // namespace Phos

@@ -36,27 +36,19 @@ VulkanCubemap::~VulkanCubemap() {
 void VulkanCubemap::init(const Faces& faces) {
     int32_t width, height;
 
+    // @NOTE: At the moment, only works if all images in cubemap have the same dimensions
+    std::vector<unsigned char> data;
+
     // Order from:
     // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap16.html#_cube_map_face_selection_and_transformations
-    std::array<std::vector<char>, 6> face_data;
-    load_face(faces.right, face_data[0], width, height);
-    load_face(faces.left, face_data[1], width, height);
-    load_face(faces.top, face_data[2], width, height);
-    load_face(faces.bottom, face_data[3], width, height);
-    load_face(faces.front, face_data[4], width, height);
-    load_face(faces.back, face_data[5], width, height);
+    load_face(faces.right, data, width, height, 0);
+    load_face(faces.left, data, width, height, 1);
+    load_face(faces.top, data, width, height, 2);
+    load_face(faces.bottom, data, width, height, 3);
+    load_face(faces.front, data, width, height, 4);
+    load_face(faces.back, data, width, height, 5);
 
     const auto image_size = static_cast<uint32_t>(width * height * 4) * 6;
-
-    std::vector<char> data;
-    std::ranges::copy(face_data[0], std::back_inserter(data));
-    std::ranges::copy(face_data[1], std::back_inserter(data));
-    std::ranges::copy(face_data[2], std::back_inserter(data));
-    std::ranges::copy(face_data[3], std::back_inserter(data));
-    std::ranges::copy(face_data[4], std::back_inserter(data));
-    std::ranges::copy(face_data[5], std::back_inserter(data));
-
-    PS_ASSERT(data.size() == image_size, "Size of skybox data does not match expected of size: {}", image_size)
 
     m_image = std::make_unique<VulkanImage>(VulkanImage::Description{
         .width = static_cast<uint32_t>(width),
@@ -105,14 +97,32 @@ void VulkanCubemap::init(const Faces& faces) {
     VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler))
 }
 
-void VulkanCubemap::load_face(const std::string& path, std::vector<char>& data, int32_t& width, int32_t& height) {
-    int32_t channels;
-    stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+void VulkanCubemap::load_face(const std::string& path,
+                              std::vector<unsigned char>& data,
+                              int32_t& width,
+                              int32_t& height,
+                              uint32_t idx) {
+    int32_t width_l, height_l, channels;
+    stbi_uc* pixels = stbi_load(path.c_str(), &width_l, &height_l, &channels, STBI_rgb_alpha);
+
+    if (idx == 0) {
+        const auto data_size = static_cast<uint32_t>((width_l * height_l * 4) * 6);
+        data.resize(data_size);
+
+        width = width_l;
+        height = height_l;
+    } else {
+        PS_ASSERT(width_l == width && height_l == height,
+                  "Size of cubemap image with idx {} does not match expected size ({} != {}, {} != {})",
+                  idx,
+                  width_l,
+                  width,
+                  height_l,
+                  height)
+    }
 
     const auto image_size = static_cast<uint32_t>(width * height * 4);
-    data.resize(image_size);
-
-    memcpy(data.data(), pixels, image_size);
+    memcpy(data.data() + idx * image_size, pixels, image_size);
 
     stbi_image_free(pixels);
 }

@@ -28,30 +28,38 @@ VulkanRenderer::VulkanRenderer(const RendererConfig& config) {
     fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    VK_CHECK(vkCreateFence(VulkanContext::device->handle(), &fence_create_info, nullptr, &m_in_flight_fence))
+    m_in_flight_fences.resize(Renderer::config().num_frames);
+    for (uint32_t i = 0; i < Renderer::config().num_frames; ++i)
+        VK_CHECK(vkCreateFence(VulkanContext::device->handle(), &fence_create_info, nullptr, &m_in_flight_fences[i]))
 
     // Frame descriptors
     m_allocator = std::make_shared<VulkanDescriptorAllocator>();
 
-    m_camera_ubo = VulkanUniformBuffer::create<CameraUniformBuffer>();
-    m_lights_ubo = VulkanUniformBuffer::create<LightsUniformBuffer>();
+    m_camera_ubos.resize(Renderer::config().num_frames);
+    m_lights_ubos.resize(Renderer::config().num_frames);
+    m_frame_descriptor_sets.resize(Renderer::config().num_frames);
 
-    VkDescriptorBufferInfo camera_info{};
-    camera_info.buffer = m_camera_ubo->handle();
-    camera_info.range = m_camera_ubo->size();
-    camera_info.offset = 0;
+    for (uint32_t i = 0; i < Renderer::config().num_frames; ++i) {
+        m_camera_ubos[i] = VulkanUniformBuffer::create<CameraUniformBuffer>();
+        m_lights_ubos[i] = VulkanUniformBuffer::create<LightsUniformBuffer>();
 
-    VkDescriptorBufferInfo lights_info{};
-    lights_info.buffer = m_lights_ubo->handle();
-    lights_info.range = m_lights_ubo->size();
-    lights_info.offset = 0;
+        VkDescriptorBufferInfo camera_info{};
+        camera_info.buffer = m_camera_ubos[i]->handle();
+        camera_info.range = m_camera_ubos[i]->size();
+        camera_info.offset = 0;
 
-    bool built = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
-                     .bind_buffer(0, camera_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                     .bind_buffer(1, lights_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-                     .build(m_frame_descriptor_set);
+        VkDescriptorBufferInfo lights_info{};
+        lights_info.buffer = m_lights_ubos[i]->handle();
+        lights_info.range = m_lights_ubos[i]->size();
+        lights_info.offset = 0;
 
-    PS_ASSERT(built, "Error creating frame descriptor set")
+        bool built = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
+                         .bind_buffer(0, camera_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                         .bind_buffer(1, lights_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                         .build(m_frame_descriptor_sets[i]);
+
+        PS_ASSERT(built, "Error creating frame descriptor set")
+    }
 
     // Create screen quad buffers
     const std::vector<ScreenQuadVertex> vertex_info = {
@@ -70,11 +78,12 @@ VulkanRenderer::~VulkanRenderer() {
     vkDeviceWaitIdle(VulkanContext::device->handle());
 
     // Destroy synchronization elements
-    vkDestroyFence(VulkanContext::device->handle(), m_in_flight_fence, nullptr);
+    for (uint32_t i = 0; i < Renderer::config().num_frames; ++i)
+        vkDestroyFence(VulkanContext::device->handle(), m_in_flight_fences[i], nullptr);
 
     // Destroy ubos
-    m_camera_ubo.reset();
-    m_lights_ubo.reset();
+    m_camera_ubos.clear();
+    m_lights_ubos.clear();
 
     // Destroy screen quads
     m_screen_quad_vertex.reset();
@@ -91,8 +100,8 @@ void VulkanRenderer::wait_idle() {
 }
 
 void VulkanRenderer::begin_frame(const FrameInformation& info) {
-    vkWaitForFences(VulkanContext::device->handle(), 1, &m_in_flight_fence, VK_TRUE, UINT64_MAX);
-    vkResetFences(VulkanContext::device->handle(), 1, &m_in_flight_fence);
+    vkWaitForFences(VulkanContext::device->handle(), 1, &m_in_flight_fences[m_current_frame], VK_TRUE, UINT64_MAX);
+    vkResetFences(VulkanContext::device->handle(), 1, &m_in_flight_fences[m_current_frame]);
 
     //
     // Update frame descriptors
@@ -108,7 +117,7 @@ void VulkanRenderer::begin_frame(const FrameInformation& info) {
         // .view_projection = info.camera->projection_matrix() * info.camera->view_matrix(),
         .position = info.camera->position(),
     };
-    m_camera_ubo->update(camera_info);
+    m_camera_ubos[m_current_frame]->update(camera_info);
 
     // Lights
     LightsUniformBuffer lights_info{};
@@ -132,21 +141,11 @@ void VulkanRenderer::begin_frame(const FrameInformation& info) {
         }
     }
 
-    m_lights_ubo->update(lights_info);
+    m_lights_ubos[m_current_frame]->update(lights_info);
 }
 
 void VulkanRenderer::end_frame() {
-    //    const std::vector<VkSemaphore> wait_semaphores = {render_finished_semaphore};
-    //
-    //    // Present image
-    //    const auto result =
-    //        m_presentation_queue->submitKHR(m_swapchain, m_swapchain->get_current_image_idx(), wait_semaphores);
-    //
-    //    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-    //        m_swapchain->recreate();
-    //    } else if (result != VK_SUCCESS) {
-    //        PS_FAIL("Failed to present image")
-    //    }
+    m_current_frame = (m_current_frame + 1) % Renderer::config().num_frames;
 }
 
 void VulkanRenderer::submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
@@ -195,22 +194,9 @@ void VulkanRenderer::bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>
                             native_pipeline->layout(),
                             0, // Set = 0 for general frame descriptors
                             1,
-                            &m_frame_descriptor_set,
+                            &m_frame_descriptor_sets[m_current_frame],
                             0,
                             nullptr);
-}
-
-void VulkanRenderer::bind_push_constant(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                        const std::shared_ptr<GraphicsPipeline>& pipeline,
-                                        uint32_t size,
-                                        const void* data) {
-    const auto& native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
-    const auto& native_pipeline = std::dynamic_pointer_cast<VulkanGraphicsPipeline>(pipeline);
-
-    // TODO: Should check if push constant exists in Pipeline, maybe passing name to check?
-
-    vkCmdPushConstants(
-        native_command_buffer->handle(), native_pipeline->layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, size, data);
 }
 
 void VulkanRenderer::begin_render_pass(const std::shared_ptr<CommandBuffer>& command_buffer,
@@ -237,7 +223,7 @@ void VulkanRenderer::submit_command_buffer(const std::shared_ptr<CommandBuffer>&
     info.pWaitDstStageMask = wait_stages.data();
     info.signalSemaphoreCount = 0;
 
-    m_graphics_queue->submit(info, m_in_flight_fence);
+    m_graphics_queue->submit(info, m_in_flight_fences[m_current_frame]);
 }
 
 void VulkanRenderer::draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer) {

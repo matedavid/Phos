@@ -6,6 +6,10 @@ layout (location = 0) out vec4 outColor;
 
 #include "../include/LightInformation.glslh"
 
+layout (push_constant) uniform ToneMappingConfig {
+    int bloomEnabled;
+} uConfig;
+
 layout (set = 1, binding = 0) uniform sampler2D uResultTexture;
 layout (set = 1, binding = 1) uniform sampler2D uBloomTexture;
 
@@ -21,7 +25,9 @@ void main() {
     vec3 color = texture(uResultTexture, vTextureCoords).rgb;
 
     // Add Bloom Contribution
-    color += texture(uBloomTexture, vTextureCoords).rgb;
+    if (uConfig.bloomEnabled == 1) {
+        color += texture(uBloomTexture, vTextureCoords).rgb;
+    }
 
     // Tone Mapping
     color = ReinhardToneMapping(color);

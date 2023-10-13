@@ -43,6 +43,18 @@ class GraphicsPipeline {
     [[nodiscard]] virtual bool bake() = 0;
     [[nodiscard]] virtual std::shared_ptr<Framebuffer> target_framebuffer() const = 0;
 
+    virtual void bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,
+                                     std::string_view name,
+                                     uint32_t size,
+                                     const void* data) = 0;
+
+    template <typename T>
+    void bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,
+                             std::string_view name,
+                             const T& data) {
+        bind_push_constants(command_buffer, name, sizeof(T), &data);
+    }
+
     virtual void add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) = 0;
     virtual void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) = 0;
     virtual void add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) = 0;

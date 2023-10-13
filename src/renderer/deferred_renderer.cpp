@@ -6,6 +6,7 @@
 #include "core/window.h"
 
 #include "managers/shader_manager.h"
+#include "managers/texture_manager.h"
 
 #include "scene/scene.h"
 #include "scene/entity.h"
@@ -30,8 +31,10 @@
 
 namespace Phos {
 
-DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene) : m_scene(std::move(scene)) {
-    m_command_buffer = CommandBuffer::create();
+DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererConfig config)
+      : m_scene(std::move(scene)), m_config(config) {
+    for (uint32_t i = 0; i < Renderer::config().num_frames; ++i)
+        m_command_buffers.push_back(CommandBuffer::create());
 
     m_shadow_map_material =
         Material::create(Renderer::shader_manager()->get_builtin_shader("ShadowMap"), "ShadowMap Material");
@@ -59,15 +62,17 @@ DeferredRenderer::~DeferredRenderer() {
     Renderer::wait_idle();
 }
 
+void DeferredRenderer::change_config(SceneRendererConfig config) {
+    m_config = config;
+
+    Renderer::wait_idle();
+    init_bloom_pipeline(m_config.bloom_config);
+}
+
 void DeferredRenderer::set_scene(std::shared_ptr<Scene> scene) {
     (void)scene;
     PS_FAIL("Unimplemented")
 }
-
-struct ShadowMappingPushConstants {
-    glm::mat4 light_space_matrix;
-    glm::mat4 model;
-};
 
 void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
     const FrameInformation frame_info = {
@@ -77,11 +82,18 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
     Renderer::begin_frame(frame_info);
 
-    m_command_buffer->record([&]() {
+    const auto command_buffer = m_command_buffers[Renderer::current_frame()];
+
+    struct ShadowMappingPushConstants {
+        glm::mat4 light_space_matrix;
+        glm::mat4 model;
+    };
+
+    command_buffer->record([&]() {
         // ShadowMapping pass
         // ==================
         {
-            Renderer::begin_render_pass(m_command_buffer, m_shadow_map_pass);
+            Renderer::begin_render_pass(command_buffer, m_shadow_map_pass);
 
             const auto it = std::ranges::find_if(frame_info.lights, [](const std::shared_ptr<Light>& light) {
                 return light->type() == Light::Type::Directional && light->shadow_type != Light::ShadowType::None;
@@ -90,7 +102,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             if (it != frame_info.lights.end()) {
                 const auto directional_light = std::dynamic_pointer_cast<DirectionalLight>(*it);
 
-                Renderer::bind_graphics_pipeline(m_command_buffer, m_shadow_map_pipeline);
+                Renderer::bind_graphics_pipeline(command_buffer, m_shadow_map_pipeline);
 
                 // Prepare light space matrix
                 constexpr float znear = 0.01f, zfar = 40.0f;
@@ -119,21 +131,21 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                         .model = model,
                     };
 
-                    Renderer::bind_push_constant(m_command_buffer, m_shadow_map_pipeline, constants);
-                    Renderer::submit_static_mesh(m_command_buffer, mr_component.mesh, m_shadow_map_material);
+                    m_shadow_map_pipeline->bind_push_constants(command_buffer, "ShadowMapPushConstants", constants);
+                    Renderer::submit_static_mesh(command_buffer, mr_component.mesh, m_shadow_map_material);
                 }
             }
 
-            Renderer::end_render_pass(m_command_buffer, m_shadow_map_pass);
+            Renderer::end_render_pass(command_buffer, m_shadow_map_pass);
         }
 
         // Geometry pass
         // =============
         {
-            Renderer::begin_render_pass(m_command_buffer, m_geometry_pass);
+            Renderer::begin_render_pass(command_buffer, m_geometry_pass);
 
             // Draw model
-            Renderer::bind_graphics_pipeline(m_command_buffer, m_geometry_pipeline);
+            Renderer::bind_graphics_pipeline(command_buffer, m_geometry_pipeline);
 
             for (const auto& entity : get_renderable_entities()) {
                 const auto& mr_component = entity.get_component<MeshRendererComponent>();
@@ -151,31 +163,31 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                     .color = glm::vec4(1.0f),
                 };
 
-                Renderer::bind_push_constant(m_command_buffer, m_geometry_pipeline, constants);
-                Renderer::submit_static_mesh(m_command_buffer, mr_component.mesh, mr_component.material);
+                m_geometry_pipeline->bind_push_constants(command_buffer, "ModelInfoPushConstants", constants);
+                Renderer::submit_static_mesh(command_buffer, mr_component.mesh, mr_component.material);
             }
 
-            Renderer::end_render_pass(m_command_buffer, m_geometry_pass);
+            Renderer::end_render_pass(command_buffer, m_geometry_pass);
         }
 
         // Lighting pass
         // ==========================
         {
-            Renderer::begin_render_pass(m_command_buffer, m_lighting_pass);
+            Renderer::begin_render_pass(command_buffer, m_lighting_pass);
 
             // Draw quad
-            Renderer::bind_graphics_pipeline(m_command_buffer, m_lighting_pipeline);
+            Renderer::bind_graphics_pipeline(command_buffer, m_lighting_pipeline);
 
             auto lighting_constants = ShadowMappingPushConstants{
                 .light_space_matrix = m_light_space_matrix,
                 .model = glm::mat4(1.0f),
             };
-            Renderer::bind_push_constant(m_command_buffer, m_lighting_pipeline, lighting_constants);
+            m_lighting_pipeline->bind_push_constants(command_buffer, "LightingPassPushConstants", lighting_constants);
 
-            Renderer::draw_screen_quad(m_command_buffer);
+            Renderer::draw_screen_quad(command_buffer);
 
             // Draw skybox
-            Renderer::bind_graphics_pipeline(m_command_buffer, m_skybox_pipeline);
+            Renderer::bind_graphics_pipeline(command_buffer, m_skybox_pipeline);
 
             glm::mat4 model{1.0f};
             model = glm::scale(model, glm::vec3(1.0f));
@@ -184,111 +196,44 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                 .model = model,
                 .color = glm::vec4{1.0f},
             };
-            Renderer::bind_push_constant(m_command_buffer, m_skybox_pipeline, constants);
-            Renderer::submit_static_mesh(m_command_buffer, m_cube_mesh, m_cube_material);
+            m_skybox_pipeline->bind_push_constants(command_buffer, "ModelInfoPushConstants", constants);
 
-            Renderer::end_render_pass(m_command_buffer, m_lighting_pass);
+            Renderer::submit_static_mesh(command_buffer, m_cube_mesh, m_cube_material);
+
+            Renderer::end_render_pass(command_buffer, m_lighting_pass);
         }
 
-        // Compute pass
+        // Bloom pass
         // ==========================
-        {
-            const auto get_mip_size = [](const std::shared_ptr<Texture>& tex, uint32_t level) -> glm::uvec2 {
-                const auto& img = tex->get_image();
-
-                PS_ASSERT(level < img->num_mips(), "Mip level not valid")
-
-                const auto width = img->width();
-                const auto height = img->height();
-
-                const auto mip_width = (uint32_t)std::round((float)width / std::pow(2.0f, (float)level));
-                const auto mip_height = (uint32_t)std::round((float)height / std::pow(2.0f, (float)level));
-
-                return {mip_width, mip_height};
-            };
-
-            constexpr int32_t MODE_DOWNSAMPLE = 0;
-            constexpr int32_t MODE_UPSAMPLE = 1;
-            constexpr int32_t MODE_PREFILTER = 2;
-
-            struct BloomPushConstants {
-                int32_t mode;
-                float threshold;
-            };
-
-            auto bloom_constants = BloomPushConstants{};
-            bloom_constants.threshold = 1.0f;
-
-            // Prefilter
-            bloom_constants.mode = MODE_PREFILTER;
-
-            m_bloom_pipeline->set("uInputImage", m_lighting_texture);
-            m_bloom_pipeline->set("uOutputImage", m_bloom_downsample_texture, 1);
-
-            PS_ASSERT(m_bloom_pipeline->bake(), "Could not bake ComputePipeline")
-
-            auto work_groups = get_mip_size(m_bloom_downsample_texture, 1) / 2u;
-
-            m_bloom_pipeline->bind(m_command_buffer);
-            m_bloom_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
-            m_bloom_pipeline->execute(m_command_buffer, glm::ivec3(work_groups, 1));
-
-            // Down sampling
-            constexpr uint32_t downsampling_range = 5;
-            const auto num_mips = m_bloom_downsample_texture->get_image()->num_mips();
-
-            bloom_constants.mode = MODE_DOWNSAMPLE;
-
-            for (uint32_t i = 2; i < num_mips - downsampling_range; ++i) {
-                m_bloom_pipeline->set("uInputImage", m_bloom_downsample_texture, i - 1);
-                m_bloom_pipeline->set("uOutputImage", m_bloom_downsample_texture, i);
-
-                PS_ASSERT(m_bloom_pipeline->bake(), "Could not bake ComputePipeline")
-
-                work_groups = get_mip_size(m_bloom_downsample_texture, i) / 2u;
-
-                m_bloom_pipeline->bind(m_command_buffer);
-                m_bloom_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
-                m_bloom_pipeline->execute(m_command_buffer, glm::vec3(work_groups, 1));
-            }
-
-            // Up sampling
-            bloom_constants.mode = MODE_UPSAMPLE;
-
-            const auto last_mip = num_mips - (downsampling_range + 1);
-            for (uint32_t i = last_mip; i > 0; --i) {
-                m_bloom_pipeline->set("uInputImage", m_bloom_downsample_texture, i);
-                m_bloom_pipeline->set("uOutputImage", m_bloom_upsample_texture, i - 1);
-
-                PS_ASSERT(m_bloom_pipeline->bake(), "Could not bake ComputePipeline")
-
-                work_groups = get_mip_size(m_bloom_upsample_texture, i - 1) / 2u;
-
-                m_bloom_pipeline->bind(m_command_buffer);
-                m_bloom_pipeline->bind_push_constants(m_command_buffer, "uInfo", bloom_constants);
-                m_bloom_pipeline->execute(m_command_buffer, glm::vec3(work_groups, 1));
-            }
-        }
+        if (m_config.bloom_config.enabled)
+            m_bloom_pipeline->execute(command_buffer);
 
         // Tone Mapping pass
         // ==========================
         {
-            Renderer::begin_render_pass(m_command_buffer, m_tone_mapping_pass);
+            struct ToneMappingPushConstants {
+                int32_t bloom_enabled{};
+                int32_t _padding[3]{};
+            };
 
-            Renderer::bind_graphics_pipeline(m_command_buffer, m_tone_mapping_pipeline);
-            Renderer::draw_screen_quad(m_command_buffer);
+            const auto constants = ToneMappingPushConstants{
+                .bloom_enabled = static_cast<int32_t>(m_config.bloom_config.enabled),
+            };
 
-            Renderer::end_render_pass(m_command_buffer, m_tone_mapping_pass);
+            Renderer::begin_render_pass(command_buffer, m_tone_mapping_pass);
+
+            Renderer::bind_graphics_pipeline(command_buffer, m_tone_mapping_pipeline);
+            m_tone_mapping_pipeline->bind_push_constants(command_buffer, "ToneMappingConfig", constants);
+            Renderer::draw_screen_quad(command_buffer);
+
+            Renderer::end_render_pass(command_buffer, m_tone_mapping_pass);
         }
     });
 
     // Submit command buffer
-    Renderer::submit_command_buffer(m_command_buffer);
+    Renderer::submit_command_buffer(command_buffer);
 
     Renderer::end_frame();
-
-    Renderer::wait_idle();
-    m_bloom_pipeline->invalidate();
 }
 
 std::shared_ptr<Texture> DeferredRenderer::output_texture() const {
@@ -504,10 +449,6 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
 
     // Bloom pass
     {
-        m_bloom_pipeline = ComputePipeline::create(ComputePipeline::Description{
-            .shader = Shader::create("../shaders/build/Bloom.Compute.spv"),
-        });
-
         m_bloom_downsample_texture = Texture::create(Image::create({
             .width = width,
             .height = height,
@@ -527,6 +468,8 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
             .attachment = false,
             .storage = true,
         }));
+
+        init_bloom_pipeline(m_config.bloom_config);
     }
 
     // Tone Mapping pass
@@ -563,6 +506,84 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
             .debug_name = "ToneMappingPass",
             .target_framebuffer = m_tone_mapping_framebuffer,
         });
+    }
+}
+
+void DeferredRenderer::init_bloom_pipeline(const BloomConfig& config) {
+    m_bloom_pipeline = ComputePipeline::create(ComputePipeline::Description{
+        .shader = Renderer::shader_manager()->get_builtin_shader("Bloom"),
+    });
+
+    const auto get_mip_size = [](const std::shared_ptr<Texture>& tex, uint32_t level) -> glm::uvec2 {
+        const auto& img = tex->get_image();
+
+        PS_ASSERT(level < img->num_mips(), "Mip level not valid")
+
+        const auto img_width = img->width();
+        const auto img_height = img->height();
+
+        const auto mip_width = (uint32_t)std::round((float)img_width / std::pow(2.0f, (float)level));
+        const auto mip_height = (uint32_t)std::round((float)img_height / std::pow(2.0f, (float)level));
+
+        return {mip_width, mip_height};
+    };
+
+    constexpr int32_t MODE_DOWNSAMPLE = 0;
+    constexpr int32_t MODE_UPSAMPLE = 1;
+    constexpr int32_t MODE_PREFILTER = 2;
+
+    struct BloomPushConstants {
+        int32_t mode{};
+        float threshold{};
+        int32_t _padding[2]{};
+    };
+
+    auto bloom_constants = BloomPushConstants{};
+    bloom_constants.threshold = config.threshold;
+
+    // Prefilter step
+    bloom_constants.mode = MODE_PREFILTER;
+    auto work_groups = get_mip_size(m_bloom_downsample_texture, 1) / 2u;
+    m_bloom_pipeline->add_step(
+        [&](ComputePipeline::StepBuilder& builder) {
+            builder.set("uInputImage", m_lighting_texture);
+            builder.set("uOutputImage", m_bloom_downsample_texture, 1);
+            builder.set_push_constants("BloomInformation", bloom_constants);
+        },
+        {work_groups, 1});
+
+    // Down sampling
+    constexpr uint32_t downsampling_range = 5;
+    const auto num_mips = m_bloom_downsample_texture->get_image()->num_mips();
+
+    bloom_constants.mode = MODE_DOWNSAMPLE;
+
+    for (uint32_t i = 2; i < num_mips - downsampling_range; ++i) {
+        work_groups = get_mip_size(m_bloom_downsample_texture, i) / 2u;
+
+        m_bloom_pipeline->add_step(
+            [&](ComputePipeline::StepBuilder& builder) {
+                builder.set("uInputImage", m_bloom_downsample_texture, i - 1);
+                builder.set("uOutputImage", m_bloom_downsample_texture, i);
+                builder.set_push_constants("BloomInformation", bloom_constants);
+            },
+            {work_groups, 1});
+    }
+
+    // Up sampling
+    bloom_constants.mode = MODE_UPSAMPLE;
+
+    const auto last_mip = num_mips - (downsampling_range + 1);
+    for (uint32_t i = last_mip; i > 0; --i) {
+        work_groups = get_mip_size(m_bloom_upsample_texture, i - 1) / 2u;
+
+        m_bloom_pipeline->add_step(
+            [&](ComputePipeline::StepBuilder& builder) {
+                builder.set("uInputImage", m_bloom_downsample_texture, i);
+                builder.set("uOutputImage", m_bloom_upsample_texture, i - 1);
+                builder.set_push_constants("BloomInformation", bloom_constants);
+            },
+            {work_groups, 1});
     }
 }
 

@@ -1,6 +1,6 @@
 #version 450
 
-layout (binding = 0)uniform sampler2D uInputImage;
+layout (binding = 0) uniform sampler2D uInputImage;
 layout (binding = 1, rgba16f) restrict writeonly uniform image2D uOutputImage;
 
 layout (push_constant) uniform BloomInformation {

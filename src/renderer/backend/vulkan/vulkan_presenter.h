@@ -30,16 +30,18 @@ class VulkanPresenter : public Presenter {
 
     std::shared_ptr<VulkanQueue> m_graphics_queue;
     std::shared_ptr<VulkanQueue> m_presentation_queue;
-    std::shared_ptr<VulkanCommandBuffer> m_command_buffer;
+    std::vector<std::shared_ptr<VulkanCommandBuffer>> m_command_buffers;
 
     // Presentation pass
     std::shared_ptr<VulkanGraphicsPipeline> m_presentation_pipeline;
     std::shared_ptr<VulkanRenderPass> m_presentation_pass;
 
     // Synchronization
-    VkSemaphore m_image_available_semaphore{VK_NULL_HANDLE};
-    VkSemaphore m_rendering_finished_semaphore{VK_NULL_HANDLE};
-    VkFence m_wait_fence{VK_NULL_HANDLE};
+    std::vector<VkSemaphore> m_image_available_semaphores;
+    std::vector<VkSemaphore> m_rendering_finished_semaphores;
+    std::vector<VkFence> m_wait_fences;
+
+    uint32_t m_current_frame = 0;
 
     void init();
 };

@@ -6,8 +6,8 @@
 #include "scene/entity.h"
 
 #include "asset/editor_asset_manager.h"
-#include "asset/asset.h"
 
+#include "renderer/backend/renderer.h"
 #include "renderer/backend/material.h"
 
 AssetWatcher::AssetWatcher(std::shared_ptr<Phos::Scene> scene, std::shared_ptr<Phos::EditorAssetManager> asset_manager)
@@ -23,6 +23,10 @@ AssetWatcher::AssetWatcher(std::shared_ptr<Phos::Scene> scene, std::shared_ptr<P
 }
 
 void AssetWatcher::asset_modified(const Phos::UUID& id) const {
+    // @TODO: Doing because modifying material when possible frame in flight (due to multiple frames in flight)
+    // Should investigate if I come up with a better approach
+    Phos::Renderer::wait_idle();
+
     if (m_material_to_entities.contains(id)) {
         for (const auto& entity : m_material_to_entities.at(id)) {
             auto& mr = entity.get_component<Phos::MeshRendererComponent>();

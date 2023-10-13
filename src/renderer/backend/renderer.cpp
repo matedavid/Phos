@@ -14,6 +14,8 @@ std::unique_ptr<TextureManager> Renderer::m_texture_manager = nullptr;
 std::unique_ptr<ShaderManager> Renderer::m_shader_manager = nullptr;
 
 void Renderer::initialize(const RendererConfig& config) {
+    m_config = config;
+
     switch (config.graphics_api) {
     case GraphicsAPI::Vulkan:
         m_native_renderer = std::make_shared<VulkanRenderer>(config);
@@ -21,8 +23,6 @@ void Renderer::initialize(const RendererConfig& config) {
     default:
         PS_FAIL("Vulkan is the only supported api")
     }
-
-    m_config = config;
 
     // Managers
     m_texture_manager = std::make_unique<TextureManager>();
@@ -77,6 +77,10 @@ void Renderer::submit_command_buffer(const std::shared_ptr<CommandBuffer>& comma
 
 void Renderer::draw_screen_quad(const std::shared_ptr<CommandBuffer>& command_buffer) {
     m_native_renderer->draw_screen_quad(command_buffer);
+}
+
+uint32_t Renderer::current_frame() {
+    return m_native_renderer->current_frame();
 }
 
 } // namespace Phos
