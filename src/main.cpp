@@ -29,7 +29,14 @@ class SandboxLayer : public Phos::Layer {
     SandboxLayer() {
         m_project = Phos::Project::open("../projects/project1/project1.psproj");
 
-        m_scene_renderer = std::make_shared<Phos::DeferredRenderer>(m_project->scene());
+        const auto config = Phos::SceneRendererConfig{
+            .bloom_config =
+            Phos::BloomConfig{
+                .enabled = true,
+                .threshold = 1.0f,
+            },
+        };
+        m_scene_renderer = std::make_shared<Phos::DeferredRenderer>(m_project->scene(), config);
         m_presenter = Phos::Presenter::create(m_scene_renderer, Phos::Application::instance()->get_window());
 
         // Camera
