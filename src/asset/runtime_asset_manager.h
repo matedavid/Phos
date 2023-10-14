@@ -9,8 +9,9 @@ class RuntimeAssetManager : public AssetManagerBase {
     explicit RuntimeAssetManager(std::shared_ptr<AssetPack> asset_pack);
     ~RuntimeAssetManager() override = default;
 
-    std::shared_ptr<IAsset> load(const std::string& path) override;
-    std::shared_ptr<IAsset> load_by_id(UUID id) override;
+    [[nodiscard]] std::shared_ptr<IAsset> load(const std::string& path) override;
+    [[nodiscard]] std::shared_ptr<IAsset> load_by_id(UUID id) override;
+    [[nodiscard]] std::filesystem::path get_asset_path(UUID id) override;
 
   private:
     std::shared_ptr<AssetPack> m_asset_pack;

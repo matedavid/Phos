@@ -157,6 +157,7 @@ add_executable(PhosEditor
         editor/asset_watcher.cpp
 
         editor/asset_tools/editor_material_helper.cpp
+        editor/asset_tools/editor_cubemap_helper.cpp
 
         editor/panels/viewport_panel.cpp
         editor/panels/entity_hierarchy_panel.cpp

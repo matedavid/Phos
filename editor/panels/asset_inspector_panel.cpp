@@ -5,6 +5,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "asset_tools/editor_material_helper.h"
+#include "asset_tools/editor_cubemap_helper.h"
 
 #include "asset/asset.h"
 #include "asset/editor_asset_manager.h"
@@ -38,6 +39,7 @@ void AssetInspectorPanel::on_imgui_render() {
         render_texture_asset();
         break;
     case Phos::AssetType::Cubemap:
+        render_cubemap_asset();
         break;
     case Phos::AssetType::Shader:
         break;
@@ -59,12 +61,15 @@ void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
 
     m_selected_asset = std::move(asset);
 
-    if (!m_selected_asset.has_value())
-        return;
-
     // Clear not used asset helpers
     m_texture.reset();
     m_material_helper.reset();
+    m_cubemap_helper.reset();
+    m_cubemap_face_textures.clear();
+    m_cubemap_face_ids.clear();
+
+    if (!m_selected_asset.has_value())
+        return;
 
     // Action based on asset type
     if (m_selected_asset->is_directory)
@@ -75,6 +80,23 @@ void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
         m_imgui_texture_id = ImGuiImpl::add_texture(m_texture);
     } else if (m_selected_asset->type == Phos::AssetType::Material) {
         m_material_helper = EditorMaterialHelper::open(m_selected_asset->path);
+    } else if (m_selected_asset->type == Phos::AssetType::Cubemap) {
+        m_cubemap_helper = EditorCubemapHelper::open(m_selected_asset->path);
+
+        const auto faces = m_cubemap_helper->get_faces();
+        m_cubemap_face_textures = {
+            m_asset_manager->load_by_id_type<Phos::Texture>(faces.left),
+            m_asset_manager->load_by_id_type<Phos::Texture>(faces.right),
+            m_asset_manager->load_by_id_type<Phos::Texture>(faces.top),
+            m_asset_manager->load_by_id_type<Phos::Texture>(faces.bottom),
+            m_asset_manager->load_by_id_type<Phos::Texture>(faces.front),
+            m_asset_manager->load_by_id_type<Phos::Texture>(faces.back),
+        };
+
+        for (const auto& face_texture : m_cubemap_face_textures) {
+            m_cubemap_face_ids.push_back(ImGuiImpl::add_texture(face_texture));
+        }
+
     } else {
         PS_FAIL("Not implemented")
     }
@@ -174,9 +196,76 @@ void AssetInspectorPanel::render_material_asset() const {
 
     ImGui::EndTable();
 
-    // @TODO: Temporal button...??
+    // @TODO: Temporary button...??
     if (ImGui::Button("Save")) {
         m_material_helper->save();
+        m_asset_modified_callback(m_selected_asset->uuid);
+    }
+}
+
+void AssetInspectorPanel::render_cubemap_asset() {
+    ImGui::Text("%s (Cubemap)", m_cubemap_helper->get_cubemap_name().c_str());
+    ImGui::Separator();
+
+    const auto cubemap_face_input = [&](const std::string& name, EditorCubemapHelper::Face face) {
+        ImGui::TableNextRow();
+
+        const auto face_id = static_cast<uint32_t>(face);
+
+        ImGui::AlignTextToFramePadding();
+
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("%s:", name.c_str());
+
+        ImGui::TableSetColumnIndex(1);
+        const std::string id = "##CubemapFaceInput" + name;
+        std::string asset_name = std::filesystem::path(m_cubemap_face_textures[face_id]->asset_name).stem();
+
+        ImGui::InputText(id.c_str(), asset_name.data(), ImGuiInputTextFlags_ReadOnly);
+
+        // Tooltip for texture name
+        if (!asset_name.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
+            ImGui::BeginTooltip();
+            ImGui::Text("%s", asset_name.c_str());
+            ImGui::EndTooltip();
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+                const auto uuid = Phos::UUID(*(uint64_t*)payload->Data);
+
+                const auto asset_type = m_asset_manager->get_asset_type(uuid);
+                if (asset_type == Phos::AssetType::Texture) {
+                    m_cubemap_helper->update_face(face, uuid);
+
+                    const auto texture = m_asset_manager->load_by_id_type<Phos::Texture>(uuid);
+                    m_cubemap_face_textures[face_id] = texture;
+                    m_cubemap_face_ids[face_id] = ImGuiImpl::add_texture(texture);
+                }
+            }
+
+            ImGui::EndDragDropTarget();
+        }
+
+        ImGui::TableSetColumnIndex(2);
+        ImGui::Image(m_cubemap_face_ids[face_id], {32, 32});
+    };
+
+    if (!ImGui::BeginTable("##CubemapAssetInspector", 3))
+        return;
+
+    cubemap_face_input("Left", EditorCubemapHelper::Face::Left);
+    cubemap_face_input("Right", EditorCubemapHelper::Face::Right);
+    cubemap_face_input("Top", EditorCubemapHelper::Face::Top);
+    cubemap_face_input("Bottom", EditorCubemapHelper::Face::Bottom);
+    cubemap_face_input("Front", EditorCubemapHelper::Face::Front);
+    cubemap_face_input("Back", EditorCubemapHelper::Face::Back);
+
+    ImGui::EndTable();
+
+    // @TODO: Temporary button...??
+    if (ImGui::Button("Save")) {
+        m_cubemap_helper->save();
         m_asset_modified_callback(m_selected_asset->uuid);
     }
 }

@@ -3,6 +3,7 @@
 #include "core.h"
 
 #include <glm/glm.hpp>
+#include <filesystem>
 
 #include "asset/asset.h"
 #include "asset/model_asset.h"
@@ -56,10 +57,15 @@ class TextureParser : public IAssetParser {
 
 class CubemapParser : public IAssetParser {
   public:
-    explicit CubemapParser([[maybe_unused]] AssetManagerBase*) {}
+    explicit CubemapParser(AssetManagerBase* manager) : m_manager(manager) {}
 
     [[nodiscard]] AssetType type() override { return AssetType::Cubemap; }
     std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
+
+  private:
+    AssetManagerBase* m_manager;
+
+    [[nodiscard]] std::filesystem::path load_face(const Phos::UUID& id);
 };
 
 class MaterialParser : public IAssetParser {

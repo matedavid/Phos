@@ -19,6 +19,7 @@ class Material;
 
 // Forward declarations
 class EditorMaterialHelper;
+class EditorCubemapHelper;
 
 class AssetInspectorPanel : public IImGuiPanel {
   public:
@@ -49,7 +50,14 @@ class AssetInspectorPanel : public IImGuiPanel {
     // Material type
     std::shared_ptr<EditorMaterialHelper> m_material_helper;
 
+    // Cubemap type
+    std::shared_ptr<EditorCubemapHelper> m_cubemap_helper;
+
+    std::vector<std::shared_ptr<Phos::Texture>> m_cubemap_face_textures; // left, right, top, bottom, front, back
+    std::vector<ImTextureID> m_cubemap_face_ids;
+
     // Render functions
     void render_texture_asset() const;
     void render_material_asset() const;
+    void render_cubemap_asset();
 };

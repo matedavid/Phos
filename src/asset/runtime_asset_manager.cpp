@@ -29,4 +29,8 @@ std::shared_ptr<IAsset> RuntimeAssetManager::load_by_id(UUID id) {
     return load(path);
 }
 
+std::filesystem::path RuntimeAssetManager::get_asset_path(UUID id) {
+    return m_asset_pack->path_from_id(id);
+}
+
 } // namespace Phos
