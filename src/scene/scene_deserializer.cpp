@@ -10,6 +10,7 @@
 #include "renderer/mesh.h"
 #include "renderer/backend/material.h"
 #include "renderer/backend/shader.h"
+#include "renderer/backend/cubemap.h"
 
 namespace Phos {
 
@@ -25,6 +26,21 @@ std::shared_ptr<Scene> SceneDeserializer::deserialize(const std::string& path,
     const auto name = node["name"].as<std::string>();
     auto scene = std::make_shared<Scene>(name);
 
+    // Load scene config
+    const auto config_node = node["config"];
+    auto& renderer_config = scene->config();
+
+    renderer_config.bloom_config.enabled = config_node["bloomConfig"]["enabled"].as<bool>();
+    renderer_config.bloom_config.threshold = config_node["bloomConfig"]["threshold"].as<float>();
+
+    const auto skybox_id = UUID(config_node["environmentConfig"]["skybox"].as<uint64_t>());
+    if (skybox_id == UUID(0)) {
+        // @TODO: Add default skybox
+    } else {
+        renderer_config.environment_config.skybox = m_asset_manager->load_by_id_type<Phos::Cubemap>(skybox_id);
+    }
+
+    // Load entities
     const auto entities = node["entities"];
     for (const auto& it : entities) {
         const auto uuid = UUID(it.first.as<std::size_t>());

@@ -8,14 +8,20 @@ namespace Phos {
 class Scene;
 class Texture;
 class Camera;
+class Cubemap;
 
 struct BloomConfig {
     bool enabled = false;
     float threshold = 1.0f;
 };
 
+struct EnvironmentConfig {
+    std::shared_ptr<Cubemap> skybox = nullptr;
+};
+
 struct SceneRendererConfig {
     BloomConfig bloom_config{};
+    EnvironmentConfig environment_config{};
 };
 
 class ISceneRenderer {

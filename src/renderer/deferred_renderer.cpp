@@ -2,6 +2,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <utility>
 
 #include "core/window.h"
 
@@ -32,7 +33,7 @@
 namespace Phos {
 
 DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererConfig config)
-      : m_scene(std::move(scene)), m_config(config) {
+      : m_scene(std::move(scene)), m_config(std::move(config)) {
     for (uint32_t i = 0; i < Renderer::config().num_frames; ++i)
         m_command_buffers.push_back(CommandBuffer::create());
 
@@ -40,17 +41,9 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererCo
         Material::create(Renderer::shader_manager()->get_builtin_shader("ShadowMap"), "ShadowMap Material");
     PS_ASSERT(m_shadow_map_material->bake(), "Failed to bake Shadow Map material")
 
-    const auto faces = Cubemap::Faces{
-        .right = "right.jpg",
-        .left = "left.jpg",
-        .top = "top.jpg",
-        .bottom = "bottom.jpg",
-        .front = "front.jpg",
-        .back = "back.jpg",
-    };
-    m_skybox = Cubemap::create(faces, "../assets/skybox/");
+    // Skybox
+    m_skybox = m_config.environment_config.skybox;
 
-    // Create cube
     m_cube_mesh = ModelLoader::load_single_mesh("../assets/cube.fbx");
     m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
     m_cube_material->bake();

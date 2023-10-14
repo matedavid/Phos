@@ -8,6 +8,7 @@
 
 #include "renderer/mesh.h"
 #include "renderer/backend/material.h"
+#include "renderer/backend/cubemap.h"
 
 namespace Phos {
 
@@ -30,6 +31,34 @@ void SceneSerializer::serialize(const std::shared_ptr<Scene>& scene, const std::
     out << YAML::BeginMap;
     emit_yaml(out, "name", scene->name());
 
+    // Emit config
+    const auto& config = scene->config();
+
+    emit_yaml(out, "config");
+    out << YAML::BeginMap;
+
+    emit_yaml(out, "bloomConfig");
+    {
+        out << YAML::BeginMap;
+
+        emit_yaml(out, "enabled", config.bloom_config.enabled);
+        emit_yaml(out, "threshold", config.bloom_config.threshold);
+
+        out << YAML::EndMap;
+    }
+
+    emit_yaml(out, "environmentConfig");
+    {
+        out << YAML::BeginMap;
+
+        emit_yaml(out, "skybox", (uint64_t)config.environment_config.skybox->id);
+
+        out << YAML::EndMap;
+    }
+
+    out << YAML::EndMap;
+
+    // Emit entities
     emit_yaml(out, "entities");
     out << YAML::BeginMap;
 
