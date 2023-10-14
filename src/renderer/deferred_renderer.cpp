@@ -59,7 +59,9 @@ void DeferredRenderer::change_config(SceneRendererConfig config) {
     m_config = config;
 
     Renderer::wait_idle();
+
     init_bloom_pipeline(m_config.bloom_config);
+    init_skybox_pipeline(m_config.environment_config);
 }
 
 void DeferredRenderer::set_scene(std::shared_ptr<Scene> scene) {
@@ -426,19 +428,8 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
         });
     }
 
-    // Cubemap pass
-    {
-        m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-            .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
-            .target_framebuffer = m_lighting_framebuffer,
-
-            .front_face = FrontFace::Clockwise,
-            .depth_compare_op = DepthCompareOp::LessEq,
-        });
-
-        m_skybox_pipeline->add_input("uSkybox", m_skybox);
-        PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
-    }
+    // Skybox pass
+    init_skybox_pipeline(m_config.environment_config);
 
     // Bloom pass
     {
@@ -578,6 +569,21 @@ void DeferredRenderer::init_bloom_pipeline(const BloomConfig& config) {
             },
             {work_groups, 1});
     }
+}
+
+void DeferredRenderer::init_skybox_pipeline(const EnvironmentConfig& config) {
+    m_skybox = config.skybox;
+
+    m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
+        .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
+        .target_framebuffer = m_lighting_framebuffer,
+
+        .front_face = FrontFace::Clockwise,
+        .depth_compare_op = DepthCompareOp::LessEq,
+    });
+
+    m_skybox_pipeline->add_input("uSkybox", m_skybox);
+    PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
 }
 
 std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {

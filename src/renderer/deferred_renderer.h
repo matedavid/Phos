@@ -104,6 +104,7 @@ class DeferredRenderer : public ISceneRenderer {
 
     void init(uint32_t width, uint32_t height);
     void init_bloom_pipeline(const BloomConfig& config);
+    void init_skybox_pipeline(const EnvironmentConfig& config);
 
     [[nodiscard]] std::vector<std::shared_ptr<Light>> get_light_info() const;
     [[nodiscard]] std::vector<Entity> get_renderable_entities() const;
