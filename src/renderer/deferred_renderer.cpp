@@ -2,6 +2,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <utility>
 
 #include "core/window.h"
 
@@ -32,7 +33,7 @@
 namespace Phos {
 
 DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererConfig config)
-      : m_scene(std::move(scene)), m_config(config) {
+      : m_scene(std::move(scene)), m_config(std::move(config)) {
     for (uint32_t i = 0; i < Renderer::config().num_frames; ++i)
         m_command_buffers.push_back(CommandBuffer::create());
 
@@ -40,17 +41,6 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererCo
         Material::create(Renderer::shader_manager()->get_builtin_shader("ShadowMap"), "ShadowMap Material");
     PS_ASSERT(m_shadow_map_material->bake(), "Failed to bake Shadow Map material")
 
-    const auto faces = Cubemap::Faces{
-        .right = "right.jpg",
-        .left = "left.jpg",
-        .top = "top.jpg",
-        .bottom = "bottom.jpg",
-        .front = "front.jpg",
-        .back = "back.jpg",
-    };
-    m_skybox = Cubemap::create(faces, "../assets/skybox/");
-
-    // Create cube
     m_cube_mesh = ModelLoader::load_single_mesh("../assets/cube.fbx");
     m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
     m_cube_material->bake();
@@ -62,11 +52,13 @@ DeferredRenderer::~DeferredRenderer() {
     Renderer::wait_idle();
 }
 
-void DeferredRenderer::change_config(SceneRendererConfig config) {
+void DeferredRenderer::change_config(const SceneRendererConfig& config) {
+    Renderer::wait_idle();
+
     m_config = config;
 
-    Renderer::wait_idle();
     init_bloom_pipeline(m_config.bloom_config);
+    init_skybox_pipeline(m_config.environment_config);
 }
 
 void DeferredRenderer::set_scene(std::shared_ptr<Scene> scene) {
@@ -433,19 +425,8 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
         });
     }
 
-    // Cubemap pass
-    {
-        m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
-            .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
-            .target_framebuffer = m_lighting_framebuffer,
-
-            .front_face = FrontFace::Clockwise,
-            .depth_compare_op = DepthCompareOp::LessEq,
-        });
-
-        m_skybox_pipeline->add_input("uSkybox", m_skybox);
-        PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
-    }
+    // Skybox pass
+    init_skybox_pipeline(m_config.environment_config);
 
     // Bloom pass
     {
@@ -585,6 +566,19 @@ void DeferredRenderer::init_bloom_pipeline(const BloomConfig& config) {
             },
             {work_groups, 1});
     }
+}
+
+void DeferredRenderer::init_skybox_pipeline(const EnvironmentConfig& config) {
+    m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
+        .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
+        .target_framebuffer = m_lighting_framebuffer,
+
+        .front_face = FrontFace::Clockwise,
+        .depth_compare_op = DepthCompareOp::LessEq,
+    });
+
+    m_skybox_pipeline->add_input("uSkybox", config.skybox);
+    PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
 }
 
 std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {

@@ -95,26 +95,39 @@ std::shared_ptr<IAsset> TextureParser::parse(const YAML::Node& node, [[maybe_unu
 //
 
 std::shared_ptr<IAsset> CubemapParser::parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) {
-    const auto containing_folder = std::filesystem::path(path).parent_path();
-
     const auto faces_node = node["faces"];
 
-    const auto left = faces_node["left"].as<std::string>();
-    const auto right = faces_node["right"].as<std::string>();
-    const auto top = faces_node["top"].as<std::string>();
-    const auto bottom = faces_node["bottom"].as<std::string>();
-    const auto front = faces_node["front"].as<std::string>();
-    const auto back = faces_node["back"].as<std::string>();
+    const auto left = Phos::UUID(faces_node["left"].as<uint64_t>());
+    const auto right = Phos::UUID(faces_node["right"].as<uint64_t>());
+    const auto top = Phos::UUID(faces_node["top"].as<uint64_t>());
+    const auto bottom = Phos::UUID(faces_node["bottom"].as<uint64_t>());
+    const auto front = Phos::UUID(faces_node["front"].as<uint64_t>());
+    const auto back = Phos::UUID(faces_node["back"].as<uint64_t>());
+
+    // @TODO: Supposing all face fields have valid value
 
     const Cubemap::Faces faces = {
-        .right = right,
-        .left = left,
-        .top = top,
-        .bottom = bottom,
-        .front = front,
-        .back = back,
+        .right = load_face(right),
+        .left = load_face(left),
+        .top = load_face(top),
+        .bottom = load_face(bottom),
+        .front = load_face(front),
+        .back = load_face(back),
     };
-    return Cubemap::create(faces, containing_folder);
+    return Cubemap::create(faces);
+}
+
+std::filesystem::path CubemapParser::load_face(const Phos::UUID& id) {
+    const auto path = m_manager->get_asset_path(id);
+    const auto containing_folder = path.parent_path();
+
+    const auto node = YAML::LoadFile(path);
+
+    const auto asset_type = node["assetType"].as<std::string>();
+    PS_ASSERT(asset_type == "texture", "Cubemap face with id {} is not of type texture ({})", (uint64_t)id, asset_type)
+
+    const auto face_local_path = node["path"].as<std::string>();
+    return containing_folder / face_local_path;
 }
 
 //

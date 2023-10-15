@@ -71,7 +71,7 @@ EditorMaterialHelper::EditorMaterialHelper(const std::filesystem::path& path) : 
 
 void EditorMaterialHelper::save() const {
     if (!std::filesystem::exists(m_path)) {
-        PS_ERROR("Could not save material {} because path is not set");
+        PS_ERROR("Could not save material {} because path is not set", m_material_name);
         return;
     }
 

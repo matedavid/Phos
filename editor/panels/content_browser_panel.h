@@ -54,4 +54,5 @@ class ContentBrowserPanel : public IImGuiPanel {
     [[nodiscard]] std::vector<std::string> get_path_components() const;
 
     void create_material(const std::string& name);
+    void create_cubemap(const std::string& name);
 };

@@ -4,6 +4,7 @@
 
 #include "scene/registry.h"
 #include "scene/components.h"
+#include "scene/scene_renderer.h"
 
 namespace Phos {
 
@@ -39,10 +40,12 @@ class Scene {
     }
 
     [[nodiscard]] std::string name() const { return m_name; }
+    [[nodiscard]] SceneRendererConfig& config() { return m_renderer_config; }
 
   private:
     std::string m_name;
     std::unique_ptr<Registry> m_registry;
+    SceneRendererConfig m_renderer_config;
 
     std::unordered_map<std::size_t, Entity*> m_id_to_entity;
     std::unordered_map<UUID, Entity*> m_uuid_to_entity;

@@ -39,6 +39,13 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id(UUID id) {
     return asset;
 }
 
+std::filesystem::path EditorAssetManager::get_asset_path(UUID id) {
+    const auto path = get_path_from_id_r(id, m_path);
+    PS_ASSERT(std::filesystem::exists(path), "No asset with id {} found in path: {}", (uint64_t)id, m_path)
+
+    return path;
+}
+
 std::shared_ptr<IAsset> EditorAssetManager::load_by_id_force_reload(UUID id) {
     const auto path = get_path_from_id_r(id, m_path);
     PS_ASSERT(std::filesystem::exists(path), "No asset with id {} found in path: {}", (uint64_t)id, m_path)
@@ -65,6 +72,10 @@ std::string EditorAssetManager::get_asset_name(Phos::UUID id) const {
         return node["name"].as<std::string>();
     else
         return path.stem();
+}
+
+UUID EditorAssetManager::get_asset_id(const std::filesystem::path& path) const {
+    return m_loader->get_id(path);
 }
 
 /*

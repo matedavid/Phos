@@ -1,5 +1,6 @@
 #include <ranges>
 #include <fstream>
+#include <utility>
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -17,6 +18,7 @@
 #include "panels/components_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/asset_inspector_panel.h"
+#include "panels/scene_configuration_panel.h"
 
 #include "asset/editor_asset_manager.h"
 
@@ -29,6 +31,7 @@
 #include "renderer/backend/material.h"
 #include "renderer/backend/shader.h"
 #include "renderer/backend/texture.h"
+#include "renderer/backend/cubemap.h"
 
 #include "editor_state_manager.h"
 #include "asset_watcher.h"
@@ -40,15 +43,7 @@ class EditorLayer : public Phos::Layer {
   public:
     EditorLayer() {
         m_project = Phos::Project::open("../projects/project1/project1.psproj");
-
-        const auto config = Phos::SceneRendererConfig{
-            .bloom_config =
-                Phos::BloomConfig{
-                    .enabled = true,
-                    .threshold = 1.0f,
-                },
-        };
-        m_renderer = std::make_shared<Phos::DeferredRenderer>(m_project->scene(), config);
+        m_renderer = std::make_shared<Phos::DeferredRenderer>(m_project->scene(), m_project->scene()->config());
 
         // Initialize ImGui backend
         ImGuiImpl::initialize(Phos::Application::instance()->get_window());
@@ -60,7 +55,7 @@ class EditorLayer : public Phos::Layer {
             std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
         PS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager")
 
-        m_asset_watcher = std::make_unique<AssetWatcher>(m_project->scene(), editor_asset_manager);
+        m_asset_watcher = std::make_unique<AssetWatcher>(m_project->scene(), m_renderer, editor_asset_manager);
 
         // Panels
         m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_project->scene(), m_state_manager);
@@ -68,9 +63,16 @@ class EditorLayer : public Phos::Layer {
         m_components_panel = std::make_unique<ComponentsPanel>("Components", m_project->scene(), editor_asset_manager);
         m_content_browser_panel = std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager);
         m_asset_inspector_panel = std::make_unique<AssetInspectorPanel>("Inspector", editor_asset_manager);
+        m_scene_configuration_panel = std::make_unique<SceneConfigurationPanel>(
+            "Scene Configuration", m_project->scene()->config(), editor_asset_manager);
 
         m_asset_inspector_panel->set_asset_modified_callback(
             [&](const Phos::UUID& id) { m_asset_watcher->asset_modified(id); });
+
+        m_scene_configuration_panel->set_scene_config_updated_callback([&](Phos::SceneRendererConfig config) {
+            m_project->scene()->config() = std::move(config);
+            m_renderer->change_config(m_project->scene()->config());
+        });
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
@@ -130,7 +132,7 @@ class EditorLayer : public Phos::Layer {
             ImGui::DockBuilderDockWindow("Components", dock_id_left_down);
 
             ImGui::DockBuilderDockWindow("Inspector", dock_id_right);
-            ImGui::DockBuilderDockWindow("Configuration", dock_id_right);
+            ImGui::DockBuilderDockWindow("Scene Configuration", dock_id_right);
 
             ImGui::DockBuilderDockWindow("ViewportControls", dock_id_viewport_up);
             ImGui::DockBuilderDockWindow("Viewport", m_dockspace_id);
@@ -184,11 +186,7 @@ class EditorLayer : public Phos::Layer {
         //
         // Configuration Panel
         //
-        ImGui::Begin("Configuration");
-
-        ImGui::Text("Configuration");
-
-        ImGui::End();
+        m_scene_configuration_panel->on_imgui_render();
 
         //
         // Viewport
@@ -257,6 +255,7 @@ class EditorLayer : public Phos::Layer {
     std::unique_ptr<ComponentsPanel> m_components_panel;
     std::unique_ptr<ContentBrowserPanel> m_content_browser_panel;
     std::unique_ptr<AssetInspectorPanel> m_asset_inspector_panel;
+    std::unique_ptr<SceneConfigurationPanel> m_scene_configuration_panel;
 
     std::unique_ptr<AssetWatcher> m_asset_watcher;
 
