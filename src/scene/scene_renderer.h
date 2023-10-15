@@ -28,7 +28,7 @@ class ISceneRenderer {
   public:
     virtual ~ISceneRenderer() = default;
 
-    virtual void change_config(SceneRendererConfig config) = 0;
+    virtual void change_config(const SceneRendererConfig& config) = 0;
     virtual void set_scene(std::shared_ptr<Scene> scene) = 0;
 
     virtual void render(const std::shared_ptr<Camera>& camera) = 0;

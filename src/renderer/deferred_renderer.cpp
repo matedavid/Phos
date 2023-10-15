@@ -41,9 +41,6 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererCo
         Material::create(Renderer::shader_manager()->get_builtin_shader("ShadowMap"), "ShadowMap Material");
     PS_ASSERT(m_shadow_map_material->bake(), "Failed to bake Shadow Map material")
 
-    // Skybox
-    m_skybox = m_config.environment_config.skybox;
-
     m_cube_mesh = ModelLoader::load_single_mesh("../assets/cube.fbx");
     m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
     m_cube_material->bake();
@@ -55,10 +52,10 @@ DeferredRenderer::~DeferredRenderer() {
     Renderer::wait_idle();
 }
 
-void DeferredRenderer::change_config(SceneRendererConfig config) {
-    m_config = config;
-
+void DeferredRenderer::change_config(const SceneRendererConfig& config) {
     Renderer::wait_idle();
+
+    m_config = config;
 
     init_bloom_pipeline(m_config.bloom_config);
     init_skybox_pipeline(m_config.environment_config);
@@ -572,8 +569,6 @@ void DeferredRenderer::init_bloom_pipeline(const BloomConfig& config) {
 }
 
 void DeferredRenderer::init_skybox_pipeline(const EnvironmentConfig& config) {
-    m_skybox = config.skybox;
-
     m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
         .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
         .target_framebuffer = m_lighting_framebuffer,
@@ -582,7 +577,7 @@ void DeferredRenderer::init_skybox_pipeline(const EnvironmentConfig& config) {
         .depth_compare_op = DepthCompareOp::LessEq,
     });
 
-    m_skybox_pipeline->add_input("uSkybox", m_skybox);
+    m_skybox_pipeline->add_input("uSkybox", config.skybox);
     PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
 }
 

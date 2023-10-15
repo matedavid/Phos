@@ -36,7 +36,7 @@ class DeferredRenderer : public ISceneRenderer {
     explicit DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererConfig config);
     ~DeferredRenderer() override;
 
-    void change_config(SceneRendererConfig config) override;
+    void change_config(const SceneRendererConfig& config) override;
     void set_scene(std::shared_ptr<Scene> scene) override;
 
     void render(const std::shared_ptr<Camera>& camera) override;
@@ -90,7 +90,6 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<RenderPass> m_tone_mapping_pass;
 
     // Cubemap pipeline
-    std::shared_ptr<Cubemap> m_skybox;
     std::shared_ptr<GraphicsPipeline> m_skybox_pipeline;
 
     // Skybox cube
