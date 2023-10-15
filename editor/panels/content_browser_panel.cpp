@@ -2,11 +2,12 @@
 
 #include <algorithm>
 #include <ranges>
-#include <fstream>
 #include <yaml-cpp/yaml.h>
 
 #include "imgui/imgui_impl.h"
+
 #include "asset_tools/editor_material_helper.h"
+#include "asset_tools/editor_cubemap_helper.h"
 
 #include "asset/editor_asset_manager.h"
 
@@ -194,6 +195,11 @@ void ContentBrowserPanel::on_imgui_render() {
                 update();
             }
 
+            if (ImGui::MenuItem("Cubemap")) {
+                create_cubemap("NewCubemap");
+                update();
+            }
+
             ImGui::EndMenu();
         }
 
@@ -226,11 +232,12 @@ void ContentBrowserPanel::update() {
             continue;
 
         try {
-            const auto asset = m_asset_manager->load(path.path());
+            const auto id = m_asset_manager->get_asset_id(path);
+
             m_assets.push_back({
-                .type = asset->asset_type(),
+                .type = m_asset_manager->get_asset_type(id),
                 .path = path.path(),
-                .uuid = asset->id,
+                .uuid = id,
             });
         } catch (std::exception&) {
             PS_ERROR("Error loading asset with path: {}\n", path.path().string());
@@ -277,4 +284,17 @@ void ContentBrowserPanel::create_material(const std::string& name) {
 
     const auto helper = EditorMaterialHelper::create(shader, material_path.stem());
     helper->save(material_path);
+}
+
+void ContentBrowserPanel::create_cubemap(const std::string& name) {
+    // Find available path for cubemap
+    auto cubemap_path = m_current_path / (name + ".psa");
+    uint32_t i = 1;
+    while (std::filesystem::exists(cubemap_path)) {
+        cubemap_path = m_current_path / (name + std::to_string(i) + ".psa");
+        ++i;
+    }
+
+    const auto helper = EditorCubemapHelper::create(cubemap_path.stem());
+    helper->save(cubemap_path);
 }

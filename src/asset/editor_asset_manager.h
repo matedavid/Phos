@@ -28,6 +28,7 @@ class EditorAssetManager : public AssetManagerBase {
 
     [[nodiscard]] AssetType get_asset_type(UUID id) const;
     [[nodiscard]] std::string get_asset_name(UUID id) const;
+    [[nodiscard]] UUID get_asset_id(const std::filesystem::path& path) const;
 
     [[nodiscard]] std::string path() const { return m_path; }
 

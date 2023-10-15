@@ -74,6 +74,10 @@ std::string EditorAssetManager::get_asset_name(Phos::UUID id) const {
         return path.stem();
 }
 
+UUID EditorAssetManager::get_asset_id(const std::filesystem::path& path) const {
+    return m_loader->get_id(path);
+}
+
 /*
 std::shared_ptr<IAsset> EditorAssetManager::load_by_id_r(UUID id, const std::string& folder) const {
     std::queue<std::string> pending_directories;

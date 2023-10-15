@@ -9,8 +9,7 @@ std::shared_ptr<EditorCubemapHelper> EditorCubemapHelper::create(std::string nam
 
 // create constructor
 EditorCubemapHelper::EditorCubemapHelper(std::string name) : m_cubemap_name(std::move(name)) {
-    // @TODO.
-    PS_FAIL("Unimplemented")
+    m_faces = {};
 }
 
 std::shared_ptr<EditorCubemapHelper> EditorCubemapHelper::open(const std::filesystem::path& path) {

@@ -10,6 +10,9 @@
 #include "asset/asset.h"
 #include "asset/editor_asset_manager.h"
 
+#include "managers/texture_manager.h"
+
+#include "renderer/backend/renderer.h"
 #include "renderer/backend/shader.h"
 #include "renderer/backend/texture.h"
 
@@ -55,6 +58,10 @@ void AssetInspectorPanel::on_imgui_render() {
     ImGui::End();
 }
 
+#define CUBEMAP_FACE_TEX(face)                                                           \
+    faces.face == Phos::UUID(0) ? Phos::Renderer::texture_manager()->get_white_texture() \
+                                : m_asset_manager->load_by_id_type<Phos::Texture>(faces.face)
+
 void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
     if ((m_selected_asset.has_value() && m_selected_asset->uuid == asset->uuid) || m_locked)
         return;
@@ -85,12 +92,12 @@ void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
 
         const auto faces = m_cubemap_helper->get_faces();
         m_cubemap_face_textures = {
-            m_asset_manager->load_by_id_type<Phos::Texture>(faces.left),
-            m_asset_manager->load_by_id_type<Phos::Texture>(faces.right),
-            m_asset_manager->load_by_id_type<Phos::Texture>(faces.top),
-            m_asset_manager->load_by_id_type<Phos::Texture>(faces.bottom),
-            m_asset_manager->load_by_id_type<Phos::Texture>(faces.front),
-            m_asset_manager->load_by_id_type<Phos::Texture>(faces.back),
+            CUBEMAP_FACE_TEX(left),
+            CUBEMAP_FACE_TEX(right),
+            CUBEMAP_FACE_TEX(top),
+            CUBEMAP_FACE_TEX(bottom),
+            CUBEMAP_FACE_TEX(front),
+            CUBEMAP_FACE_TEX(back),
         };
 
         for (const auto& face_texture : m_cubemap_face_textures) {
