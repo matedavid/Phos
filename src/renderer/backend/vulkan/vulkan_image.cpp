@@ -132,6 +132,20 @@ void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_
 
                 source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
                 destination_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            } else if (old_layout == VK_IMAGE_LAYOUT_GENERAL &&
+                       new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+                barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                source_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            } else if (old_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL &&
+                       new_layout == VK_IMAGE_LAYOUT_GENERAL) {
+                barrier.srcAccessMask = 0;
+                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+
+                source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                destination_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
             } else {
                 PS_FAIL("Unsupported layout transition")
             }
@@ -150,6 +164,8 @@ VkFormat VulkanImage::get_image_format(Format format) {
         return VK_FORMAT_R8G8B8A8_SRGB;
     case Format::R16G16B16A16_SFLOAT:
         return VK_FORMAT_R16G16B16A16_SFLOAT;
+    case Format::R32G32B32A32_SFLOAT:
+        return VK_FORMAT_R32G32B32A32_SFLOAT;
     case Format::D32_SFLOAT:
         return VK_FORMAT_D32_SFLOAT;
     }

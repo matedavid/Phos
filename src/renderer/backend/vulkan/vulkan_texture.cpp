@@ -11,15 +11,26 @@ namespace Phos {
 
 VulkanTexture::VulkanTexture(const std::string& path) {
     // Load image
-    int32_t width, height, channels;
-    stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+    int32_t width, height, channels, type_size;
+    void* pixels;
+    Image::Format format;
+
+    if (stbi_is_hdr(path.c_str())) {
+        pixels = stbi_loadf(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+        type_size = sizeof(float);
+        format = Image::Format::R32G32B32A32_SFLOAT;
+    } else {
+        pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+        type_size = sizeof(stbi_uc);
+        format = Image::Format::R8G8B8A8_SRGB;
+    }
 
     if (!pixels) {
         PS_ERROR("Failed to load image: {}", path);
         return;
     }
 
-    const auto image_size = static_cast<uint32_t>(width * height * 4);
+    const auto image_size = static_cast<uint32_t>(width * height * 4 * type_size);
 
     const auto staging_buffer = VulkanBuffer{
         image_size,
@@ -36,7 +47,7 @@ VulkanTexture::VulkanTexture(const std::string& path) {
         .width = static_cast<uint32_t>(width),
         .height = static_cast<uint32_t>(height),
         .type = VulkanImage::Type::Image2D,
-        .format = VulkanImage::Format::R8G8B8A8_SRGB,
+        .format = format,
         .transfer = true,
     };
     m_image = std::make_shared<VulkanImage>(description);

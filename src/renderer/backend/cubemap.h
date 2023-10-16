@@ -6,6 +6,9 @@
 
 namespace Phos {
 
+// Forward declarations
+class Image;
+
 class Cubemap : public IAsset {
   public:
     struct Faces {
@@ -23,6 +26,9 @@ class Cubemap : public IAsset {
 
     static std::shared_ptr<Cubemap> create(const Faces& faces);
     static std::shared_ptr<Cubemap> create(const Faces& faces, const std::string& directory);
+    static std::shared_ptr<Cubemap> create(const std::string& equirectangular_path);
+
+    [[nodiscard]] virtual std::shared_ptr<Image> get_image() const = 0;
 };
 
 } // namespace Phos

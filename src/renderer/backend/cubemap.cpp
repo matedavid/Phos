@@ -25,4 +25,13 @@ std::shared_ptr<Cubemap> Cubemap::create(const Faces& faces, const std::string& 
     }
 }
 
+std::shared_ptr<Cubemap> Cubemap::create(const std::string& equirectangular_path) {
+    switch (Renderer::graphics_api()) {
+    case GraphicsAPI::Vulkan:
+        return std::dynamic_pointer_cast<Cubemap>(std::make_shared<VulkanCubemap>(equirectangular_path));
+    default:
+        PS_FAIL("Vulkan is the only supported api")
+    }
+}
+
 } // namespace Phos

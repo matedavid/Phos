@@ -36,6 +36,11 @@ ShaderManager::ShaderManager() {
 
     m_builtin_shaders.insert(std::make_pair("ToneMapping", tone_mapping));
     m_builtin_shaders.insert(std::make_pair("Bloom", bloom));
+
+    // Other
+    const auto equirectangular_to_cubemap = Shader::create(SHADER_PATH("EquirectangularToCubemap.Compute.spv"));
+
+    m_builtin_shaders.insert(std::make_pair("EquirectangularToCubemap", equirectangular_to_cubemap));
 }
 
 std::shared_ptr<Shader> ShaderManager::get_builtin_shader(const std::string& name) const {

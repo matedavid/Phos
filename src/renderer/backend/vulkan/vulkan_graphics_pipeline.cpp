@@ -240,6 +240,7 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
 
 void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) {
     const auto native_cubemap = std::dynamic_pointer_cast<VulkanCubemap>(cubemap);
+    const auto native_image = std::dynamic_pointer_cast<VulkanImage>(cubemap->get_image());
 
     const auto info = m_shader->descriptor_info(name);
     PS_ASSERT(info.has_value() && info->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
