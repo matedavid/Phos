@@ -179,18 +179,20 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             Renderer::draw_screen_quad(command_buffer);
 
             // Draw skybox
-            Renderer::bind_graphics_pipeline(command_buffer, m_skybox_pipeline);
+            if (m_skybox_enabled) {
+                Renderer::bind_graphics_pipeline(command_buffer, m_skybox_pipeline);
 
-            glm::mat4 model{1.0f};
-            model = glm::scale(model, glm::vec3(1.0f));
+                glm::mat4 model{1.0f};
+                model = glm::scale(model, glm::vec3(1.0f));
 
-            const auto constants = ModelInfoPushConstant{
-                .model = model,
-                .color = glm::vec4{1.0f},
-            };
-            m_skybox_pipeline->bind_push_constants(command_buffer, "ModelInfoPushConstants", constants);
+                const auto constants = ModelInfoPushConstant{
+                    .model = model,
+                    .color = glm::vec4{1.0f},
+                };
+                m_skybox_pipeline->bind_push_constants(command_buffer, "ModelInfoPushConstants", constants);
 
-            Renderer::submit_static_mesh(command_buffer, m_cube_mesh, m_cube_material);
+                Renderer::submit_static_mesh(command_buffer, m_cube_mesh, m_cube_material);
+            }
 
             Renderer::end_render_pass(command_buffer, m_lighting_pass);
         }
@@ -569,6 +571,14 @@ void DeferredRenderer::init_bloom_pipeline(const BloomConfig& config) {
 }
 
 void DeferredRenderer::init_skybox_pipeline(const EnvironmentConfig& config) {
+    if (config.skybox == nullptr) {
+        m_skybox_enabled = false;
+        m_skybox_pipeline.reset();
+        return;
+    }
+
+    m_skybox_enabled = true;
+
     m_skybox_pipeline = GraphicsPipeline::create(GraphicsPipeline::Description{
         .shader = Renderer::shader_manager()->get_builtin_shader("Skybox"),
         .target_framebuffer = m_lighting_framebuffer,

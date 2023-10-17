@@ -34,11 +34,8 @@ std::shared_ptr<Scene> SceneDeserializer::deserialize(const std::string& path,
     renderer_config.bloom_config.threshold = config_node["bloomConfig"]["threshold"].as<float>();
 
     const auto skybox_id = UUID(config_node["environmentConfig"]["skybox"].as<uint64_t>());
-    if (skybox_id == UUID(0)) {
-        // @TODO: Add default skybox
-    } else {
-        renderer_config.environment_config.skybox = m_asset_manager->load_by_id_type<Phos::Cubemap>(skybox_id);
-    }
+    renderer_config.environment_config.skybox =
+        skybox_id == UUID(0) ? nullptr : m_asset_manager->load_by_id_type<Phos::Cubemap>(skybox_id);
 
     // Load entities
     const auto entities = node["entities"];

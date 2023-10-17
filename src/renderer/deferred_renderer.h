@@ -89,8 +89,9 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<GraphicsPipeline> m_tone_mapping_pipeline;
     std::shared_ptr<RenderPass> m_tone_mapping_pass;
 
-    // Cubemap pipeline
+    // Skybox pipeline
     std::shared_ptr<GraphicsPipeline> m_skybox_pipeline;
+    bool m_skybox_enabled = true;
 
     // Skybox cube
     std::shared_ptr<Mesh> m_cube_mesh;

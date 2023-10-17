@@ -52,7 +52,7 @@ void SceneConfigurationPanel::render_environment_config() {
     ImGui::Text("Skybox:");
     ImGui::SameLine();
 
-    auto skybox_name = config.skybox == nullptr ? "Default" : config.skybox->asset_name;
+    auto skybox_name = config.skybox == nullptr ? "" : config.skybox->asset_name;
     ImGui::InputText("##SkyboxConfigInput", skybox_name.data(), skybox_name.size(), ImGuiInputTextFlags_ReadOnly);
 
     if (ImGui::BeginDragDropTarget()) {
