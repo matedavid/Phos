@@ -9,7 +9,10 @@ std::shared_ptr<EditorCubemapHelper> EditorCubemapHelper::create(std::string nam
 
 // create constructor
 EditorCubemapHelper::EditorCubemapHelper(std::string name) : m_cubemap_name(std::move(name)) {
+    m_type = Type::Faces;
+
     m_faces = {};
+    m_equirectangular_id = Phos::UUID(0);
 }
 
 std::shared_ptr<EditorCubemapHelper> EditorCubemapHelper::open(const std::filesystem::path& path) {
@@ -28,15 +31,25 @@ EditorCubemapHelper::EditorCubemapHelper(const std::filesystem::path& path) : m_
     m_cubemap_id = Phos::UUID(node["id"].as<uint64_t>());
     m_cubemap_name = path.stem();
 
-    const auto& faces_node = node["faces"];
+    const auto cubemap_type = node["type"].as<std::string>();
+    if (cubemap_type == "faces") {
+        m_type = Type::Faces;
 
-    m_faces = {};
-    LOAD_FACE(left);
-    LOAD_FACE(right);
-    LOAD_FACE(top);
-    LOAD_FACE(bottom);
-    LOAD_FACE(front);
-    LOAD_FACE(back);
+        const auto& faces_node = node["faces"];
+
+        m_faces = {};
+        LOAD_FACE(left);
+        LOAD_FACE(right);
+        LOAD_FACE(top);
+        LOAD_FACE(bottom);
+        LOAD_FACE(front);
+        LOAD_FACE(back);
+    } else if (cubemap_type == "equirectangular") {
+        m_type = Type::Equirectangular;
+        m_equirectangular_id = Phos::UUID(node["texture"].as<uint64_t>());
+    } else {
+        PS_FAIL("Cubemap type '{}' is not recognized", cubemap_type)
+    }
 }
 
 void EditorCubemapHelper::update_face(Face face, Phos::UUID id) {
@@ -62,6 +75,14 @@ void EditorCubemapHelper::update_face(Face face, Phos::UUID id) {
     }
 }
 
+void EditorCubemapHelper::update_equirectangular_id(Phos::UUID id) {
+    m_equirectangular_id = id;
+}
+
+void EditorCubemapHelper::change_type(Type type) {
+    m_type = type;
+}
+
 void EditorCubemapHelper::save() const {
     if (!std::filesystem::exists(m_path)) {
         PS_ERROR("Could not save cubemap {} because path is not set", m_cubemap_name);
@@ -79,16 +100,28 @@ void EditorCubemapHelper::save(const std::filesystem::path& path) const {
     out << YAML::Key << "assetType" << YAML::Value << "cubemap";
     out << YAML::Key << "id" << YAML::Value << (uint64_t)m_cubemap_id;
 
-    out << YAML::Key << "faces" << YAML::BeginMap;
+    switch (m_type) {
+    case Type::Faces: {
+        out << YAML::Key << "type" << YAML::Value << "faces";
 
-    out << YAML::Key << "left" << YAML::Value << (uint64_t)m_faces.left;
-    out << YAML::Key << "right" << YAML::Value << (uint64_t)m_faces.right;
-    out << YAML::Key << "top" << YAML::Value << (uint64_t)m_faces.top;
-    out << YAML::Key << "bottom" << YAML::Value << (uint64_t)m_faces.bottom;
-    out << YAML::Key << "front" << YAML::Value << (uint64_t)m_faces.front;
-    out << YAML::Key << "back" << YAML::Value << (uint64_t)m_faces.back;
+        out << YAML::Key << "faces" << YAML::BeginMap;
 
-    out << YAML::EndMap << YAML::EndMap;
+        out << YAML::Key << "left" << YAML::Value << (uint64_t)m_faces.left;
+        out << YAML::Key << "right" << YAML::Value << (uint64_t)m_faces.right;
+        out << YAML::Key << "top" << YAML::Value << (uint64_t)m_faces.top;
+        out << YAML::Key << "bottom" << YAML::Value << (uint64_t)m_faces.bottom;
+        out << YAML::Key << "front" << YAML::Value << (uint64_t)m_faces.front;
+        out << YAML::Key << "back" << YAML::Value << (uint64_t)m_faces.back;
+
+        out << YAML::EndMap;
+    } break;
+    case Type::Equirectangular: {
+        out << YAML::Key << "type" << YAML::Value << "equirectangular";
+        out << YAML::Key << "texture" << YAML::Value << (uint64_t)m_equirectangular_id;
+    } break;
+    }
+
+    out << YAML::EndMap;
 
     std::ofstream output_file(path);
     output_file << out.c_str();

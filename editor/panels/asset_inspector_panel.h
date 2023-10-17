@@ -53,8 +53,14 @@ class AssetInspectorPanel : public IImGuiPanel {
     // Cubemap type
     std::shared_ptr<EditorCubemapHelper> m_cubemap_helper;
 
+    void setup_cubemap_info();
+
     std::vector<std::shared_ptr<Phos::Texture>> m_cubemap_face_textures; // left, right, top, bottom, front, back
     std::vector<ImTextureID> m_cubemap_face_ids;
+
+    std::shared_ptr<Phos::Texture> m_cubemap_equirectangular_texture;
+    ImTextureID m_cubemap_equirectangular_id;
+
 
     // Render functions
     void render_texture_asset() const;

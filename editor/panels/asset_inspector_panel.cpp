@@ -58,9 +58,9 @@ void AssetInspectorPanel::on_imgui_render() {
     ImGui::End();
 }
 
-#define CUBEMAP_FACE_TEX(face)                                                           \
-    faces.face == Phos::UUID(0) ? Phos::Renderer::texture_manager()->get_white_texture() \
-                                : m_asset_manager->load_by_id_type<Phos::Texture>(faces.face)
+#define CUBEMAP_TEX(face)                                                          \
+    face == Phos::UUID(0) ? Phos::Renderer::texture_manager()->get_white_texture() \
+                          : m_asset_manager->load_by_id_type<Phos::Texture>(face)
 
 void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
     if ((m_selected_asset.has_value() && m_selected_asset->uuid == asset->uuid) || m_locked)
@@ -89,23 +89,33 @@ void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
         m_material_helper = EditorMaterialHelper::open(m_selected_asset->path);
     } else if (m_selected_asset->type == Phos::AssetType::Cubemap) {
         m_cubemap_helper = EditorCubemapHelper::open(m_selected_asset->path);
+        setup_cubemap_info();
+    } else {
+        PS_FAIL("Not implemented")
+    }
+}
 
+void AssetInspectorPanel::setup_cubemap_info() {
+    switch (m_cubemap_helper->get_cubemap_type()) {
+    case EditorCubemapHelper::Type::Faces: {
         const auto faces = m_cubemap_helper->get_faces();
         m_cubemap_face_textures = {
-            CUBEMAP_FACE_TEX(left),
-            CUBEMAP_FACE_TEX(right),
-            CUBEMAP_FACE_TEX(top),
-            CUBEMAP_FACE_TEX(bottom),
-            CUBEMAP_FACE_TEX(front),
-            CUBEMAP_FACE_TEX(back),
+            CUBEMAP_TEX(faces.left),
+            CUBEMAP_TEX(faces.right),
+            CUBEMAP_TEX(faces.top),
+            CUBEMAP_TEX(faces.bottom),
+            CUBEMAP_TEX(faces.front),
+            CUBEMAP_TEX(faces.back),
         };
 
         for (const auto& face_texture : m_cubemap_face_textures) {
             m_cubemap_face_ids.push_back(ImGuiImpl::add_texture(face_texture));
         }
-
-    } else {
-        PS_FAIL("Not implemented")
+    } break;
+    case EditorCubemapHelper::Type::Equirectangular: {
+        m_cubemap_equirectangular_texture = CUBEMAP_TEX(m_cubemap_helper->get_equirectangular_id());
+        m_cubemap_equirectangular_id = ImGuiImpl::add_texture(m_cubemap_equirectangular_texture);
+    } break;
     }
 }
 
@@ -214,6 +224,7 @@ void AssetInspectorPanel::render_cubemap_asset() {
     ImGui::Text("%s (Cubemap)", m_cubemap_helper->get_cubemap_name().c_str());
     ImGui::Separator();
 
+    // Helper functions
     const auto cubemap_face_input = [&](const std::string& name, EditorCubemapHelper::Face face) {
         ImGui::TableNextRow();
 
@@ -258,15 +269,93 @@ void AssetInspectorPanel::render_cubemap_asset() {
         ImGui::Image(m_cubemap_face_ids[face_id], {32, 32});
     };
 
+    const auto cubemap_equirectangular_input = [&]() {
+        ImGui::TableNextRow();
+
+        ImGui::AlignTextToFramePadding();
+
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Texture:");
+
+        ImGui::TableSetColumnIndex(1);
+        const std::string id = "##CubemapEquirectangularInput";
+        std::string asset_name = std::filesystem::path(m_cubemap_equirectangular_texture->asset_name).stem();
+
+        ImGui::InputText(id.c_str(), asset_name.data(), ImGuiInputTextFlags_ReadOnly);
+
+        // Tooltip for texture name
+        if (!asset_name.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
+            ImGui::BeginTooltip();
+            ImGui::Text("%s", asset_name.c_str());
+            ImGui::EndTooltip();
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+                const auto uuid = Phos::UUID(*(uint64_t*)payload->Data);
+
+                const auto asset_type = m_asset_manager->get_asset_type(uuid);
+                if (asset_type == Phos::AssetType::Texture) {
+                    m_cubemap_helper->update_equirectangular_id(uuid);
+
+                    const auto texture = m_asset_manager->load_by_id_type<Phos::Texture>(uuid);
+                    m_cubemap_equirectangular_texture = texture;
+                    m_cubemap_equirectangular_id = ImGuiImpl::add_texture(texture);
+                }
+            }
+
+            ImGui::EndDragDropTarget();
+        }
+
+        ImGui::TableSetColumnIndex(2);
+        ImGui::Image(m_cubemap_equirectangular_id, {32, 32});
+    };
+    // ================
+
+    constexpr const char* faces_cubemap_name = "Faces";
+    constexpr const char* equirectangular_cubemap_name = "Equirectangular";
+
+    std::string selected_type;
+
+    const auto cubemap_type = m_cubemap_helper->get_cubemap_type();
+    switch (cubemap_type) {
+    default:
+    case EditorCubemapHelper::Type::Faces:
+        selected_type = faces_cubemap_name;
+        break;
+    case EditorCubemapHelper::Type::Equirectangular:
+        selected_type = equirectangular_cubemap_name;
+        break;
+    }
+
+    if (ImGui::BeginCombo("##CameraTypeCombo", selected_type.c_str())) {
+        if (ImGui::Selectable(faces_cubemap_name, cubemap_type == EditorCubemapHelper::Type::Faces))
+            m_cubemap_helper->change_type(EditorCubemapHelper::Type::Faces);
+
+        if (ImGui::Selectable(equirectangular_cubemap_name, cubemap_type == EditorCubemapHelper::Type::Equirectangular))
+            m_cubemap_helper->change_type(EditorCubemapHelper::Type::Equirectangular);
+
+        ImGui::EndCombo();
+    }
+
+    // Check if type changed
+    if (m_cubemap_helper->get_cubemap_type() != cubemap_type) {
+        setup_cubemap_info();
+    }
+
     if (!ImGui::BeginTable("##CubemapAssetInspector", 3))
         return;
 
-    cubemap_face_input("Left", EditorCubemapHelper::Face::Left);
-    cubemap_face_input("Right", EditorCubemapHelper::Face::Right);
-    cubemap_face_input("Top", EditorCubemapHelper::Face::Top);
-    cubemap_face_input("Bottom", EditorCubemapHelper::Face::Bottom);
-    cubemap_face_input("Front", EditorCubemapHelper::Face::Front);
-    cubemap_face_input("Back", EditorCubemapHelper::Face::Back);
+    if (m_cubemap_helper->get_cubemap_type() == EditorCubemapHelper::Type::Faces) {
+        cubemap_face_input("Left", EditorCubemapHelper::Face::Left);
+        cubemap_face_input("Right", EditorCubemapHelper::Face::Right);
+        cubemap_face_input("Top", EditorCubemapHelper::Face::Top);
+        cubemap_face_input("Bottom", EditorCubemapHelper::Face::Bottom);
+        cubemap_face_input("Front", EditorCubemapHelper::Face::Front);
+        cubemap_face_input("Back", EditorCubemapHelper::Face::Back);
+    } else if (m_cubemap_helper->get_cubemap_type() == EditorCubemapHelper::Type::Equirectangular) {
+        cubemap_equirectangular_input();
+    }
 
     ImGui::EndTable();
 

@@ -26,24 +26,39 @@ class EditorCubemapHelper {
         Back,
     };
 
+    enum class Type {
+        Faces,
+        Equirectangular,
+    };
+
     ~EditorCubemapHelper() = default;
 
     [[nodiscard]] static std::shared_ptr<EditorCubemapHelper> create(std::string name);
     [[nodiscard]] static std::shared_ptr<EditorCubemapHelper> open(const std::filesystem::path& path);
 
     void update_face(Face face, Phos::UUID id);
+    void update_equirectangular_id(Phos::UUID id);
+
+    void change_type(Type type);
+
     void save() const;
     void save(const std::filesystem::path& path) const;
 
     [[nodiscard]] std::string get_cubemap_name() const { return m_cubemap_name; }
+    [[nodiscard]] Type get_cubemap_type() const { return m_type; }
+
     [[nodiscard]] Faces get_faces() const { return m_faces; }
+    [[nodiscard]] Phos::UUID get_equirectangular_id() const { return m_equirectangular_id; }
 
   private:
     std::string m_cubemap_name;
     std::filesystem::path m_path;
     Phos::UUID m_cubemap_id;
 
+    Type m_type;
+
     Faces m_faces;
+    Phos::UUID m_equirectangular_id = Phos::UUID(0);
 
     explicit EditorCubemapHelper(std::string name);
     explicit EditorCubemapHelper(const std::filesystem::path& path);
