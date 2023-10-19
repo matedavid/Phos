@@ -188,6 +188,21 @@ add_executable(PhosApplication
 target_link_libraries(PhosApplication PUBLIC ${PROJECT_NAME})
 
 #
+# Scripting tests
+#
+add_executable(Scripting
+        src/scripting/main.cpp
+)
+
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/mono/lib/)
+    message("Copying mono libraries to: " ${CMAKE_BINARY_DIR}/mono/lib/)
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/lib/ DESTINATION ${CMAKE_BINARY_DIR}/mono/lib/)
+endif()
+
+target_link_libraries(Scripting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/lib/libmono-2.0.so)
+target_include_directories(Scripting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/include/mono-2.0/)
+
+#
 # Tests
 #
 add_executable(tests)
