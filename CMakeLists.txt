@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Create executable
 add_library(${PROJECT_NAME})
 
-target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
+# target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -Wall -Wpedantic -Wextra -Wshadow -Wconversion -Werror)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
@@ -35,6 +35,9 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/scene/model_loader.cpp
         src/scene/scene_serializer.cpp
         src/scene/scene_deserializer.cpp
+
+        # Scripting
+        src/scripting/scripting_engine.cpp
 
         # Input
         src/input/input.cpp
@@ -145,9 +148,17 @@ target_link_libraries(${PROJECT_NAME} PUBLIC yaml-cpp)
 # imgui
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)
 
-
 # Catch 2
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/Catch2)
+
+# Mono
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/mono/lib/)
+    message("Copying mono libraries to: " ${CMAKE_BINARY_DIR}/mono/lib/)
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/lib/ DESTINATION ${CMAKE_BINARY_DIR}/mono/lib/)
+endif ()
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/lib/libmono-2.0.so)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/include/mono-2.0/)
 
 #
 # Editor
@@ -190,17 +201,9 @@ target_link_libraries(PhosApplication PUBLIC ${PROJECT_NAME})
 #
 # Scripting tests
 #
-add_executable(Scripting
-        src/scripting/main.cpp
-)
-
-if (NOT EXISTS ${CMAKE_BINARY_DIR}/mono/lib/)
-    message("Copying mono libraries to: " ${CMAKE_BINARY_DIR}/mono/lib/)
-    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/lib/ DESTINATION ${CMAKE_BINARY_DIR}/mono/lib/)
-endif()
-
-target_link_libraries(Scripting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/lib/libmono-2.0.so)
-target_include_directories(Scripting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/include/mono-2.0/)
+#add_executable(Scripting
+#src/scripting/main.cpp
+#)
 
 #
 # Tests

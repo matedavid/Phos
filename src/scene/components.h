@@ -58,4 +58,9 @@ struct CameraComponent {
     int32_t depth = 0;
 };
 
+struct ScriptComponent {
+    std::string class_name;
+    bool is_initialized = false;
+};
+
 } // namespace Phos
