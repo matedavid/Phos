@@ -2,6 +2,9 @@
 
 #include <fstream>
 
+#include "scripting/class_instance_handle.h"
+
+#include "scene/scene.h"
 #include "scene/entity.h"
 
 namespace Phos {
@@ -31,7 +34,8 @@ static char* read_file_bytes(const std::filesystem::path& path, uint32_t& file_s
     return buffer;
 }
 
-ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path) : m_dll_path(std::move(dll_path)) {
+ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path, std::shared_ptr<Scene> scene)
+      : m_dll_path(std::move(dll_path)) {
     PS_ASSERT(std::filesystem::exists(m_dll_path), "DLL path '{}' does not exist", m_dll_path.string())
 
     //
@@ -67,6 +71,11 @@ ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path) : m_dll_path(st
 
     // Create image
     m_image = mono_assembly_get_image(assembly);
+
+    //
+    // Initialize scene
+    //
+    set_scene(std::move(scene));
 }
 
 ScriptingEngine::~ScriptingEngine() {
@@ -74,47 +83,45 @@ ScriptingEngine::~ScriptingEngine() {
 }
 
 void ScriptingEngine::on_update() {
-    constexpr const char* func_name = "IncrementFloatVar";
+    for (const auto& entity : m_scene->get_entities_with<ScriptComponent>()) {
+        auto& sc = entity.get_component<ScriptComponent>();
+        if (!sc.is_initialized)
+            continue;
 
-    for (const auto& [uuid, ref] : m_entity_to_class_ref) {
-        auto* on_update_method = mono_class_get_method_from_name(ref.klass, func_name, 0);
-
-        MonoObject* exception;
-        mono_runtime_invoke(on_update_method, ref.class_instance, nullptr, &exception);
-
-        // TEST
-        auto* floatField = mono_class_get_field_from_name(ref.klass, "MyPublicFloatVar");
-        float* value;
-        mono_field_get_value(ref.class_instance, floatField, value);
-        fmt::print("Value after ScriptEngine::on_update: {}\n", *value);
+        auto& handle = sc.scripting_instance;
+        handle->invoke_on_update();
     }
 }
 
-void ScriptingEngine::initialize_script_entity(const Entity& entity) {
-    if (!entity.has_component<ScriptComponent>()) {
-        PS_WARNING("Entity {} does not have ScriptComponent", (uint64_t)entity.uuid());
-        return;
+void ScriptingEngine::set_scene(std::shared_ptr<Scene> scene) {
+    m_scene = std::move(scene);
+
+    for (const auto& entity : m_scene->get_entities_with<ScriptComponent>()) {
+        auto& sc = entity.get_component<ScriptComponent>();
+        sc.is_initialized = false;
+
+        auto instance = create_class_instance(sc.class_name);
+        if (instance == nullptr) {
+            PS_ERROR("Failed to create script class instance for class: {}", sc.class_name);
+            continue;
+        }
+
+        sc.scripting_instance = std::move(instance);
+        sc.is_initialized = true;
+
+        sc.scripting_instance->invoke_on_create();
     }
+}
 
-    auto& sc = entity.get_component<ScriptComponent>();
-    if (sc.is_initialized)
-        return;
-
-    auto* klass = mono_class_from_name(m_image, "", sc.class_name.c_str());
+std::shared_ptr<ClassInstanceHandle> ScriptingEngine::create_class_instance(std::string_view class_name) {
+    auto* klass = mono_class_from_name(m_image, "", class_name.data());
     auto* class_instance = mono_object_new(m_app_domain, klass);
     if (class_instance == nullptr) {
-        PS_ERROR("Failed to create script class instance for class: {}", sc.class_name);
-        return;
+        return nullptr;
     }
     mono_runtime_object_init(class_instance);
 
-    const auto class_ref = MonoClassReference{
-        .klass = klass,
-        .class_instance = class_instance,
-    };
-    m_entity_to_class_ref.insert({entity.uuid(), class_ref});
-
-    sc.is_initialized = true;
+    return std::make_shared<ClassInstanceHandle>(klass, class_instance);
 }
 
 } // namespace Phos

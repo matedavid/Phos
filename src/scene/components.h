@@ -12,6 +12,7 @@ namespace Phos {
 // Forward declarations
 class Mesh;
 class Material;
+class ClassInstanceHandle;
 
 struct UUIDComponent {
     UUID uuid;
@@ -60,6 +61,8 @@ struct CameraComponent {
 
 struct ScriptComponent {
     std::string class_name;
+
+    std::shared_ptr<ClassInstanceHandle> scripting_instance = nullptr;
     bool is_initialized = false;
 };
 

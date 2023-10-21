@@ -1,13 +1,13 @@
 public class ExampleClass
 {
-    public float MyPublicFloatVar = 5.0f;
+    public float MyPublicFloatVar = 0.0f;
 
-    public void SetFloatValue(float value)
+    public void OnCreate()
     {
-        MyPublicFloatVar = value;
+        MyPublicFloatVar = 10.0f;
     }
 
-    private void IncrementFloatVar()
+    private void OnUpdate()
     {
         MyPublicFloatVar += 1;
     }

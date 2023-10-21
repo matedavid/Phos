@@ -38,6 +38,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 
         # Scripting
         src/scripting/scripting_engine.cpp
+        src/scripting/class_instance_handle.cpp
 
         # Input
         src/input/input.cpp
