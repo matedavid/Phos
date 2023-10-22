@@ -32,7 +32,7 @@ class ScriptingEngine {
     std::shared_ptr<Scene> m_scene = nullptr;
     std::filesystem::path m_dll_path;
 
-    std::shared_ptr<ClassInstanceHandle> create_class_instance(std::string_view class_name);
+    std::shared_ptr<ClassInstanceHandle> create_class_instance(std::string_view class_name, const Entity& entity);
 };
 
 } // namespace Phos

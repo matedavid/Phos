@@ -1,13 +1,15 @@
-public class ExampleClass
+using PhosEngine;
+
+public class ExampleClass : Entity
 {
     public float MyPublicFloatVar = 0.0f;
 
-    public void OnCreate()
+    public override void OnCreate()
     {
         MyPublicFloatVar = 10.0f;
     }
 
-    private void OnUpdate()
+    public override void OnUpdate()
     {
         MyPublicFloatVar += 1;
     }

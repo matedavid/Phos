@@ -98,9 +98,11 @@ void ScriptingEngine::set_scene(std::shared_ptr<Scene> scene) {
 
     for (const auto& entity : m_scene->get_entities_with<ScriptComponent>()) {
         auto& sc = entity.get_component<ScriptComponent>();
+
+        sc.scripting_instance = nullptr;
         sc.is_initialized = false;
 
-        auto instance = create_class_instance(sc.class_name);
+        auto instance = create_class_instance(sc.class_name, entity);
         if (instance == nullptr) {
             PS_ERROR("Failed to create script class instance for class: {}", sc.class_name);
             continue;
@@ -113,13 +115,25 @@ void ScriptingEngine::set_scene(std::shared_ptr<Scene> scene) {
     }
 }
 
-std::shared_ptr<ClassInstanceHandle> ScriptingEngine::create_class_instance(std::string_view class_name) {
+std::shared_ptr<ClassInstanceHandle> ScriptingEngine::create_class_instance(std::string_view class_name,
+                                                                            const Entity& entity) {
     auto* klass = mono_class_from_name(m_image, "", class_name.data());
     auto* class_instance = mono_object_new(m_app_domain, klass);
     if (class_instance == nullptr) {
         return nullptr;
     }
     mono_runtime_object_init(class_instance);
+
+    // Entity class constructor
+    auto* entity_klass = mono_class_from_name(m_image, "PhosEngine", "Entity");
+    auto* ctor_method = mono_class_get_method_from_name(entity_klass, ".ctor", 1);
+    PS_ASSERT(ctor_method != nullptr, "Entity constructor not found")
+
+    void* args[1];
+    auto id = (uint64_t)entity.uuid();
+    args[0] = &id;
+
+    mono_runtime_invoke(ctor_method, class_instance, args, nullptr);
 
     return std::make_shared<ClassInstanceHandle>(klass, class_instance);
 }
