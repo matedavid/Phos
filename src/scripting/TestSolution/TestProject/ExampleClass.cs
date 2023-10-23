@@ -11,6 +11,7 @@ public class ExampleClass : Entity
 
     public override void OnUpdate()
     {
-        MyPublicFloatVar += 1;
+        // MyPublicFloatVar += 1;
+        MyPublicFloatVar = InternalCalls.Sample();
     }
 }

@@ -41,6 +41,7 @@
     <ItemGroup>
         <Compile Include="ExampleClass.cs" />
         <Compile Include="Entity.cs" />
+        <Compile Include="InternalCalls.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>

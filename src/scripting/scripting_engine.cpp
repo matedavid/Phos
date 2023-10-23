@@ -34,6 +34,10 @@ static char* read_file_bytes(const std::filesystem::path& path, uint32_t& file_s
     return buffer;
 }
 
+static float sample() {
+    return 69.0f;
+}
+
 ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path, std::shared_ptr<Scene> scene)
       : m_dll_path(std::move(dll_path)) {
     PS_ASSERT(std::filesystem::exists(m_dll_path), "DLL path '{}' does not exist", m_dll_path.string())
@@ -76,6 +80,12 @@ ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path, std::shared_ptr
     // Initialize scene
     //
     set_scene(std::move(scene));
+
+    //
+    // InternalCalls
+    //
+
+    mono_add_internal_call("PhosEngine.InternalCalls::Sample", (void*)sample);
 }
 
 ScriptingEngine::~ScriptingEngine() {
