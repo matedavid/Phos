@@ -13,6 +13,7 @@ namespace Phos {
 class Entity;
 class Scene;
 class ScriptComponent;
+class ClassHandle;
 class ClassInstanceHandle;
 
 class ScriptingEngine {
@@ -32,7 +33,11 @@ class ScriptingEngine {
     std::shared_ptr<Scene> m_scene = nullptr;
     std::filesystem::path m_dll_path;
 
-    std::shared_ptr<ClassInstanceHandle> create_class_instance(std::string_view class_name, const Entity& entity);
+    std::shared_ptr<ClassHandle> m_entity_class_handle;
+    std::unordered_map<std::string, std::shared_ptr<ClassHandle>> m_class_handle_cache;
+
+    [[nodiscard]] std::shared_ptr<ClassHandle> create_class_handle(std::string space, std::string class_name);
+    [[nodiscard]] std::shared_ptr<ClassInstanceHandle> create_entity_class_instance(const Entity& entity);
 };
 
 } // namespace Phos

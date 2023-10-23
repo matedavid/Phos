@@ -6,17 +6,20 @@
 
 namespace Phos {
 
+// Forward declarations
+class ClassHandle;
+
 class ClassInstanceHandle {
   public:
-    ClassInstanceHandle(MonoClass* klass, MonoObject* instance);
-    ~ClassInstanceHandle();
+    ClassInstanceHandle(MonoObject* instance, std::shared_ptr<ClassHandle> class_handle);
+    ~ClassInstanceHandle() = default;
 
     void invoke_on_create();
     void invoke_on_update();
 
   private:
-    MonoClass* m_klass;
     MonoObject* m_instance;
+    std::shared_ptr<ClassHandle> m_class_handle;
 
     MonoMethod* m_on_create_method;
     MonoMethod* m_on_update_method;

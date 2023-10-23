@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "scripting/class_instance_handle.h"
+#include "scripting/class_handle.h"
 
 #include "scene/scene.h"
 #include "scene/entity.h"
@@ -77,6 +78,11 @@ ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path, std::shared_ptr
     m_image = mono_assembly_get_image(assembly);
 
     //
+    // Initialize components
+    //
+    m_entity_class_handle = create_class_handle("PhosEngine", "Entity");
+
+    //
     // Initialize scene
     //
     set_scene(std::move(scene));
@@ -112,7 +118,7 @@ void ScriptingEngine::set_scene(std::shared_ptr<Scene> scene) {
         sc.scripting_instance = nullptr;
         sc.is_initialized = false;
 
-        auto instance = create_class_instance(sc.class_name, entity);
+        auto instance = create_entity_class_instance(entity);
         if (instance == nullptr) {
             PS_ERROR("Failed to create script class instance for class: {}", sc.class_name);
             continue;
@@ -125,27 +131,55 @@ void ScriptingEngine::set_scene(std::shared_ptr<Scene> scene) {
     }
 }
 
-std::shared_ptr<ClassInstanceHandle> ScriptingEngine::create_class_instance(std::string_view class_name,
-                                                                            const Entity& entity) {
-    auto* klass = mono_class_from_name(m_image, "", class_name.data());
-    auto* class_instance = mono_object_new(m_app_domain, klass);
-    if (class_instance == nullptr) {
+std::shared_ptr<ClassHandle> ScriptingEngine::create_class_handle(std::string space, std::string class_name) {
+    const auto full_name = space.empty() ? class_name : space + "." + class_name;
+    if (m_class_handle_cache.contains(class_name)) {
+        return m_class_handle_cache[class_name];
+    }
+
+    auto* klass = mono_class_from_name(m_image, space.data(), class_name.data());
+    if (klass == nullptr) {
+        PS_ERROR("No class found with name: '{}.{}'", space, class_name);
         return nullptr;
     }
-    mono_runtime_object_init(class_instance);
 
-    // Entity class constructor
-    auto* entity_klass = mono_class_from_name(m_image, "PhosEngine", "Entity");
-    auto* ctor_method = mono_class_get_method_from_name(entity_klass, ".ctor", 1);
-    PS_ASSERT(ctor_method != nullptr, "Entity constructor not found")
+    auto handle = std::make_shared<ClassHandle>(klass);
+    m_class_handle_cache[full_name] = handle;
+
+    return handle;
+}
+
+std::shared_ptr<ClassInstanceHandle> ScriptingEngine::create_entity_class_instance(const Entity& entity) {
+    if (!entity.has_component<ScriptComponent>()) {
+        PS_ERROR("Entity must have ScriptComponent to create class instance");
+        return nullptr;
+    }
+
+    const auto& sc = entity.get_component<ScriptComponent>();
+
+    const auto class_handle = create_class_handle("", sc.class_name);
+    if (class_handle == nullptr) {
+        PS_ERROR("Could not create class handle for entity: {}", (uint64_t)entity.uuid());
+        return nullptr;
+    }
+
+    auto* class_instance = mono_object_new(m_app_domain, class_handle->handle());
+    if (class_instance == nullptr) {
+        PS_ERROR("Failed to create class instance for entity: {}", (uint64_t)entity.uuid());
+        return nullptr;
+    }
+
+    // Call constructor
+    const auto ctor_method = m_entity_class_handle->get_method(".ctor");
+    PS_ASSERT(ctor_method.has_value(), "No suitable constructor found when creating entity instance")
 
     void* args[1];
     auto id = (uint64_t)entity.uuid();
     args[0] = &id;
 
-    mono_runtime_invoke(ctor_method, class_instance, args, nullptr);
+    mono_runtime_invoke(*ctor_method, class_instance, args, nullptr);
 
-    return std::make_shared<ClassInstanceHandle>(klass, class_instance);
+    return std::make_shared<ClassInstanceHandle>(class_instance, class_handle);
 }
 
 } // namespace Phos
