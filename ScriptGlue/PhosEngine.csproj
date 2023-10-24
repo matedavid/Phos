@@ -39,8 +39,11 @@
         <Reference Include="System.Xml"/>
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="Entity.cs" />
-        <Compile Include="InternalCalls.cs" />
+        <Compile Include="Components\Component.cs" />
+        <Compile Include="Components\TransformComponent.cs" />
+        <Compile Include="Core\Entity.cs" />
+        <Compile Include="Core\InternalCalls.cs" />
+        <Compile Include="Core\Vector3.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <ItemGroup>

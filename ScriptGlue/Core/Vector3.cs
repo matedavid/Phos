@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace PhosEngine
@@ -10,17 +9,16 @@ namespace PhosEngine
         public float Y;
         public float Z;
 
+        public static Vector3 Zero => new Vector3() { X = 0.0f, Y = 0.0f, Z = 0.0f };
+
         public Vector3(float x, float y, float z)
         {
             X = x;
             Y = y;
             Z = z;
         }
-    }
 
-    public static class InternalCalls
-    {
-        [MethodImpl(MethodImplOptions.InternalCall)]
-        public static extern void Get_Position(ulong entityId, out Vector3 position);
+        public static Vector3 operator +(Vector3 a, Vector3 b) => new Vector3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+        public static Vector3 operator -(Vector3 a, Vector3 b) => new Vector3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
     }
 }

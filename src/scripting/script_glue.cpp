@@ -12,7 +12,12 @@ namespace Phos {
 static std::shared_ptr<Scene> s_scene;
 
 void ScriptGlue::initialize() {
-    ADD_INTERNAL_CALL(Get_Position);
+    ADD_INTERNAL_CALL(TransformComponent_GetPosition);
+    ADD_INTERNAL_CALL(TransformComponent_SetPosition);
+    ADD_INTERNAL_CALL(TransformComponent_GetScale);
+    ADD_INTERNAL_CALL(TransformComponent_SetScale);
+    ADD_INTERNAL_CALL(TransformComponent_GetRotation);
+    ADD_INTERNAL_CALL(TransformComponent_SetRotation);
 }
 
 void ScriptGlue::shutdown() {
@@ -26,9 +31,35 @@ void ScriptGlue::set_scene(std::shared_ptr<Scene> scene) {
 //
 // Internal calls
 //
-void ScriptGlue::Get_Position(uint64_t id, glm::vec3* out) {
+
+void ScriptGlue::TransformComponent_GetPosition(uint64_t id, glm::vec3* out) {
     const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
     *out = entity.get_component<TransformComponent>().position;
+}
+
+void ScriptGlue::TransformComponent_SetPosition(uint64_t id, glm::vec3* value) {
+    const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
+    entity.get_component<TransformComponent>().position = *value;
+}
+
+void ScriptGlue::TransformComponent_GetScale(uint64_t id, glm::vec3* out) {
+    const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
+    *out = entity.get_component<TransformComponent>().scale;
+}
+
+void ScriptGlue::TransformComponent_SetScale(uint64_t id, glm::vec3* value) {
+    const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
+    entity.get_component<TransformComponent>().scale = *value;
+}
+
+void ScriptGlue::TransformComponent_GetRotation(uint64_t id, glm::vec3* out) {
+    const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
+    *out = entity.get_component<TransformComponent>().rotation;
+}
+
+void ScriptGlue::TransformComponent_SetRotation(uint64_t id, glm::vec3* value) {
+    const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
+    entity.get_component<TransformComponent>().rotation = *value;
 }
 
 } // namespace Phos

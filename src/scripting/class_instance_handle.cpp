@@ -31,14 +31,6 @@ static void print_fields(MonoClass* klass) {
 void ClassInstanceHandle::invoke_on_update() {
     MonoObject* exception;
     mono_runtime_invoke(m_on_update_method, m_instance, nullptr, &exception);
-
-    // TEST
-    auto* floatField = mono_class_get_field_from_name(m_class_handle->handle(), "MyPublicFloatVar");
-    float* value;
-    mono_field_get_value(m_instance, floatField, value);
-    fmt::print("Value after ScriptEngine::on_update: {}\n", *value);
-
-    // print_fields(m_klass);
 }
 
 } // namespace Phos
