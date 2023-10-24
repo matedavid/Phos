@@ -49,36 +49,38 @@ ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path, std::shared_ptr
     m_root_domain = mono_jit_init("PhosScriptEngine");
     PS_ASSERT(m_root_domain, "Failed to Initialize Mono Runtime")
 
+    const auto load_mono_assembly =
+        [](const std::filesystem::path& path, const std::string& name, MonoDomain*& domain, MonoImage*& image) {
+            domain = mono_domain_create_appdomain(const_cast<char*>(name.c_str()), nullptr);
+            mono_domain_set(domain, true);
+
+            MonoImageOpenStatus status;
+            image = mono_image_open_full(path.c_str(), &status, 0);
+
+            if (status != MONO_IMAGE_OK) {
+                const char* errorMessage = mono_image_strerror(status);
+                PS_FAIL(errorMessage)
+            }
+
+            auto* assembly = mono_assembly_load_from_full(image, path.c_str(), &status, 0);
+            mono_image_close(image);
+
+            // Create image
+            image = mono_assembly_get_image(assembly);
+        };
+
+    // Create core domain
+    const std::filesystem::path CORE_DLL_PATH = "../ScriptGlue/bin/Debug/PhosEngine.dll";
+    load_mono_assembly(CORE_DLL_PATH, "CoreDomain", m_core_domain, m_core_image);
+
     // Create app domain
-    m_app_domain = mono_domain_create_appdomain(const_cast<char*>("PhosScriptDomain"), nullptr);
-    mono_domain_set(m_app_domain, true);
-
-    // Load assembly
-    uint32_t file_size;
-    auto* file_data = read_file_bytes(m_dll_path, file_size);
-    PS_ASSERT(file_data != nullptr, "Could not open file: {}", m_dll_path.string())
-
-    MonoImageOpenStatus status;
-    auto* image = mono_image_open_from_data_full(file_data, file_size, 1, &status, 0);
-
-    if (status != MONO_IMAGE_OK) {
-        const char* errorMessage = mono_image_strerror(status);
-        PS_FAIL(errorMessage)
-    }
-
-    auto* assembly = mono_assembly_load_from_full(image, m_dll_path.c_str(), &status, 0);
-    mono_image_close(image);
-
-    delete[] file_data;
-
-    // Create image
-    m_image = mono_assembly_get_image(assembly);
+    load_mono_assembly(m_dll_path, "AppDomain", m_app_domain, m_app_image);
 
     //
     // Initialize components
     //
     ScriptGlue::initialize();
-    m_entity_class_handle = create_class_handle("PhosEngine", "Entity");
+    m_entity_class_handle = create_class_handle("PhosEngine", "Entity", m_core_image);
 
     //
     // Initialize scene
@@ -125,15 +127,17 @@ void ScriptingEngine::set_scene(std::shared_ptr<Scene> scene) {
     }
 }
 
-std::shared_ptr<ClassHandle> ScriptingEngine::create_class_handle(std::string space, std::string class_name) {
+std::shared_ptr<ClassHandle> ScriptingEngine::create_class_handle(std::string space,
+                                                                  std::string class_name,
+                                                                  MonoImage* image) {
     const auto full_name = space.empty() ? class_name : space + "." + class_name;
     if (m_class_handle_cache.contains(class_name)) {
         return m_class_handle_cache[class_name];
     }
 
-    auto* klass = mono_class_from_name(m_image, space.data(), class_name.data());
+    auto* klass = mono_class_from_name(image, space.data(), class_name.data());
     if (klass == nullptr) {
-        PS_ERROR("No class found with name: '{}.{}'", space, class_name);
+        PS_ERROR("No class found with name: '{}'", full_name);
         return nullptr;
     }
 
@@ -151,7 +155,7 @@ std::shared_ptr<ClassInstanceHandle> ScriptingEngine::create_entity_class_instan
 
     const auto& sc = entity.get_component<ScriptComponent>();
 
-    const auto class_handle = create_class_handle("", sc.class_name);
+    const auto class_handle = create_class_handle("", sc.class_name, m_app_image);
     if (class_handle == nullptr) {
         PS_ERROR("Could not create class handle for entity: {}", (uint64_t)entity.uuid());
         return nullptr;
