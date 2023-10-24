@@ -4,6 +4,7 @@
 
 #include "scripting/class_instance_handle.h"
 #include "scripting/class_handle.h"
+#include "scripting/script_glue.h"
 
 #include "scene/scene.h"
 #include "scene/entity.h"
@@ -33,10 +34,6 @@ static char* read_file_bytes(const std::filesystem::path& path, uint32_t& file_s
 
     file_size = size;
     return buffer;
-}
-
-static float sample() {
-    return 69.0f;
 }
 
 ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path, std::shared_ptr<Scene> scene)
@@ -80,21 +77,17 @@ ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path, std::shared_ptr
     //
     // Initialize components
     //
+    ScriptGlue::initialize();
     m_entity_class_handle = create_class_handle("PhosEngine", "Entity");
 
     //
     // Initialize scene
     //
     set_scene(std::move(scene));
-
-    //
-    // InternalCalls
-    //
-
-    mono_add_internal_call("PhosEngine.InternalCalls::Sample", (void*)sample);
 }
 
 ScriptingEngine::~ScriptingEngine() {
+    ScriptGlue::shutdown();
     mono_jit_cleanup(m_root_domain);
 }
 
@@ -111,6 +104,7 @@ void ScriptingEngine::on_update() {
 
 void ScriptingEngine::set_scene(std::shared_ptr<Scene> scene) {
     m_scene = std::move(scene);
+    ScriptGlue::set_scene(m_scene);
 
     for (const auto& entity : m_scene->get_entities_with<ScriptComponent>()) {
         auto& sc = entity.get_component<ScriptComponent>();
@@ -170,14 +164,14 @@ std::shared_ptr<ClassInstanceHandle> ScriptingEngine::create_entity_class_instan
     }
 
     // Call constructor
-    const auto ctor_method = m_entity_class_handle->get_method(".ctor");
-    PS_ASSERT(ctor_method.has_value(), "No suitable constructor found when creating entity instance")
+    auto* ctor_method = mono_class_get_method_from_name(m_entity_class_handle->handle(), ".ctor", 1);
+    PS_ASSERT(ctor_method != nullptr, "No suitable constructor found when creating entity instance")
 
     void* args[1];
     auto id = (uint64_t)entity.uuid();
     args[0] = &id;
 
-    mono_runtime_invoke(*ctor_method, class_instance, args, nullptr);
+    mono_runtime_invoke(ctor_method, class_instance, args, nullptr);
 
     return std::make_shared<ClassInstanceHandle>(class_instance, class_handle);
 }

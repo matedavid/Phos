@@ -11,7 +11,7 @@ public class ExampleClass : Entity
 
     public override void OnUpdate()
     {
-        // MyPublicFloatVar += 1;
-        MyPublicFloatVar = InternalCalls.Sample();
+        InternalCalls.Get_Position(Id, out Vector3 pos);
+        MyPublicFloatVar = pos.Z;
     }
 }
