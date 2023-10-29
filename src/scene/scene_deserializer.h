@@ -5,7 +5,7 @@
 // Forward declarations
 namespace YAML {
 class Node;
-};
+}
 
 namespace Phos {
 
@@ -20,9 +20,6 @@ class SceneDeserializer {
 
     [[nodiscard]] static std::shared_ptr<Scene> deserialize(const std::string& path,
                                                             const std::shared_ptr<AssetManagerBase>& asset_manager);
-
-  private:
-    static void deserialize_entity(const YAML::Node& node, Entity& entity);
 };
 
 } // namespace Phos

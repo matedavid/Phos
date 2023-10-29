@@ -30,6 +30,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/asset/model_asset.cpp
         src/asset/runtime_asset_manager.cpp
         src/asset/editor_asset_manager.cpp
+        src/asset/prefab_loader.cpp
 
         # Scene
         src/scene/registry.cpp
@@ -37,6 +38,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/scene/model_loader.cpp
         src/scene/scene_serializer.cpp
         src/scene/scene_deserializer.cpp
+        src/scene/entity_deserializer.cpp
 
         # Scripting
         src/scripting/scripting_engine.cpp
