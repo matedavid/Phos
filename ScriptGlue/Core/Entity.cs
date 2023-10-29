@@ -1,17 +1,21 @@
-using System.Runtime.Remoting.Metadata.W3cXsd2001;
-using PhosEngine;
+using System;
 
 namespace PhosEngine
 {
-    public abstract class Entity
+    public class Entity
     {
         internal readonly ulong Id;
 
         public Entity() => Id = 0;
         public Entity(ulong id) => Id = id;
 
-        public abstract void OnCreate();
-        public abstract void OnUpdate();
+        public virtual void OnCreate()
+        {
+        }
+
+        public virtual void OnUpdate()
+        {
+        }
 
         public TransformComponent Transform => GetComponent<TransformComponent>();
 
@@ -22,6 +26,17 @@ namespace PhosEngine
             component.Entity = this;
 
             return component;
+        }
+
+        protected Entity Instantiate(ulong prefabId)
+        {
+            InternalCalls.Entity_Instantiate(prefabId, out var id);
+            return new Entity(id);
+        }
+
+        protected void Destroy(Entity entity)
+        {
+            InternalCalls.Entity_Destroy(entity.Id);
         }
     }
 }

@@ -9,14 +9,24 @@ namespace Phos {
 
 // Forward declarations
 class Scene;
+class AssetManagerBase;
 
 class ScriptGlue {
   public:
     static void initialize();
     static void shutdown();
+
     static void set_scene(std::shared_ptr<Scene> scene);
+    static void set_asset_manager(std::shared_ptr<AssetManagerBase> asset_manager);
 
   private:
+    // region Entity
+
+    static void Entity_Instantiate(uint64_t prefab_asset_id, uint64_t* id);
+    static void Entity_Destroy(uint64_t id);
+
+    // endregion
+
     // region TransformComponent
 
     static void TransformComponent_GetPosition(uint64_t id, glm::vec3* out);

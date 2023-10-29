@@ -4,6 +4,16 @@ namespace PhosEngine
 {
     internal static class InternalCalls
     {
+        #region Entity
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Entity_Instantiate(ulong prefabId, out ulong entityId);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Entity_Destroy(ulong entityId);
+
+        #endregion
+
         #region TransformComponent
 
         [MethodImpl(MethodImplOptions.InternalCall)]

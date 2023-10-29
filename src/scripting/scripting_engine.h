@@ -12,13 +12,16 @@ namespace Phos {
 // Forward declarations
 class Entity;
 class Scene;
+class AssetManagerBase;
 class ScriptComponent;
 class ClassHandle;
 class ClassInstanceHandle;
 
 class ScriptingEngine {
   public:
-    explicit ScriptingEngine(std::filesystem::path dll_path, std::shared_ptr<Scene> scene);
+    explicit ScriptingEngine(std::filesystem::path dll_path,
+                             std::shared_ptr<Scene> scene,
+                             std::shared_ptr<AssetManagerBase> asset_manager);
     ~ScriptingEngine();
 
     void on_update();
@@ -34,7 +37,9 @@ class ScriptingEngine {
     MonoDomain* m_app_domain{};
     MonoImage* m_app_image{};
 
-    std::shared_ptr<Scene> m_scene = nullptr;
+    std::shared_ptr<Scene> m_scene;
+    std::shared_ptr<AssetManagerBase> m_asset_manager;
+
     std::filesystem::path m_dll_path;
 
     std::shared_ptr<ClassHandle> m_entity_class_handle;

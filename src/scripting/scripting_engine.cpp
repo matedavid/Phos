@@ -11,8 +11,10 @@
 
 namespace Phos {
 
-ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path, std::shared_ptr<Scene> scene)
-      : m_dll_path(std::move(dll_path)) {
+ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path,
+                                 std::shared_ptr<Scene> scene,
+                                 std::shared_ptr<AssetManagerBase> asset_manager)
+      : m_asset_manager(std::move(asset_manager)), m_dll_path(std::move(dll_path)) {
     PS_ASSERT(std::filesystem::exists(m_dll_path), "DLL path '{}' does not exist", m_dll_path.string())
 
     //
@@ -55,6 +57,8 @@ ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path, std::shared_ptr
     // Initialize components
     //
     ScriptGlue::initialize();
+    ScriptGlue::set_asset_manager(m_asset_manager);
+
     m_entity_class_handle = create_class_handle("PhosEngine", "Entity", m_core_image);
 
     //
