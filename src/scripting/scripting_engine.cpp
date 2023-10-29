@@ -11,31 +11,6 @@
 
 namespace Phos {
 
-static char* read_file_bytes(const std::filesystem::path& path, uint32_t& file_size) {
-    std::ifstream stream(path, std::ios::binary | std::ios::ate);
-
-    if (!stream) {
-        // Failed to open the file
-        return nullptr;
-    }
-
-    std::streampos end = stream.tellg();
-    stream.seekg(0, std::ios::beg);
-    uint32_t size = end - stream.tellg();
-
-    if (size == 0) {
-        // File is empty
-        return nullptr;
-    }
-
-    char* buffer = new char[size];
-    stream.read((char*)buffer, size);
-    stream.close();
-
-    file_size = size;
-    return buffer;
-}
-
 ScriptingEngine::ScriptingEngine(std::filesystem::path dll_path, std::shared_ptr<Scene> scene)
       : m_dll_path(std::move(dll_path)) {
     PS_ASSERT(std::filesystem::exists(m_dll_path), "DLL path '{}' does not exist", m_dll_path.string())
@@ -168,14 +143,14 @@ std::shared_ptr<ClassInstanceHandle> ScriptingEngine::create_entity_class_instan
     }
 
     // Call constructor
-    auto* ctor_method = mono_class_get_method_from_name(m_entity_class_handle->handle(), ".ctor", 1);
-    PS_ASSERT(ctor_method != nullptr, "No suitable constructor found when creating entity instance")
+    const auto ctor_method = m_entity_class_handle->get_method(".ctor", 1);
+    PS_ASSERT(ctor_method.has_value(), "No suitable constructor found when creating entity instance")
 
     void* args[1];
     auto id = (uint64_t)entity.uuid();
     args[0] = &id;
 
-    mono_runtime_invoke(ctor_method, class_instance, args, nullptr);
+    mono_runtime_invoke(*ctor_method, class_instance, args, nullptr);
 
     return std::make_shared<ClassInstanceHandle>(class_instance, class_handle);
 }

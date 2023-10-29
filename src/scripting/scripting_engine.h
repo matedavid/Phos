@@ -26,13 +26,13 @@ class ScriptingEngine {
     void set_scene(std::shared_ptr<Scene> scene);
 
   private:
-    MonoDomain* m_root_domain;
+    MonoDomain* m_root_domain{};
 
-    MonoDomain* m_core_domain;
-    MonoImage* m_core_image;
+    MonoDomain* m_core_domain{};
+    MonoImage* m_core_image{};
 
-    MonoDomain* m_app_domain;
-    MonoImage* m_app_image;
+    MonoDomain* m_app_domain{};
+    MonoImage* m_app_image{};
 
     std::shared_ptr<Scene> m_scene = nullptr;
     std::filesystem::path m_dll_path;
