@@ -14,6 +14,16 @@ namespace PhosEngine
 
         #endregion
 
+        #region Input
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Input_IsKeyDown(uint key, out bool isDown);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Input_IsMouseButtonDown(uint mouseButton, out bool isDown);
+
+        #endregion
+
         #region TransformComponent
 
         [MethodImpl(MethodImplOptions.InternalCall)]

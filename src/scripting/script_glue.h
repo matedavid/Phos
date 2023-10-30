@@ -27,6 +27,13 @@ class ScriptGlue {
 
     // endregion
 
+    // region Input
+
+    static void Input_IsKeyDown(uint32_t key, bool* is_down);
+    static void Input_IsMouseButtonDown(uint32_t mouse_button, bool* is_down);
+
+    // endregion
+
     // region TransformComponent
 
     static void TransformComponent_GetPosition(uint64_t id, glm::vec3* out);

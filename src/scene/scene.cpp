@@ -18,6 +18,7 @@ Scene::Scene(std::string name) : m_name(std::move(name)) {
     m_registry->register_component<Phos::MeshRendererComponent>();
     m_registry->register_component<Phos::LightComponent>();
     m_registry->register_component<Phos::CameraComponent>();
+    m_registry->register_component<Phos::ScriptComponent>();
 }
 
 Scene::~Scene() {

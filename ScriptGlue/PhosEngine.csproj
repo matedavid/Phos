@@ -44,6 +44,8 @@
         <Compile Include="Core\Entity.cs" />
         <Compile Include="Core\InternalCalls.cs" />
         <Compile Include="Core\Vector3.cs" />
+        <Compile Include="Input\Input.cs" />
+        <Compile Include="Input\Keycodes.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <ItemGroup>
