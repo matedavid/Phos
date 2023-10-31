@@ -24,8 +24,7 @@ class ScriptingEngine {
                              std::shared_ptr<AssetManagerBase> asset_manager);
     ~ScriptingEngine();
 
-    void on_update();
-
+    void on_update(double delta_time);
     void set_scene(std::shared_ptr<Scene> scene);
 
   private:

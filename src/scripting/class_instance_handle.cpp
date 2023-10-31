@@ -7,7 +7,7 @@ namespace Phos {
 ClassInstanceHandle::ClassInstanceHandle(MonoObject* instance, std::shared_ptr<ClassHandle> class_handle)
       : m_instance(instance), m_class_handle(std::move(class_handle)) {
     m_on_create_method = *m_class_handle->get_method("OnCreate");
-    m_on_update_method = *m_class_handle->get_method("OnUpdate");
+    m_on_update_method = *m_class_handle->get_method("OnUpdate", 1);
 }
 
 void ClassInstanceHandle::invoke_on_create() {
@@ -28,9 +28,14 @@ static void print_fields(MonoClass* klass) {
     }
 }
 
-void ClassInstanceHandle::invoke_on_update() {
+void ClassInstanceHandle::invoke_on_update(double delta_time) {
+    auto dt = static_cast<float>(delta_time); // ScriptGlue works with floats
+
+    void* args[1];
+    args[0] = &dt;
+
     MonoObject* exception;
-    mono_runtime_invoke(m_on_update_method, m_instance, nullptr, &exception);
+    mono_runtime_invoke(m_on_update_method, m_instance, args, &exception);
 }
 
 } // namespace Phos

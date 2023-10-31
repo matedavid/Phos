@@ -15,7 +15,7 @@ class ClassInstanceHandle {
     ~ClassInstanceHandle() = default;
 
     void invoke_on_create();
-    void invoke_on_update();
+    void invoke_on_update(double delta_time);
 
   private:
     MonoObject* m_instance;

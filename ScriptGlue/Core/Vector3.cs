@@ -20,5 +20,14 @@ namespace PhosEngine
 
         public static Vector3 operator +(Vector3 a, Vector3 b) => new Vector3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
         public static Vector3 operator -(Vector3 a, Vector3 b) => new Vector3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+
+        public static Vector3 operator +(Vector3 a, float b) => new Vector3(a.X + b, a.Y + b, a.Z + b);
+        public static Vector3 operator +(float b, Vector3 a) => new Vector3(a.X + b, a.Y + b, a.Z + b);
+
+        public static Vector3 operator -(Vector3 a, float b) => new Vector3(a.X - b, a.Y - b, a.Z - b);
+        public static Vector3 operator -(float b, Vector3 a) => new Vector3(a.X - b, a.Y - b, a.Z - b);
+
+        public static Vector3 operator *(Vector3 a, float b) => new Vector3(a.X * b, a.Y * b, a.Z * b);
+        public static Vector3 operator *(float b, Vector3 a) => new Vector3(a.X * b, a.Y * b, a.Z * b);
     }
 }

@@ -72,14 +72,14 @@ ScriptingEngine::~ScriptingEngine() {
     mono_jit_cleanup(m_root_domain);
 }
 
-void ScriptingEngine::on_update() {
+void ScriptingEngine::on_update(double delta_time) {
     for (const auto& entity : m_scene->get_entities_with<ScriptComponent>()) {
         auto& sc = entity.get_component<ScriptComponent>();
         if (!sc.is_initialized)
             continue;
 
         auto& handle = sc.scripting_instance;
-        handle->invoke_on_update();
+        handle->invoke_on_update(delta_time);
     }
 }
 

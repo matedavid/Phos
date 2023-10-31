@@ -13,7 +13,7 @@ namespace PhosEngine
         {
         }
 
-        public virtual void OnUpdate()
+        public virtual void OnUpdate(float deltaTime)
         {
         }
 
