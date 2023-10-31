@@ -167,6 +167,9 @@ endif ()
 target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/lib/libmono-2.0.so)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/include/mono-2.0/)
 
+# nativefiledialog
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog)
+
 #
 # Editor
 #
@@ -195,6 +198,7 @@ target_link_libraries(PhosEditor PUBLIC ${PROJECT_NAME})
 target_link_libraries(PhosEditor PRIVATE imgui)
 target_link_libraries(PhosEditor PRIVATE imgui_impl_glfw)
 target_link_libraries(PhosEditor PRIVATE imgui_impl_vulkan)
+target_link_libraries(PhosEditor PRIVATE nativefiledialog)
 
 #
 # Application
@@ -204,13 +208,6 @@ add_executable(PhosApplication
 )
 
 target_link_libraries(PhosApplication PUBLIC ${PROJECT_NAME})
-
-#
-# Scripting tests
-#
-#add_executable(Scripting
-#src/scripting/main.cpp
-#)
 
 #
 # Tests

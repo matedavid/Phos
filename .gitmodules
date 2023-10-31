@@ -25,3 +25,6 @@
 [submodule "vendor/mono"]
 	path = vendor/mono
 	url = git@github.com:mono/mono.git
+[submodule "vendor/nativefiledialog"]
+	path = vendor/nativefiledialog
+	url = git@github.com:mlabbe/nativefiledialog.git
