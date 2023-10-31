@@ -13,6 +13,7 @@
 
 #include "asset/asset_manager.h"
 #include "asset/model_asset.h"
+#include "asset/prefab_asset.h"
 
 #include "renderer/backend/renderer.h"
 
@@ -36,8 +37,10 @@ static AssetType string_to_asset_type(const std::string& str) {
         return AssetType::Mesh;
     else if (str == "model")
         return AssetType::Model;
+    else if (str == "prefab")
+        return AssetType::Prefab;
 
-    PS_FAIL("Not valid asset type")
+    PS_FAIL("Asset type: {} is not valid", str)
 }
 
 #define REGISTER_PARSER(Parser) m_parsers.push_back(std::make_unique<Parser>(m_manager))
@@ -49,6 +52,7 @@ AssetLoader::AssetLoader(AssetManagerBase* manager) : m_manager(manager) {
     REGISTER_PARSER(MaterialParser);
     REGISTER_PARSER(MeshParser);
     REGISTER_PARSER(ModelParser);
+    REGISTER_PARSER(PrefabParser);
 }
 
 UUID AssetLoader::get_id(const std::string& path) const {
@@ -335,6 +339,18 @@ ModelAsset::Node* ModelParser::parse_node_r(const YAML::Node& node) const {
     }
 
     return n;
+}
+
+//
+// PrefabParser
+//
+
+std::shared_ptr<IAsset> PrefabParser::parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) {
+    // @TODO: Should probably rethink this approach of loading prefabs...
+    std::stringstream ss;
+    ss << node["components"];
+
+    return std::make_shared<PrefabAsset>(ss.str());
 }
 
 } // namespace Phos

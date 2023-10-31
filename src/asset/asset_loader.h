@@ -105,4 +105,15 @@ class ModelParser : public IAssetParser {
     [[nodiscard]] ModelAsset::Node* parse_node_r(const YAML::Node& node) const;
 };
 
+class PrefabParser : public IAssetParser {
+  public:
+    explicit PrefabParser(AssetManagerBase* manager) : m_manager(manager) {}
+
+    [[nodiscard]] AssetType type() override { return AssetType::Prefab; }
+    std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
+
+  private:
+    AssetManagerBase* m_manager;
+};
+
 } // namespace Phos
