@@ -50,8 +50,15 @@ class ContentBrowserPanel : public IImGuiPanel {
     std::optional<std::size_t> m_partial_select_idx;
     std::optional<std::size_t> m_selected_asset_idx;
 
+    std::optional<std::size_t> m_renaming_asset_idx;
+    std::string m_renaming_asset_tmp_name;
+
+    void display_asset(const EditorAsset& asset, std::size_t asset_idx);
+
     void update();
     [[nodiscard]] std::vector<std::string> get_path_components() const;
+
+    void rename_currently_renaming_asset();
 
     void create_material(const std::string& name);
     void create_cubemap(const std::string& name);
