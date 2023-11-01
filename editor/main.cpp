@@ -5,6 +5,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include <nfd.h>
+
 #include "imgui/imgui_impl.h"
 
 #include "core/entry_point.h"
@@ -42,37 +44,11 @@ constexpr uint32_t HEIGHT = 960;
 class EditorLayer : public Phos::Layer {
   public:
     EditorLayer() {
-        m_project = Phos::Project::open("../projects/project1/project1.psproj");
-        m_renderer = std::make_shared<Phos::DeferredRenderer>(m_project->scene(), m_project->scene()->config());
-
         // Initialize ImGui backend
         ImGuiImpl::initialize(Phos::Application::instance()->get_window());
 
-        // Editor State Manager
-        m_state_manager = std::make_shared<EditorStateManager>();
-
-        const auto editor_asset_manager =
-            std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
-        PS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager")
-
-        m_asset_watcher = std::make_unique<AssetWatcher>(m_project->scene(), m_renderer, editor_asset_manager);
-
-        // Panels
-        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_project->scene(), m_state_manager);
-        m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_project->scene());
-        m_components_panel = std::make_unique<ComponentsPanel>("Components", m_project->scene(), editor_asset_manager);
-        m_content_browser_panel = std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager);
-        m_asset_inspector_panel = std::make_unique<AssetInspectorPanel>("Inspector", editor_asset_manager);
-        m_scene_configuration_panel = std::make_unique<SceneConfigurationPanel>(
-            "Scene Configuration", m_project->scene()->config(), editor_asset_manager);
-
-        m_asset_inspector_panel->set_asset_modified_callback(
-            [&](const Phos::UUID& id) { m_asset_watcher->asset_modified(id); });
-
-        m_scene_configuration_panel->set_scene_config_updated_callback([&](Phos::SceneRendererConfig config) {
-            m_project->scene()->config() = std::move(config);
-            m_renderer->change_config(m_project->scene()->config());
-        });
+        // Open example project
+        open_project("../projects/project1/project1.psproj");
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
@@ -145,7 +121,7 @@ class EditorLayer : public Phos::Layer {
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("Open Project...", "Ctrl+O"))
-                    open_project();
+                    open_project_dialog();
 
                 if (ImGui::MenuItem("Save Project", "Ctrl+S"))
                     save_project();
@@ -263,9 +239,49 @@ class EditorLayer : public Phos::Layer {
 
     std::shared_ptr<EditorStateManager> m_state_manager;
 
-    void open_project() {
-        // TODO:
-        fmt::print("Open new project...\n");
+    void open_project(const std::filesystem::path& path) {
+        m_project = Phos::Project::open(path);
+        m_renderer = std::make_shared<Phos::DeferredRenderer>(m_project->scene(), m_project->scene()->config());
+
+        // Editor State Manager
+        m_state_manager = std::make_shared<EditorStateManager>();
+
+        const auto editor_asset_manager =
+            std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
+        PS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager")
+
+        m_asset_watcher = std::make_unique<AssetWatcher>(m_project->scene(), m_renderer, editor_asset_manager);
+
+        // Panels
+        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_project->scene(), m_state_manager);
+        m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_project->scene());
+        m_components_panel = std::make_unique<ComponentsPanel>("Components", m_project->scene(), editor_asset_manager);
+        m_content_browser_panel = std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager);
+        m_asset_inspector_panel = std::make_unique<AssetInspectorPanel>("Inspector", editor_asset_manager);
+        m_scene_configuration_panel = std::make_unique<SceneConfigurationPanel>(
+            "Scene Configuration", m_project->scene()->config(), editor_asset_manager);
+
+        m_asset_inspector_panel->set_asset_modified_callback(
+            [&](const Phos::UUID& id) { m_asset_watcher->asset_modified(id); });
+
+        m_scene_configuration_panel->set_scene_config_updated_callback([&](Phos::SceneRendererConfig config) {
+            m_project->scene()->config() = std::move(config);
+            m_renderer->change_config(m_project->scene()->config());
+        });
+    }
+
+    void open_project_dialog() {
+        nfdchar_t* out_path = nullptr;
+        const auto result = NFD_OpenDialog("psproj", nullptr, &out_path);
+
+        if (result == NFD_OKAY) {
+            const auto& path = std::filesystem::path(out_path);
+            if (std::filesystem::exists(path) && path.extension() == ".psproj") {
+                open_project(path);
+            }
+        } else if (result == NFD_ERROR) {
+            PS_ERROR("[EDITOR] Error opening dialog when opening project: {}", NFD_GetError());
+        }
     }
 
     void save_project() { Phos::SceneSerializer::serialize(m_project->scene(), "../projects/project1/scene.pssc"); }
