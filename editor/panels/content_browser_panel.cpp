@@ -140,7 +140,11 @@ void ContentBrowserPanel::on_imgui_render() {
             }
 
             if (ImGui::MenuItem("Delete")) {
-                // @TODO:
+                // @TODO: Should ask user for confirmation
+                if (std::filesystem::remove(asset.path))
+                    update();
+                else
+                    PS_ERROR("[ContentBrowserPanel] Error removing path {}", asset.path.string());
             }
 
             ImGui::EndPopup();
