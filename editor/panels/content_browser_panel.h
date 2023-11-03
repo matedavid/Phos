@@ -58,6 +58,7 @@ class ContentBrowserPanel : public IImGuiPanel {
     void update();
     [[nodiscard]] std::vector<std::string> get_path_components() const;
 
+    bool remove_asset(const EditorAsset& path);
     void rename_currently_renaming_asset();
 
     void create_material(const std::string& name);

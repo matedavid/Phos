@@ -141,7 +141,7 @@ void ContentBrowserPanel::on_imgui_render() {
 
             if (ImGui::MenuItem("Delete")) {
                 // @TODO: Should ask user for confirmation
-                if (std::filesystem::remove(asset.path))
+                if (remove_asset(asset))
                     update();
                 else
                     PS_ERROR("[ContentBrowserPanel] Error removing path {}", asset.path.string());
@@ -320,6 +320,36 @@ std::vector<std::string> ContentBrowserPanel::get_path_components() const {
     components.push_back(current.filename());
 
     return components;
+}
+
+bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
+    if (asset.is_directory) {
+        return std::filesystem::remove_all(asset.path);
+    }
+
+    switch (asset.type) {
+    default:
+    case Phos::AssetType::Texture: {
+        const auto node = YAML::LoadFile(asset.path);
+
+        auto texture_path = node["path"].as<std::string>();
+        texture_path = asset.path.parent_path() / texture_path;
+
+        return std::filesystem::remove(asset.path) && std::filesystem::remove(texture_path);
+    }
+
+    case Phos::AssetType::Model: {
+        PS_ERROR("[ContentBrowserPanel::remove_asset] Unimplemented");
+        return false;
+    }
+
+    case Phos::AssetType::Cubemap:
+    case Phos::AssetType::Material:
+    case Phos::AssetType::Mesh:
+    case Phos::AssetType::Prefab:
+    case Phos::AssetType::Shader:
+        return std::filesystem::remove(asset.path);
+    }
 }
 
 void ContentBrowserPanel::rename_currently_renaming_asset() {
