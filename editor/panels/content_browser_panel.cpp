@@ -7,8 +7,11 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include "imgui/imgui_impl.h"
 
+#include "file_dialog.h"
+
 #include "asset_tools/editor_material_helper.h"
 #include "asset_tools/editor_cubemap_helper.h"
+#include "asset_tools/asset_importer.h"
 
 #include "asset/editor_asset_manager.h"
 
@@ -210,6 +213,10 @@ void ContentBrowserPanel::on_imgui_render() {
             ImGui::EndMenu();
         }
 
+        if (ImGui::MenuItem("Import")) {
+            import_asset();
+        }
+
         ImGui::EndPopup();
     }
 
@@ -369,6 +376,25 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
     std::filesystem::rename(asset.path, new_path);
 
     update();
+}
+
+void ContentBrowserPanel::import_asset() {
+    // @TODO: Should move to another place, maybe near AssetImporter
+    constexpr auto asset_filter = "jpg,jpeg,png;fbx,obj";
+
+    const auto paths = FileDialog::open_file_dialog_multiple(asset_filter);
+    if (paths.empty())
+        return;
+
+    for (const auto& path : paths) {
+        if (!std::filesystem::exists(path)) {
+            PS_ERROR("[ContentBrowserPanel] Importing file '{}' does not exist", path.string());
+            continue;
+        }
+
+        AssetImporter::import_asset(path, m_current_path);
+        update();
+    }
 }
 
 void ContentBrowserPanel::create_material(const std::string& name) {

@@ -60,6 +60,8 @@ class ContentBrowserPanel : public IImGuiPanel {
 
     bool remove_asset(const EditorAsset& path);
     void rename_currently_renaming_asset();
+    void import_asset();
+
 
     void create_material(const std::string& name);
     void create_cubemap(const std::string& name);

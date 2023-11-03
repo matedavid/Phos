@@ -5,7 +5,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include <nfd.h>
+#include "file_dialog.h"
 
 #include "imgui/imgui_impl.h"
 
@@ -271,16 +271,9 @@ class EditorLayer : public Phos::Layer {
     }
 
     void open_project_dialog() {
-        nfdchar_t* out_path = nullptr;
-        const auto result = NFD_OpenDialog("psproj", nullptr, &out_path);
-
-        if (result == NFD_OKAY) {
-            const auto& path = std::filesystem::path(out_path);
-            if (std::filesystem::exists(path) && path.extension() == ".psproj") {
-                open_project(path);
-            }
-        } else if (result == NFD_ERROR) {
-            PS_ERROR("[EDITOR] Error opening dialog when opening project: {}", NFD_GetError());
+        const auto path = FileDialog::open_file_dialog("psproj");
+        if (path.has_value() && std::filesystem::exists(*path)) {
+            open_project(*path);
         }
     }
 

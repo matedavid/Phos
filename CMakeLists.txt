@@ -176,9 +176,11 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog)
 add_executable(PhosEditor
         editor/main.cpp
         editor/asset_watcher.cpp
+        editor/file_dialog.cpp
 
         editor/asset_tools/editor_material_helper.cpp
         editor/asset_tools/editor_cubemap_helper.cpp
+        editor/asset_tools/asset_importer.cpp
 
         editor/panels/viewport_panel.cpp
         editor/panels/entity_hierarchy_panel.cpp
