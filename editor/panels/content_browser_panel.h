@@ -6,6 +6,7 @@
 #include "imgui_panel.h"
 
 #include "asset/asset.h"
+#include "asset_tools/editor_asset.h"
 
 namespace Phos {
 
@@ -15,13 +16,6 @@ class Texture;
 
 } // namespace Phos
 
-struct EditorAsset {
-    bool is_directory = false;
-    Phos::AssetType type;
-    std::filesystem::path path;
-    Phos::UUID uuid;
-};
-
 class ContentBrowserPanel : public IImGuiPanel {
   public:
     ContentBrowserPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager);
@@ -30,7 +24,7 @@ class ContentBrowserPanel : public IImGuiPanel {
     void on_imgui_render() override;
 
     [[nodiscard]] std::optional<EditorAsset> get_selected_asset() const {
-        return m_selected_asset_idx ? m_assets[*m_selected_asset_idx] : std::optional<EditorAsset>();
+        return m_selected_asset_idx ? *m_assets[*m_selected_asset_idx] : std::optional<EditorAsset>();
     }
 
   private:
@@ -45,7 +39,7 @@ class ContentBrowserPanel : public IImGuiPanel {
     ImTextureID m_file_icon{};
     ImTextureID m_directory_icon{};
 
-    std::vector<EditorAsset> m_assets;
+    std::vector<std::unique_ptr<EditorAsset>> m_assets;
 
     std::optional<std::size_t> m_partial_select_idx;
     std::optional<std::size_t> m_selected_asset_idx;
@@ -61,7 +55,7 @@ class ContentBrowserPanel : public IImGuiPanel {
     bool remove_asset(const EditorAsset& path);
     void rename_currently_renaming_asset();
     void import_asset();
-
+    void move_into_folder(const EditorAsset& asset, const EditorAsset& move_into);
 
     void create_material(const std::string& name);
     void create_cubemap(const std::string& name);

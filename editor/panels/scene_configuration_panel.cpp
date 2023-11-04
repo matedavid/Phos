@@ -1,9 +1,11 @@
 #include "scene_configuration_panel.h"
 
+#include "imgui/imgui_utils.h"
+#include "asset_tools/editor_asset.h"
+
 #include "asset/asset.h"
 #include "asset/editor_asset_manager.h"
 
-#include "scene/scene.h"
 #include "scene/scene_renderer.h"
 
 #include "renderer/backend/cubemap.h"
@@ -55,15 +57,8 @@ void SceneConfigurationPanel::render_environment_config() {
     auto skybox_name = config.skybox == nullptr ? "" : config.skybox->asset_name;
     ImGui::InputText("##SkyboxConfigInput", skybox_name.data(), skybox_name.size(), ImGuiInputTextFlags_ReadOnly);
 
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-            const auto uuid = Phos::UUID(*(uint64_t*)payload->Data);
-
-            const auto asset_type = m_asset_manager->get_asset_type(uuid);
-            if (asset_type == Phos::AssetType::Cubemap)
-                config.skybox = m_asset_manager->load_by_id_type<Phos::Cubemap>(uuid);
-        }
-
-        ImGui::EndDragDropTarget();
+    const auto asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
+    if (asset.has_value() && !asset->is_directory && asset->type == Phos::AssetType::Cubemap) {
+        config.skybox = m_asset_manager->load_by_id_type<Phos::Cubemap>(asset->uuid);
     }
 }

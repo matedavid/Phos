@@ -1,6 +1,8 @@
 #include "components_panel.h"
 
 #include <misc/cpp/imgui_stdlib.h>
+#include "asset_tools/editor_asset.h"
+#include "imgui/imgui_utils.h"
 
 #include "scene/scene.h"
 #include "asset/editor_asset_manager.h"
@@ -209,17 +211,9 @@ void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& 
     auto mesh_name = component.mesh != nullptr ? component.mesh->asset_name : "";
     ImGui::InputText("##MeshInput", mesh_name.data(), mesh_name.length(), ImGuiInputTextFlags_ReadOnly);
 
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-            const auto uuid = Phos::UUID(*(uint64_t*)payload->Data);
-
-            const auto asset_type = s_asset_manager->get_asset_type(uuid);
-            if (asset_type == Phos::AssetType::Mesh)
-                component.mesh = s_asset_manager->load_by_id_type<Phos::Mesh>(uuid);
-        }
-
-        ImGui::EndDragDropTarget();
-    }
+    const auto mesh_asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
+    if (mesh_asset.has_value() && !mesh_asset->is_directory && mesh_asset->type == Phos::AssetType::Mesh)
+        component.mesh = s_asset_manager->load_by_id_type<Phos::Mesh>(mesh_asset->uuid);
 
     ImGui::TableNextRow();
 
@@ -232,17 +226,9 @@ void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& 
     auto material_name = component.material != nullptr ? component.material->asset_name : "";
     ImGui::InputText("##MaterialInput", material_name.data(), material_name.length(), ImGuiInputTextFlags_ReadOnly);
 
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-            const auto uuid = Phos::UUID(*(uint64_t*)payload->Data);
-
-            const auto asset_type = s_asset_manager->get_asset_type(uuid);
-            if (asset_type == Phos::AssetType::Material)
-                component.material = s_asset_manager->load_by_id_type<Phos::Material>(uuid);
-        }
-
-        ImGui::EndDragDropTarget();
-    }
+    const auto mat_asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
+    if (mat_asset.has_value() && !mat_asset->is_directory && mat_asset->type == Phos::AssetType::Material)
+        component.material = s_asset_manager->load_by_id_type<Phos::Material>(mat_asset->uuid);
 
     ImGui::EndTable();
 }

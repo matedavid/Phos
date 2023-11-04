@@ -6,6 +6,7 @@
 
 #include <misc/cpp/imgui_stdlib.h>
 #include "imgui/imgui_impl.h"
+#include "imgui/imgui_utils.h"
 
 #include "file_dialog.h"
 
@@ -90,7 +91,7 @@ void ContentBrowserPanel::on_imgui_render() {
     const bool asset_being_renamed = m_renaming_asset_idx.has_value();
 
     for (std::size_t i = 0; i < m_assets.size(); ++i) {
-        const auto asset = m_assets[i];
+        const auto asset = *m_assets[i];
         const auto name = asset.path.stem();
 
         const bool current_asset_being_renamed = asset_being_renamed && *m_renaming_asset_idx == i;
@@ -98,15 +99,22 @@ void ContentBrowserPanel::on_imgui_render() {
         ImGui::TableSetColumnIndex(current_column);
         display_asset(asset, i);
 
-        if (!asset_being_renamed && ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-            ImGui::Image(m_file_icon, {THUMBNAIL_SIZE / 2.0f, THUMBNAIL_SIZE / 2.0f}, {0, 0}, {1, 1});
+        asset_hovered |= ImGui::IsItemHovered();
 
-            const auto uuid = (uint64_t)asset.uuid;
-            ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", &uuid, sizeof(uint64_t));
-            ImGui::EndDragDropSource();
+        if (asset.is_directory) {
+            const auto payload_asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
+            if (payload_asset.has_value()) {
+                move_into_folder(*payload_asset, asset);
+            }
         }
 
-        asset_hovered |= ImGui::IsItemHovered();
+        if (!asset_being_renamed && ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+            const auto icon = asset.is_directory ? m_directory_icon : m_file_icon;
+            ImGui::Image(icon, {THUMBNAIL_SIZE / 2.0f, THUMBNAIL_SIZE / 2.0f}, {0, 0}, {1, 1});
+
+            ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", m_assets[i].get(), sizeof(EditorAsset));
+            ImGui::EndDragDropSource();
+        }
 
         // Double-click on directory to enter
         if (!current_asset_being_renamed && asset.is_directory && ImGui::IsItemHovered() &&
@@ -190,11 +198,11 @@ void ContentBrowserPanel::on_imgui_render() {
                 const auto new_folder_path = m_current_path / "NewFolder";
                 std::filesystem::create_directory(new_folder_path);
 
-                m_assets.push_back(EditorAsset{
+                m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
                     .is_directory = true,
                     .path = new_folder_path,
                     .uuid = Phos::UUID(0),
-                });
+                }));
 
                 m_renaming_asset_idx = m_assets.size() - 1;
                 m_renaming_asset_tmp_name = "NewFolder";
@@ -278,11 +286,11 @@ void ContentBrowserPanel::update() {
 
     for (const auto& path : std::filesystem::directory_iterator(m_current_path)) {
         if (path.is_directory()) {
-            m_assets.push_back({
+            m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
                 .is_directory = true,
                 .path = path.path(),
                 .uuid = Phos::UUID(0),
-            });
+            }));
 
             continue;
         }
@@ -293,23 +301,23 @@ void ContentBrowserPanel::update() {
         try {
             const auto id = m_asset_manager->get_asset_id(path);
 
-            m_assets.push_back({
+            m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
                 .type = m_asset_manager->get_asset_type(id),
                 .path = path.path(),
                 .uuid = id,
-            });
+            }));
         } catch (std::exception&) {
             PS_ERROR("Error loading asset with path: {}\n", path.path().string());
         }
     }
 
-    std::ranges::sort(m_assets, [](const EditorAsset& a, const EditorAsset& b) {
-        if (a.is_directory && !b.is_directory)
+    std::ranges::sort(m_assets, [](const std::unique_ptr<EditorAsset>& a, const std::unique_ptr<EditorAsset>& b) {
+        if (a->is_directory && !b->is_directory)
             return true;
-        else if (!a.is_directory && b.is_directory)
+        else if (!a->is_directory && b->is_directory)
             return false;
         else
-            return a.path.stem() < b.path.stem();
+            return a->path.stem() < b->path.stem();
     });
 }
 
@@ -363,7 +371,7 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
     if (!m_renaming_asset_idx.has_value())
         return;
 
-    const auto asset = m_assets[*m_renaming_asset_idx];
+    const auto asset = *m_assets[*m_renaming_asset_idx];
 
     const std::string extension = asset.is_directory ? "" : ".psa";
     const auto new_path = asset.path.parent_path() / (m_renaming_asset_tmp_name + extension);
@@ -395,6 +403,27 @@ void ContentBrowserPanel::import_asset() {
         AssetImporter::import_asset(path, m_current_path);
         update();
     }
+}
+
+void ContentBrowserPanel::move_into_folder(const EditorAsset& asset, const EditorAsset& move_into) {
+    PS_ASSERT(move_into.is_directory, "move_into must be directory")
+
+    auto new_asset_path = move_into.path / asset.path.filename();
+    PS_INFO("{} -> {}", asset.path.string(), new_asset_path.string());
+
+    if (asset.type == Phos::AssetType::Texture) {
+        const auto node = YAML::LoadFile(asset.path);
+        const auto texture_path = asset.path.parent_path() / node["path"].as<std::string>();
+
+        const auto new_texture_path = move_into.path / texture_path.filename();
+        PS_INFO("{} -> {}", texture_path.string(), new_texture_path.string());
+
+        std::filesystem::rename(texture_path, new_texture_path);
+    }
+
+    std::filesystem::rename(asset.path, new_asset_path);
+
+    update();
 }
 
 void ContentBrowserPanel::create_material(const std::string& name) {

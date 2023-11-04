@@ -1,11 +1,13 @@
 #include "asset_inspector_panel.h"
 
-#include "../imgui/imgui_impl.h"
+#include "imgui/imgui_impl.h"
+#include "imgui/imgui_utils.h"
 
 #include <yaml-cpp/yaml.h>
 
 #include "asset_tools/editor_material_helper.h"
 #include "asset_tools/editor_cubemap_helper.h"
+#include "asset_tools/editor_asset.h"
 
 #include "asset/asset.h"
 #include "asset/editor_asset_manager.h"
@@ -53,14 +55,12 @@ void AssetInspectorPanel::on_imgui_render() {
         break;
     case Phos::AssetType::Model:
         break;
+    case Phos::AssetType::Prefab:
+        break;
     }
 
     ImGui::End();
 }
-
-#define CUBEMAP_TEX(face)                                                          \
-    face == Phos::UUID(0) ? Phos::Renderer::texture_manager()->get_white_texture() \
-                          : m_asset_manager->load_by_id_type<Phos::Texture>(face)
 
 void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
     if ((m_selected_asset.has_value() && m_selected_asset->uuid == asset->uuid) || m_locked)
@@ -94,6 +94,10 @@ void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
         PS_FAIL("Not implemented")
     }
 }
+
+#define CUBEMAP_TEX(face)                                                          \
+    face == Phos::UUID(0) ? Phos::Renderer::texture_manager()->get_white_texture() \
+                          : m_asset_manager->load_by_id_type<Phos::Texture>(face)
 
 void AssetInspectorPanel::setup_cubemap_info() {
     switch (m_cubemap_helper->get_cubemap_type()) {
@@ -195,16 +199,9 @@ void AssetInspectorPanel::render_material_asset() const {
                 ImGui::EndTooltip();
             }
 
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-                    auto uuid = Phos::UUID(*(uint64_t*)payload->Data);
-
-                    const auto asset_type = m_asset_manager->get_asset_type(uuid);
-                    if (asset_type == Phos::AssetType::Texture)
-                        asset_id = uuid;
-                }
-
-                ImGui::EndDragDropTarget();
+            const auto asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
+            if (asset.has_value() && !asset->is_directory && asset->type == Phos::AssetType::Texture) {
+                asset_id = asset->uuid;
             }
         }
 
@@ -248,21 +245,13 @@ void AssetInspectorPanel::render_cubemap_asset() {
             ImGui::EndTooltip();
         }
 
-        if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-                const auto uuid = Phos::UUID(*(uint64_t*)payload->Data);
+        const auto asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
+        if (asset.has_value() && !asset->is_directory && asset->type == Phos::AssetType::Texture) {
+            m_cubemap_helper->update_face(face, asset->uuid);
 
-                const auto asset_type = m_asset_manager->get_asset_type(uuid);
-                if (asset_type == Phos::AssetType::Texture) {
-                    m_cubemap_helper->update_face(face, uuid);
-
-                    const auto texture = m_asset_manager->load_by_id_type<Phos::Texture>(uuid);
-                    m_cubemap_face_textures[face_id] = texture;
-                    m_cubemap_face_ids[face_id] = ImGuiImpl::add_texture(texture);
-                }
-            }
-
-            ImGui::EndDragDropTarget();
+            const auto texture = m_asset_manager->load_by_id_type<Phos::Texture>(asset->uuid);
+            m_cubemap_face_textures[face_id] = texture;
+            m_cubemap_face_ids[face_id] = ImGuiImpl::add_texture(texture);
         }
 
         ImGui::TableSetColumnIndex(2);
@@ -290,21 +279,13 @@ void AssetInspectorPanel::render_cubemap_asset() {
             ImGui::EndTooltip();
         }
 
-        if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-                const auto uuid = Phos::UUID(*(uint64_t*)payload->Data);
+        const auto asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
+        if (asset.has_value() && !asset->is_directory && asset->type == Phos::AssetType::Texture) {
+            m_cubemap_helper->update_equirectangular_id(asset->uuid);
 
-                const auto asset_type = m_asset_manager->get_asset_type(uuid);
-                if (asset_type == Phos::AssetType::Texture) {
-                    m_cubemap_helper->update_equirectangular_id(uuid);
-
-                    const auto texture = m_asset_manager->load_by_id_type<Phos::Texture>(uuid);
-                    m_cubemap_equirectangular_texture = texture;
-                    m_cubemap_equirectangular_id = ImGuiImpl::add_texture(texture);
-                }
-            }
-
-            ImGui::EndDragDropTarget();
+            const auto texture = m_asset_manager->load_by_id_type<Phos::Texture>(asset->uuid);
+            m_cubemap_equirectangular_texture = texture;
+            m_cubemap_equirectangular_id = ImGuiImpl::add_texture(texture);
         }
 
         ImGui::TableSetColumnIndex(2);
