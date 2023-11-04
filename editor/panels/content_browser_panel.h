@@ -50,7 +50,10 @@ class ContentBrowserPanel : public IImGuiPanel {
     void display_asset(const EditorAsset& asset, std::size_t asset_idx);
 
     void update();
-    [[nodiscard]] std::vector<std::string> get_path_components() const;
+
+    /// Converts a path into a list of its components with respects to m_asset_manager->path().
+    /// For example, project/path/to/folder with m_asset_manager->path() == project/ will result in [path, to, folder].
+    [[nodiscard]] std::vector<std::string> get_path_components(const std::filesystem::path& path) const;
 
     bool remove_asset(const EditorAsset& path);
     void rename_currently_renaming_asset();

@@ -46,23 +46,28 @@ void ContentBrowserPanel::on_imgui_render() {
     ImGui::Begin(m_name.c_str());
 
     // Print current path components
-    const auto components = get_path_components();
+    const auto components = get_path_components(m_current_path);
 
-    for (auto i = (int32_t)components.size() - 1; i >= 0; --i) {
-        if (i == 0)
+    auto partial_path = std::filesystem::path(m_asset_manager->path());
+    for (std::size_t i = 0; i < components.size(); ++i) {
+        if (i != 0)
+            partial_path /= components[i];
+
+        if (i == components.size() - 1) {
             ImGui::Text("%s", components[i].c_str());
-        else {
+        } else {
             if (ImGui::Button(components[i].c_str())) {
-                m_current_path = m_asset_manager->path();
-                for (auto j = (int32_t)components.size() - 1; j > i; --j) {
-                    m_current_path /= components[j];
-                }
-
+                m_current_path = partial_path;
                 update();
+            }
+
+            const auto payload_asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
+            if (payload_asset.has_value()) {
+                move_into_folder(*payload_asset, {.is_directory = true, .path = partial_path, .uuid = Phos::UUID(0)});
             }
         }
 
-        if (i != 0) {
+        if (i != components.size() - 1) {
             ImGui::SameLine();
             ImGui::Text(">");
             ImGui::SameLine();
@@ -321,19 +326,18 @@ void ContentBrowserPanel::update() {
     });
 }
 
-std::vector<std::string> ContentBrowserPanel::get_path_components() const {
+std::vector<std::string> ContentBrowserPanel::get_path_components(const std::filesystem::path& path) const {
     std::vector<std::string> components;
 
-    const auto parent_path = m_asset_manager->path();
-    auto current = m_current_path;
-
-    while (current != parent_path) {
+    auto current = path;
+    while (current != m_asset_manager->path()) {
         components.push_back(current.filename());
         current = current.parent_path();
     }
 
     components.push_back(current.filename());
 
+    std::ranges::reverse(components);
     return components;
 }
 
