@@ -1,5 +1,6 @@
 #include "class_instance_handle.h"
 
+#include "core/uuid.h"
 #include "scripting/class_handle.h"
 
 namespace Phos {
@@ -15,19 +16,6 @@ void ClassInstanceHandle::invoke_on_create() {
     mono_runtime_invoke(m_on_create_method, m_instance, nullptr, &exception);
 }
 
-static void print_fields(MonoClass* klass) {
-    MonoClassField* field;
-    void* iter = nullptr;
-
-    while ((field = mono_class_get_fields(klass, &iter))) {
-        const char* field_name = mono_field_get_name(field);
-        MonoType* field_type = mono_field_get_type(field);
-
-        fmt::print("Field Name: {}\n", field_name);
-        fmt::print("Field Type: {}\n", mono_type_get_name(field_type));
-    }
-}
-
 void ClassInstanceHandle::invoke_on_update(double delta_time) {
     auto dt = static_cast<float>(delta_time); // ScriptGlue works with floats
 
@@ -36,6 +24,46 @@ void ClassInstanceHandle::invoke_on_update(double delta_time) {
 
     MonoObject* exception;
     mono_runtime_invoke(m_on_update_method, m_instance, args, &exception);
+}
+
+//
+// set_field_value_internal
+//
+
+#define SET_FIELD_VALUE_INTERNAL_FUNC(T) \
+    template <>                          \
+    void ClassInstanceHandle::set_field_value_internal<T>(const ClassFieldInfo& info, T* value)
+
+void check_type(const ClassFieldInfo& info, ClassFieldInfo::Type expected, std::string_view actual_name) {
+    PS_ASSERT(info.field_type == expected,
+              "Trying to set field '{}' value with invalid type, provided type was: '{}'",
+              info.name,
+              actual_name);
+}
+
+SET_FIELD_VALUE_INTERNAL_FUNC(int32_t) {
+    check_type(info, ClassFieldInfo::Type::Int, "int");
+
+    mono_field_set_value(m_instance, info.field, value);
+}
+
+SET_FIELD_VALUE_INTERNAL_FUNC(float) {
+    check_type(info, ClassFieldInfo::Type::Float, "float");
+
+    mono_field_set_value(m_instance, info.field, value);
+}
+
+SET_FIELD_VALUE_INTERNAL_FUNC(std::string) {
+    check_type(info, ClassFieldInfo::Type::String, "string");
+
+    // @TODO: mono_field_set_value(m_instance, info.field, value);
+}
+
+SET_FIELD_VALUE_INTERNAL_FUNC(UUID) {
+    check_type(info, ClassFieldInfo::Type::String, "entity, prefab");
+
+    auto id = (uint64_t)value;
+    mono_field_set_value(m_instance, info.field, &id);
 }
 
 } // namespace Phos

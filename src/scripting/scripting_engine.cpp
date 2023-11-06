@@ -120,7 +120,7 @@ std::shared_ptr<ClassHandle> ScriptingEngine::create_class_handle(std::string sp
         return nullptr;
     }
 
-    auto handle = std::make_shared<ClassHandle>(klass);
+    auto handle = std::make_shared<ClassHandle>(klass, full_name);
     m_class_handle_cache[full_name] = handle;
 
     return handle;
