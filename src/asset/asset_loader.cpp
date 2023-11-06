@@ -11,6 +11,9 @@
 #include "managers/shader_manager.h"
 #include "managers/texture_manager.h"
 
+#include "scene/scene.h"
+#include "scene/entity_deserializer.h"
+
 #include "asset/asset_manager.h"
 #include "asset/model_asset.h"
 #include "asset/prefab_asset.h"
@@ -39,6 +42,8 @@ static AssetType string_to_asset_type(const std::string& str) {
         return AssetType::Model;
     else if (str == "prefab")
         return AssetType::Prefab;
+    else if (str == "scene")
+        return AssetType::Scene;
 
     PS_FAIL("Asset type: {} is not valid", str)
 }
@@ -53,6 +58,7 @@ AssetLoader::AssetLoader(AssetManagerBase* manager) : m_manager(manager) {
     REGISTER_PARSER(MeshParser);
     REGISTER_PARSER(ModelParser);
     REGISTER_PARSER(PrefabParser);
+    REGISTER_PARSER(SceneParser);
 }
 
 UUID AssetLoader::get_id(const std::string& path) const {
@@ -351,6 +357,35 @@ std::shared_ptr<IAsset> PrefabParser::parse(const YAML::Node& node, [[maybe_unus
     ss << node["components"];
 
     return std::make_shared<PrefabAsset>(ss.str());
+}
+
+//
+// SceneParser
+//
+
+std::shared_ptr<IAsset> SceneParser::parse(const YAML::Node& node, [[maybe_unused]] const std::string& path) {
+    const auto name = node["name"].as<std::string>();
+    auto scene = std::make_shared<Scene>(name);
+
+    // Load scene config
+    const auto config_node = node["config"];
+    auto& renderer_config = scene->config();
+
+    renderer_config.bloom_config.enabled = config_node["bloomConfig"]["enabled"].as<bool>();
+    renderer_config.bloom_config.threshold = config_node["bloomConfig"]["threshold"].as<float>();
+
+    const auto skybox_id = UUID(config_node["environmentConfig"]["skybox"].as<uint64_t>());
+    renderer_config.environment_config.skybox =
+        skybox_id == UUID(0) ? nullptr : m_manager->load_by_id_type<Phos::Cubemap>(skybox_id);
+
+    // Load entities
+    const auto entities = node["entities"];
+    for (const auto& it : entities) {
+        auto entity = EntityDeserializer::deserialize(entities[it.first], scene, m_manager);
+        entity.get_component<UUIDComponent>().uuid = UUID(it.first.as<std::size_t>());
+    }
+
+    return scene;
 }
 
 } // namespace Phos

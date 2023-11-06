@@ -116,4 +116,15 @@ class PrefabParser : public IAssetParser {
     AssetManagerBase* m_manager;
 };
 
+class SceneParser : public IAssetParser {
+  public:
+    explicit SceneParser(AssetManagerBase* manager) : m_manager(manager) {}
+
+    [[nodiscard]] AssetType type() override { return AssetType::Scene; }
+    std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
+
+  private:
+    AssetManagerBase* m_manager;
+};
+
 } // namespace Phos

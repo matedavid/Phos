@@ -16,7 +16,7 @@ Entity Phos::PrefabLoader::load(const UUID& prefab_id,
     const auto prefab = asset_manager->load_by_id_type<PrefabAsset>(prefab_id);
 
     const auto components_node = YAML::Load(prefab->components_string_representation);
-    return EntityDeserializer::deserialize(components_node, scene, asset_manager);
+    return EntityDeserializer::deserialize(components_node, scene, asset_manager.get());
 }
 
 } // namespace Phos

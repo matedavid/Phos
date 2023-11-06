@@ -16,6 +16,7 @@ enum class AssetType {
     Mesh,
     Model,
     Prefab,
+    Scene,
 };
 
 class IAsset {

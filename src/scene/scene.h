@@ -2,6 +2,8 @@
 
 #include "core.h"
 
+#include "asset/asset.h"
+
 #include "scene/registry.h"
 #include "scene/components.h"
 #include "scene/scene_renderer.h"
@@ -12,10 +14,12 @@ namespace Phos {
 class Camera;
 class Entity;
 
-class Scene {
+class Scene : public IAsset {
   public:
     explicit Scene(std::string name);
-    ~Scene();
+    virtual ~Scene();
+
+    [[nodiscard]] AssetType asset_type() override { return AssetType::Scene; }
 
     Entity create_entity();
     Entity create_entity(UUID uuid);
@@ -33,8 +37,8 @@ class Scene {
         std::vector<Entity> entities;
         entities.reserve(ids.size());
 
-        for (const auto& id : ids)
-            entities.push_back(*m_id_to_entity[id]);
+        for (const auto& entity_id : ids)
+            entities.push_back(*m_id_to_entity[entity_id]);
 
         return entities;
     }

@@ -5,7 +5,6 @@
 
 #include "asset/editor_asset_manager.h"
 #include "scene/scene.h"
-#include "scene/scene_deserializer.h"
 
 namespace Phos {
 
@@ -28,9 +27,9 @@ std::shared_ptr<Project> Project::open(const std::string& path) {
 
     std::vector<std::shared_ptr<Scene>> scenes;
     for (uint32_t i = 0; i < node["scenes"].size(); ++i) {
-        const auto scene_path = containing_folder / node["scenes"][i].as<std::string>();
+        const auto scene_id = UUID(node["scenes"][i].as<uint64_t>());
 
-        const auto scene = SceneDeserializer::deserialize(scene_path, asset_manager);
+        const auto scene = asset_manager->load_by_id_type<Scene>(scene_id);
         scenes.push_back(scene);
     }
 

@@ -37,7 +37,6 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/scene/scene.cpp
         src/scene/model_loader.cpp
         src/scene/scene_serializer.cpp
-        src/scene/scene_deserializer.cpp
         src/scene/entity_deserializer.cpp
 
         # Scripting

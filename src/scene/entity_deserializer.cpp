@@ -10,15 +10,13 @@
 namespace Phos {
 
 template <typename T>
-void deserialize_component_t(const YAML::Node& node,
-                             Entity& entity,
-                             [[maybe_unused]] const std::shared_ptr<AssetManagerBase>& asset_manager);
+void deserialize_component_t(const YAML::Node& node, Entity& entity, [[maybe_unused]] AssetManagerBase* asset_manager);
 
 template <typename T>
 void deserialize_component(const YAML::Node& node,
                            const std::string& name,
                            Entity& entity,
-                           const std::shared_ptr<AssetManagerBase>& asset_manager) {
+                           AssetManagerBase* asset_manager) {
     if (!node[name])
         return;
 
@@ -29,7 +27,7 @@ void deserialize_component(const YAML::Node& node,
 
 Entity EntityDeserializer::deserialize(const YAML::Node& node,
                                        const std::shared_ptr<Scene>& scene,
-                                       const std::shared_ptr<AssetManagerBase>& asset_manager) {
+                                       AssetManagerBase* asset_manager) {
     auto entity = scene->create_entity();
 
     DESERIALIZE_COMPONENT(NameComponent, "NameComponent");
@@ -46,11 +44,10 @@ Entity EntityDeserializer::deserialize(const YAML::Node& node,
 // Specific deserialize_component_t
 //
 
-#define DESERIALIZE_COMPONENT_T(Type)                          \
-    template <>                                                \
-    void deserialize_component_t<Type>(const YAML::Node& node, \
-                                       Entity& entity,         \
-                                       [[maybe_unused]] const std::shared_ptr<AssetManagerBase>& asset_manager)
+#define DESERIALIZE_COMPONENT_T(Type)   \
+    template <>                         \
+    void deserialize_component_t<Type>( \
+        const YAML::Node& node, Entity& entity, [[maybe_unused]] AssetManagerBase* asset_manager)
 
 DESERIALIZE_COMPONENT_T(NameComponent) {
     entity.get_component<NameComponent>().name = node.as<std::string>();

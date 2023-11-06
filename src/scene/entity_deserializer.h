@@ -19,7 +19,7 @@ class EntityDeserializer {
 
     static Entity deserialize(const YAML::Node& node,
                               const std::shared_ptr<Scene>& scene,
-                              const std::shared_ptr<AssetManagerBase>& asset_manager);
+                              AssetManagerBase* asset_manager);
 };
 
 } // namespace Phos
