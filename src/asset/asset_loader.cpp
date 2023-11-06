@@ -381,8 +381,8 @@ std::shared_ptr<IAsset> SceneParser::parse(const YAML::Node& node, [[maybe_unuse
     // Load entities
     const auto entities = node["entities"];
     for (const auto& it : entities) {
-        auto entity = EntityDeserializer::deserialize(entities[it.first], scene, m_manager);
-        entity.get_component<UUIDComponent>().uuid = UUID(it.first.as<std::size_t>());
+        const auto id = UUID(it.first.as<uint64_t>());
+        EntityDeserializer::deserialize(entities[it.first], id, scene, m_manager);
     }
 
     return scene;

@@ -18,6 +18,7 @@ class EntityDeserializer {
     EntityDeserializer() = delete;
 
     static Entity deserialize(const YAML::Node& node,
+                              const UUID& asset_id,
                               const std::shared_ptr<Scene>& scene,
                               AssetManagerBase* asset_manager);
 };

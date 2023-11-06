@@ -26,9 +26,10 @@ void deserialize_component(const YAML::Node& node,
 #define DESERIALIZE_COMPONENT(T, name) deserialize_component<T>(node, name, entity, asset_manager)
 
 Entity EntityDeserializer::deserialize(const YAML::Node& node,
+                                       const UUID& asset_id,
                                        const std::shared_ptr<Scene>& scene,
                                        AssetManagerBase* asset_manager) {
-    auto entity = scene->create_entity();
+    auto entity = scene->create_entity(asset_id);
 
     DESERIALIZE_COMPONENT(NameComponent, "NameComponent");
     DESERIALIZE_COMPONENT(RelationshipComponent, "RelationshipComponent");
