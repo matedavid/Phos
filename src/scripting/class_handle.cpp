@@ -1,9 +1,34 @@
 #include "class_handle.h"
 
+#include "scripting/scripting_engine.h"
+
 namespace Phos {
 
 // From mono/mono/metadata/tabledefs.h
 #define FIELD_ATTRIBUTE_PUBLIC 0x0006
+
+std::shared_ptr<ClassHandle> ClassHandle::create(const std::string& namespace_, const std::string& class_name) {
+    const auto full_name = namespace_.empty() ? class_name : namespace_ + "." + class_name;
+    if (ScriptingEngine::m_context.klass_cache.contains(full_name)) {
+        return ScriptingEngine::m_context.klass_cache[class_name];
+    }
+
+    // @TODO: Maybe not the best idea??
+    auto* image = ScriptingEngine::m_context.app_image;
+    if (namespace_ == "PhosEngine")
+        image = ScriptingEngine::m_context.core_image;
+
+    auto* klass = mono_class_from_name(image, namespace_.data(), class_name.data());
+    if (klass == nullptr) {
+        PS_ERROR("No class found with name: '{}'", full_name);
+        return nullptr;
+    }
+
+    const auto handle = std::shared_ptr<ClassHandle>(new ClassHandle(klass, full_name));
+    ScriptingEngine::m_context.klass_cache[full_name] = handle;
+
+    return handle;
+}
 
 ClassHandle::ClassHandle(MonoClass* klass, std::string name) : m_klass(klass), m_name(std::move(name)) {
     MonoMethod* method;

@@ -10,44 +10,42 @@
 namespace Phos {
 
 // Forward declarations
-class Entity;
-class Scene;
-class AssetManagerBase;
-class ScriptComponent;
 class ClassHandle;
 class ClassInstanceHandle;
 
 class ScriptingEngine {
   public:
-    explicit ScriptingEngine(std::filesystem::path dll_path,
-                             std::shared_ptr<Scene> scene,
-                             std::shared_ptr<AssetManagerBase> asset_manager);
-    ~ScriptingEngine();
+    ScriptingEngine() = delete;
 
-    void on_update(double delta_time);
-    void set_scene(std::shared_ptr<Scene> scene);
+    static void initialize();
+    static void shutdown();
+
+    static void set_dll_path(const std::filesystem::path& dll_path);
 
   private:
-    MonoDomain* m_root_domain{};
+    static void load_mono_assembly(const std::filesystem::path& path,
+                                   const std::string& name,
+                                   MonoDomain*& domain,
+                                   MonoImage*& image);
 
-    MonoDomain* m_core_domain{};
-    MonoImage* m_core_image{};
+    static MonoDomain* m_root_domain;
 
-    MonoDomain* m_app_domain{};
-    MonoImage* m_app_image{};
+    struct ScriptingEngineContext {
+        MonoDomain* core_domain = nullptr;
+        MonoImage* core_image = nullptr;
 
-    std::shared_ptr<Scene> m_scene;
-    std::shared_ptr<AssetManagerBase> m_asset_manager;
+        MonoDomain* app_domain = nullptr;
+        MonoImage* app_image = nullptr;
 
-    std::filesystem::path m_dll_path;
+        std::shared_ptr<ClassHandle> entity_class_handle;
 
-    std::shared_ptr<ClassHandle> m_entity_class_handle;
-    std::unordered_map<std::string, std::shared_ptr<ClassHandle>> m_class_handle_cache;
+        std::unordered_map<std::string, std::shared_ptr<ClassHandle>> klass_cache;
+    };
 
-    [[nodiscard]] std::shared_ptr<ClassHandle> create_class_handle(std::string space,
-                                                                   std::string class_name,
-                                                                   MonoImage* image);
-    [[nodiscard]] std::shared_ptr<ClassInstanceHandle> create_entity_class_instance(const Entity& entity);
+    static ScriptingEngineContext m_context;
+
+    friend class ClassHandle;
+    friend class ClassInstanceHandle;
 };
 
 } // namespace Phos

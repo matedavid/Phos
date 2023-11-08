@@ -1,14 +1,39 @@
 #include "class_instance_handle.h"
 
 #include "core/uuid.h"
+
 #include "scripting/class_handle.h"
+#include "scripting/scripting_engine.h"
 
 namespace Phos {
 
-ClassInstanceHandle::ClassInstanceHandle(MonoObject* instance, std::shared_ptr<ClassHandle> class_handle)
-      : m_instance(instance), m_class_handle(std::move(class_handle)) {
+std::shared_ptr<ClassInstanceHandle> ClassInstanceHandle::instantiate(std::shared_ptr<ClassHandle> class_handle) {
+    return std::shared_ptr<ClassInstanceHandle>(new ClassInstanceHandle(std::move(class_handle)));
+}
+
+ClassInstanceHandle::ClassInstanceHandle(std::shared_ptr<ClassHandle> class_handle)
+      : m_class_handle(std::move(class_handle)) {
+    m_instance = mono_object_new(ScriptingEngine::m_context.app_domain, m_class_handle->handle());
+    if (m_instance == nullptr) {
+        PS_ERROR("Failed to create class instance for class: {}", m_class_handle->class_name());
+    }
+
+    m_constructor = *ScriptingEngine::m_context.entity_class_handle->get_method(".ctor", 1);
     m_on_create_method = *m_class_handle->get_method("OnCreate");
     m_on_update_method = *m_class_handle->get_method("OnUpdate", 1);
+}
+
+void ClassInstanceHandle::invoke_constructor(const UUID& entity_id) {
+    PS_ASSERT(!m_constructed,
+              "Class's instance for class '{}' constructor has already been called",
+              m_class_handle->class_name())
+
+    void* args[1];
+    auto id = (uint64_t)entity_id;
+    args[0] = &id;
+
+    mono_runtime_invoke(m_constructor, m_instance, args, nullptr);
+    m_constructed = true;
 }
 
 void ClassInstanceHandle::invoke_on_create() {
@@ -56,7 +81,10 @@ SET_FIELD_VALUE_INTERNAL_FUNC(float) {
 SET_FIELD_VALUE_INTERNAL_FUNC(std::string) {
     check_type(info, ClassFieldInfo::Type::String, "string");
 
-    // @TODO: mono_field_set_value(m_instance, info.field, value);
+    auto* mono_string = mono_string_new(ScriptingEngine::m_context.app_domain, value->c_str());
+    mono_field_set_value(m_instance, info.field, mono_string);
+
+    mono_free(mono_string);
 }
 
 SET_FIELD_VALUE_INTERNAL_FUNC(UUID) {
