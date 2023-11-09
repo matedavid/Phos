@@ -40,6 +40,7 @@ Entity EntityDeserializer::deserialize(const YAML::Node& node,
     DESERIALIZE_COMPONENT(MeshRendererComponent, "MeshRendererComponent");
     DESERIALIZE_COMPONENT(LightComponent, "LightComponent");
     DESERIALIZE_COMPONENT(CameraComponent, "CameraComponent");
+    DESERIALIZE_COMPONENT(ScriptComponent, "ScriptComponent");
 
     return entity;
 }
