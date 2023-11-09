@@ -538,7 +538,7 @@ void render_component<Phos::ScriptComponent>(Phos::ScriptComponent& component) {
                 v.id = prefab_asset->uuid;
             }
         } else if (std::holds_alternative<Phos::EntityRef>(value)) {
-            PS_ERROR("[render_component::ScriptComponent] Unimplemented");
+            PS_ERROR("[render_component::ScriptComponent EntityRef] Unimplemented");
         }
     }
 

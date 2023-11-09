@@ -8,16 +8,20 @@
 
 namespace Phos {
 
-Project::Project(std::string name, std::shared_ptr<Scene> scene, std::shared_ptr<AssetManagerBase> asset_manager)
-      : m_name(std::move(name)), m_scene(std::move(scene)), m_asset_manager(std::move(asset_manager)) {}
+Project::Project(std::string name,
+                 std::filesystem::path path,
+                 std::shared_ptr<Scene> scene,
+                 std::shared_ptr<AssetManagerBase> asset_manager)
+      : m_name(std::move(name)), m_path(std::move(path)), m_scene(std::move(scene)),
+        m_asset_manager(std::move(asset_manager)) {}
 
-std::shared_ptr<Project> Project::create(const std::string& path) {
+std::shared_ptr<Project> Project::create(const std::filesystem::path& path) {
     (void)path;
-    PS_FAIL("Unimplemented");
+    PS_ERROR("[Project::create] Unimplemented");
     return nullptr;
 }
 
-std::shared_ptr<Project> Project::open(const std::string& path) {
+std::shared_ptr<Project> Project::open(const std::filesystem::path& path) {
     const auto containing_folder = std::filesystem::path(path).parent_path();
 
     const auto node = YAML::LoadFile(path);
@@ -34,13 +38,14 @@ std::shared_ptr<Project> Project::open(const std::string& path) {
     }
 
     // TODO: Should pass all of the scenes in the project file, at the moment only one is allowed
-    auto* project = new Project(project_name, scenes[0], asset_manager);
+    auto* project = new Project(project_name, std::filesystem::absolute(path.parent_path()), scenes[0], asset_manager);
     return std::shared_ptr<Project>(project);
 }
 
-std::shared_ptr<Project> Project::load(const std::string& path) {
+std::shared_ptr<Project> Project::load(const std::filesystem::path& path) {
     (void)path;
-    PS_FAIL("Unimplemented")
+    PS_ERROR("[Project::load] Unimplemented");
+    return nullptr;
 }
 
 } // namespace Phos
