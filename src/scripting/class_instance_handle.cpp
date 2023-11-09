@@ -1,5 +1,7 @@
 #include "class_instance_handle.h"
 
+#include <glm/glm.hpp>
+
 #include "core/uuid.h"
 
 #include "scripting/class_handle.h"
@@ -78,6 +80,12 @@ SET_FIELD_VALUE_INTERNAL_FUNC(float) {
     mono_field_set_value(m_instance, info.field, value);
 }
 
+SET_FIELD_VALUE_INTERNAL_FUNC(glm::vec3) {
+    check_type(info, ClassFieldInfo::Type::Vec3, "vec3");
+
+    mono_field_set_value(m_instance, info.field, value);
+}
+
 SET_FIELD_VALUE_INTERNAL_FUNC(std::string) {
     check_type(info, ClassFieldInfo::Type::String, "string");
 
@@ -90,8 +98,8 @@ SET_FIELD_VALUE_INTERNAL_FUNC(std::string) {
 SET_FIELD_VALUE_INTERNAL_FUNC(UUID) {
     check_type(info, ClassFieldInfo::Type::String, "entity, prefab");
 
-    auto id = (uint64_t)value;
-    mono_field_set_value(m_instance, info.field, &id);
+    auto asset_id = (uint64_t)value;
+    mono_field_set_value(m_instance, info.field, &asset_id);
 }
 
 } // namespace Phos

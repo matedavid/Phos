@@ -15,6 +15,7 @@ struct ClassFieldInfo {
     enum class Type {
         Int,
         Float,
+        Vec3,
         String,
         Entity,
         Prefab,
@@ -25,11 +26,13 @@ struct ClassFieldInfo {
     Type field_type;
 };
 
-class ClassHandle {
+class ClassHandle : public IAsset {
   public:
-    ~ClassHandle();
+    virtual ~ClassHandle();
 
     static std::shared_ptr<ClassHandle> create(const std::string& namespace_, const std::string& class_name);
+
+    [[nodiscard]] AssetType asset_type() override { return AssetType::Script; }
 
     [[nodiscard]] std::optional<MonoMethod*> get_method(const std::string& name, uint32_t num_params = 0) const;
     [[nodiscard]] std::optional<ClassFieldInfo> get_field(const std::string& name) const;

@@ -2,7 +2,9 @@
 
 #include <glm/glm.hpp>
 #include <optional>
+#include <variant>
 
+#include "asset/prefab_asset.h"
 #include "core/uuid.h"
 #include "renderer/light.h"
 #include "renderer/camera.h"
@@ -59,11 +61,22 @@ struct CameraComponent {
     int32_t depth = 0;
 };
 
+// @TODO: Move to different place
+struct PrefabRef {
+    UUID id;
+};
+
+struct EntityRef {
+    UUID id;
+};
+
+using ScriptFieldValue = std::variant<int32_t, float, glm::vec3, std::string, PrefabRef, EntityRef>;
+// ===================================
+
 struct ScriptComponent {
     std::string class_name;
-
-    std::shared_ptr<ClassInstanceHandle> scripting_instance = nullptr;
-    bool is_initialized = false;
+    UUID script{0};
+    std::unordered_map<std::string, ScriptFieldValue> field_values;
 };
 
 } // namespace Phos

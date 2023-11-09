@@ -75,9 +75,12 @@ ClassHandle::ClassHandle(MonoClass* klass, std::string name) : m_klass(klass), m
         case MONO_TYPE_STRING:
             internal_type = ClassFieldInfo::Type::String;
             break;
+        case MONO_TYPE_VALUETYPE:
         case MONO_TYPE_CLASS: {
-            const std::string type_name = mono_field_get_name(field);
-            if (type_name == "PhosEngine.Entity")
+            const std::string type_name = mono_type_get_name(field_type);
+            if (type_name == "PhosEngine.Vector3")
+                internal_type = ClassFieldInfo::Type::Vec3;
+            else if (type_name == "PhosEngine.Entity")
                 internal_type = ClassFieldInfo::Type::Entity;
             else if (type_name == "PhosEngine.Prefab")
                 internal_type = ClassFieldInfo::Type::Prefab;

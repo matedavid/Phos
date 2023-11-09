@@ -3,9 +3,12 @@
 #include <yaml-cpp/yaml.h>
 
 #include "asset/asset_manager.h"
+#include "asset/asset_parsing_utils.h"
 
 #include "renderer/mesh.h"
 #include "renderer/backend/material.h"
+
+#include "scripting/class_handle.h"
 
 namespace Phos {
 
@@ -144,6 +147,43 @@ DESERIALIZE_COMPONENT_T(CameraComponent) {
         .znear = znear,
         .zfar = zfar,
         .depth = depth,
+    });
+}
+
+DESERIALIZE_COMPONENT_T(ScriptComponent) {
+    std::unordered_map<std::string, ScriptFieldValue> field_values;
+
+    const auto fields = node["fields"];
+    for (const auto& field : fields) {
+        const auto field_name = field.first.as<std::string>();
+        const auto field_type_str = fields[field_name]["type"].as<std::string>();
+        const auto data_node = fields[field_name]["data"];
+
+        ScriptFieldValue v;
+        if (field_type_str == "int") {
+            v = AssetParsingUtils::parse_numeric<int32_t>(data_node);
+        } else if (field_type_str == "float") {
+            v = AssetParsingUtils::parse_numeric<float>(data_node);
+        } else if (field_type_str == "vec3") {
+            v = AssetParsingUtils::parse_vec3(data_node);
+        } else if (field_type_str == "string") {
+            v = AssetParsingUtils::parse_string(data_node);
+        } else if (field_type_str == "entity") {
+            v = EntityRef{.id = AssetParsingUtils::parse_uuid(data_node)};
+        } else if (field_type_str == "prefab") {
+            v = PrefabRef{.id = AssetParsingUtils::parse_uuid(data_node)};
+        }
+
+        field_values.insert({field_name, v});
+    }
+
+    const auto script_id = AssetParsingUtils::parse_uuid(node["script"]);
+    const auto class_name = asset_manager->get_asset_path(script_id).stem().stem();
+
+    entity.add_component(ScriptComponent{
+        .class_name = class_name,
+        .script = script_id,
+        .field_values = std::move(field_values),
     });
 }
 

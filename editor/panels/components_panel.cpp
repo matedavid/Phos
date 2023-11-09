@@ -10,6 +10,8 @@
 #include "renderer/mesh.h"
 #include "renderer/backend/material.h"
 
+#include "scripting/class_handle.h"
+
 static std::shared_ptr<Phos::EditorAssetManager> s_asset_manager;
 
 ComponentsPanel::ComponentsPanel(std::string name,
@@ -97,6 +99,7 @@ void ComponentsPanel::on_imgui_render() {
         render_component<Phos::MeshRendererComponent>(entity);
         render_component<Phos::LightComponent>(entity);
         render_component<Phos::CameraComponent>(entity);
+        render_component<Phos::ScriptComponent>(entity);
 
         // Add component on Right Click
         if (ImGui::Button("Add Component")) {
@@ -112,6 +115,7 @@ void ComponentsPanel::on_imgui_render() {
             ADD_COMPONENT_POPUP_ITEM(Phos::MeshRendererComponent, "Mesh Renderer Component");
             ADD_COMPONENT_POPUP_ITEM(Phos::LightComponent, "Light Component");
             ADD_COMPONENT_POPUP_ITEM(Phos::CameraComponent, "Camera Component");
+            ADD_COMPONENT_POPUP_ITEM(Phos::ScriptComponent, "Script Component");
 
             ImGui::EndPopup();
         }
@@ -416,6 +420,127 @@ void render_component<Phos::CameraComponent>(Phos::CameraComponent& component) {
 
     ImGui::TableSetColumnIndex(1);
     ImGui::InputInt("##DepthCamera", &component.depth);
+
+    ImGui::EndTable();
+}
+
+template <>
+void render_component<Phos::ScriptComponent>(Phos::ScriptComponent& component) {
+    ImGui::Text("Script");
+
+    if (!ImGui::BeginTable("Script", 2))
+        return;
+
+    ImGui::TableSetupColumn("##Column1", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn("##Column2", ImGuiTableColumnFlags_WidthStretch);
+
+    ImGui::TableNextRow();
+
+    ImGui::AlignTextToFramePadding();
+
+    ImGui::TableSetColumnIndex(0);
+    ImGui::Text("Script file");
+
+    ImGui::TableSetColumnIndex(1);
+    ImGui::InputText(
+        "##ScriptFileInput", component.class_name.data(), component.class_name.length(), ImGuiInputTextFlags_ReadOnly);
+    const auto asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
+    if (asset.has_value() && !asset->is_directory && asset->type == Phos::AssetType::Script) {
+        component.script = asset->uuid;
+
+        const auto handle = s_asset_manager->load_by_id_type<Phos::ClassHandle>(component.script);
+        component.class_name = handle->class_name();
+        component.field_values = {};
+
+        for (const auto& field : handle->get_all_fields()) {
+            auto v = Phos::ScriptFieldValue();
+
+            switch (field.field_type) {
+            case Phos::ClassFieldInfo::Type::Int:
+                v = 0;
+                break;
+            case Phos::ClassFieldInfo::Type::Float:
+                v = 0.0f;
+                break;
+            case Phos::ClassFieldInfo::Type::Vec3:
+                v = glm::vec3();
+                break;
+            case Phos::ClassFieldInfo::Type::String:
+                v = std::string();
+                break;
+            case Phos::ClassFieldInfo::Type::Prefab:
+                v = Phos::PrefabRef{.id = Phos::UUID(0)};
+                break;
+            case Phos::ClassFieldInfo::Type::Entity:
+                v = Phos::EntityRef{.id = Phos::UUID(0)};
+                break;
+            }
+
+            component.field_values[field.name] = v;
+        }
+    }
+
+    if (component.field_values.empty()) {
+        ImGui::EndTable();
+        return;
+    }
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::Text("Fields:");
+
+    for (const auto& [name, value] : component.field_values) {
+        ImGui::TableNextRow();
+        ImGui::AlignTextToFramePadding();
+
+        const auto id = "##Field" + name;
+
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("%s:", name.c_str());
+
+        ImGui::TableSetColumnIndex(1);
+
+        if (std::holds_alternative<int32_t>(value)) {
+            auto& v = const_cast<int32_t&>(std::get<int32_t>(value));
+            ImGui::InputInt(id.c_str(), &v, 0, 0);
+        } else if (std::holds_alternative<float>(value)) {
+            auto& v = const_cast<float&>(std::get<float>(value));
+            ImGui::InputFloat(id.c_str(), &v, 0, 0);
+        } else if (std::holds_alternative<glm::vec3>(value)) {
+            if (ImGui::BeginTable(id.c_str(), 3)) {
+                ImGui::TableNextRow();
+
+                auto& v = const_cast<glm::vec3&>(std::get<glm::vec3>(value));
+
+                ImGui::TableSetColumnIndex(0);
+                render_label_input("X", id + "x", &v.x);
+
+                ImGui::TableSetColumnIndex(1);
+                render_label_input("Y", id + "y", &v.y);
+
+                ImGui::TableSetColumnIndex(2);
+                render_label_input("Z", id + "z", &v.y);
+
+                ImGui::EndTable();
+            }
+
+        } else if (std::holds_alternative<std::string>(value)) {
+            auto& v = const_cast<std::string&>(std::get<std::string>(value));
+            ImGui::InputText(id.c_str(), &v);
+        } else if (std::holds_alternative<Phos::PrefabRef>(value)) {
+            auto& v = const_cast<Phos::PrefabRef&>(std::get<Phos::PrefabRef>(value));
+            auto prefab_name = v.id == Phos::UUID(0) ? "" : s_asset_manager->get_asset_name(v.id);
+            ImGui::InputText(id.c_str(), &prefab_name, ImGuiInputTextFlags_ReadOnly);
+
+            const auto prefab_asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
+            if (prefab_asset.has_value() && !prefab_asset->is_directory &&
+                prefab_asset->type == Phos::AssetType::Prefab) {
+                v.id = prefab_asset->uuid;
+            }
+        } else if (std::holds_alternative<Phos::EntityRef>(value)) {
+            PS_ERROR("[render_component::ScriptComponent] Unimplemented");
+        }
+    }
 
     ImGui::EndTable();
 }
