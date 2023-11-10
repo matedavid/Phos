@@ -277,7 +277,7 @@ class EditorLayer : public Phos::Layer {
         }
     }
 
-    void save_project() { Phos::SceneSerializer::serialize(m_project->scene(), "../projects/project1/scene.pssc"); }
+    void save_project() { Phos::SceneSerializer::serialize(m_project->scene(), "../projects/project1/scene.psa"); }
 
     void on_mouse_moved(Phos::MouseMovedEvent& mouse_moved) override {
         m_viewport_panel->on_mouse_moved(mouse_moved, m_dockspace_id);
