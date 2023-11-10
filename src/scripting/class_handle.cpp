@@ -69,7 +69,6 @@ ClassHandle::ClassHandle(MonoClass* klass, std::string name) : m_klass(klass), m
             internal_type = ClassFieldInfo::Type::Int;
             break;
         case MONO_TYPE_R4:
-            fmt::print("type float\n");
             internal_type = ClassFieldInfo::Type::Float;
             break;
         case MONO_TYPE_STRING:

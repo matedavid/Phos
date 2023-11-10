@@ -44,6 +44,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/scripting/class_handle.cpp
         src/scripting/class_instance_handle.cpp
         src/scripting/script_glue.cpp
+        src/scripting/scripting_system.cpp
 
         # Input
         src/input/input.cpp
