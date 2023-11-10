@@ -177,6 +177,7 @@ add_executable(PhosEditor
         editor/main.cpp
         editor/asset_watcher.cpp
         editor/file_dialog.cpp
+        editor/editor_scene_manager.cpp
 
         editor/asset_tools/editor_material_helper.cpp
         editor/asset_tools/editor_cubemap_helper.cpp

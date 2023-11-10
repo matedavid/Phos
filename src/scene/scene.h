@@ -17,6 +17,7 @@ class Entity;
 class Scene : public IAsset {
   public:
     explicit Scene(std::string name);
+    Scene(Scene& other);
     virtual ~Scene();
 
     [[nodiscard]] AssetType asset_type() override { return AssetType::Scene; }

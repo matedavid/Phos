@@ -35,8 +35,11 @@
 #include "renderer/backend/texture.h"
 #include "renderer/backend/cubemap.h"
 
+#include "scripting/scripting_system.h"
+
 #include "editor_state_manager.h"
 #include "asset_watcher.h"
+#include "editor_scene_manager.h"
 
 constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 960;
@@ -54,6 +57,11 @@ class EditorLayer : public Phos::Layer {
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
 
     void on_update([[maybe_unused]] double ts) override {
+        // Logic
+        if (m_state_manager->get_state() == EditorState::Playing)
+            m_scripting_system->on_update(ts);
+
+        // Rendering
         ImGuiImpl::new_frame();
         ImGui::NewFrame();
 
@@ -182,7 +190,7 @@ class EditorLayer : public Phos::Layer {
                          ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize);
 
         std::string control_button_text;
-        switch (m_state_manager->state) {
+        switch (m_state_manager->get_state()) {
         case EditorState::Editing:
             control_button_text = "Play";
             break;
@@ -194,12 +202,15 @@ class EditorLayer : public Phos::Layer {
         auto windowWidth = ImGui::GetWindowSize().x;
         auto textWidth = ImGui::CalcTextSize(control_button_text.c_str()).x;
 
+        auto change_state_to = m_state_manager->get_state();
         ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
         if (ImGui::Button(control_button_text.c_str())) {
-            if (m_state_manager->state == EditorState::Editing)
-                m_state_manager->state = EditorState::Playing;
-            else if (m_state_manager->state == EditorState::Playing)
-                m_state_manager->state = EditorState::Editing;
+            if (m_state_manager->get_state() == EditorState::Editing)
+                change_state_to = EditorState::Playing;
+            // m_state_manager->set_state(EditorState::Playing);
+            else if (m_state_manager->get_state() == EditorState::Playing)
+                change_state_to = EditorState::Editing;
+            // m_state_manager->set_state(EditorState::Editing);
         }
 
         ImGui::End();
@@ -220,11 +231,18 @@ class EditorLayer : public Phos::Layer {
             ImGuiImpl::render_frame(draw_data);
             ImGuiImpl::present_frame();
         }
+
+        // Change state if requested
+        if (change_state_to != m_state_manager->get_state())
+            m_state_manager->set_state(change_state_to);
     }
 
   private:
     std::shared_ptr<Phos::Project> m_project;
     std::shared_ptr<Phos::ISceneRenderer> m_renderer;
+    std::shared_ptr<Phos::ScriptingSystem> m_scripting_system;
+
+    std::shared_ptr<EditorSceneManager> m_scene_manager;
 
     std::unique_ptr<ViewportPanel> m_viewport_panel;
     std::unique_ptr<EntityHierarchyPanel> m_entity_panel;
@@ -242,9 +260,13 @@ class EditorLayer : public Phos::Layer {
     void open_project(const std::filesystem::path& path) {
         m_project = Phos::Project::open(path);
         m_renderer = std::make_shared<Phos::DeferredRenderer>(m_project->scene(), m_project->scene()->config());
+        m_scripting_system = std::make_shared<Phos::ScriptingSystem>(m_project);
+
+        m_scene_manager = std::make_shared<EditorSceneManager>(m_project->scene());
 
         // Editor State Manager
         m_state_manager = std::make_shared<EditorStateManager>();
+        m_state_manager->subscribe([&](EditorState state) { state_changed(state); });
 
         const auto editor_asset_manager =
             std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
@@ -253,9 +275,9 @@ class EditorLayer : public Phos::Layer {
         m_asset_watcher = std::make_unique<AssetWatcher>(m_project->scene(), m_renderer, editor_asset_manager);
 
         // Panels
-        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_project->scene(), m_state_manager);
-        m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_project->scene());
-        m_components_panel = std::make_unique<ComponentsPanel>("Components", m_project->scene(), editor_asset_manager);
+        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene_manager, m_state_manager);
+        m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_scene_manager);
+        m_components_panel = std::make_unique<ComponentsPanel>("Components", editor_asset_manager);
         m_content_browser_panel = std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager);
         m_asset_inspector_panel = std::make_unique<AssetInspectorPanel>("Inspector", editor_asset_manager);
         m_scene_configuration_panel = std::make_unique<SceneConfigurationPanel>(
@@ -268,6 +290,20 @@ class EditorLayer : public Phos::Layer {
             m_project->scene()->config() = std::move(config);
             m_renderer->change_config(m_project->scene()->config());
         });
+    }
+
+    void state_changed(EditorState state) {
+        m_entity_panel->clear_selected_entity();
+
+        if (m_state_manager->get_state() == EditorState::Editing && state == EditorState::Playing) {
+            m_scene_manager->running_changed(true);
+            m_scripting_system->start(m_scene_manager->active_scene());
+            m_renderer->set_scene(m_scene_manager->active_scene());
+        } else if (m_state_manager->get_state() == EditorState::Playing && state == EditorState::Editing) {
+            m_scene_manager->running_changed(false);
+            m_scripting_system->shutdown();
+            m_renderer->set_scene(m_scene_manager->active_scene());
+        }
     }
 
     void open_project_dialog() {

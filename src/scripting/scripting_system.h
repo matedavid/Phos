@@ -21,7 +21,7 @@ class ScriptingSystem {
 
     void on_update(double ts);
 
-    void start();
+    void start(std::shared_ptr<Scene> scene);
     void shutdown();
 
   private:

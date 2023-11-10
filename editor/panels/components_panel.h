@@ -7,16 +7,13 @@
 namespace Phos {
 
 // Forward declarations
-class Scene;
 class EditorAssetManager;
 
 } // namespace Phos
 
 class ComponentsPanel : public IImGuiPanel {
   public:
-    ComponentsPanel(std::string name,
-                    std::shared_ptr<Phos::Scene> scene,
-                    std::shared_ptr<Phos::EditorAssetManager> asset_manager);
+    ComponentsPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager);
     ~ComponentsPanel() override;
 
     void on_imgui_render() override;
@@ -25,7 +22,5 @@ class ComponentsPanel : public IImGuiPanel {
 
   private:
     std::string m_name;
-    std::shared_ptr<Phos::Scene> m_scene;
-
     std::optional<Phos::Entity> m_selected_entity;
 };

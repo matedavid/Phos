@@ -1,16 +1,18 @@
 #include "entity_hierarchy_panel.h"
 
+#include "editor_scene_manager.h"
+
 #include "scene/scene.h"
 #include "scene/entity.h"
 
-EntityHierarchyPanel::EntityHierarchyPanel(std::string name, std::shared_ptr<Phos::Scene> scene)
-      : m_name(std::move(name)), m_scene(std::move(scene)) {}
+EntityHierarchyPanel::EntityHierarchyPanel(std::string name, std::shared_ptr<EditorSceneManager> scene_manager)
+      : m_name(std::move(name)), m_scene_manager(std::move(scene_manager)) {}
 
 void EntityHierarchyPanel::on_imgui_render() {
     ImGui::Begin(m_name.c_str());
 
     std::vector<Phos::Entity> parent_entities;
-    std::ranges::copy_if(m_scene->get_entities_with<Phos::RelationshipComponent>(),
+    std::ranges::copy_if(m_scene_manager->active_scene()->get_entities_with<Phos::RelationshipComponent>(),
                          std::back_inserter(parent_entities),
                          [](Phos::Entity& entity) {
                              auto relationship = entity.get_component<Phos::RelationshipComponent>();
@@ -31,7 +33,7 @@ void EntityHierarchyPanel::on_imgui_render() {
     if (!entity_hovered &&
         ImGui::BeginPopupContextWindow("##RightClickEntityHierarchy", ImGuiPopupFlags_MouseButtonRight)) {
         if (ImGui::MenuItem("Create Empty Entity")) {
-            m_scene->create_entity();
+            m_scene_manager->active_scene()->create_entity();
         }
 
         ImGui::EndPopup();
@@ -69,7 +71,7 @@ bool EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
 
     if (opened) {
         for (const auto& child_uuid : children) {
-            const auto& child = m_scene->get_entity_with_uuid(child_uuid);
+            const auto& child = m_scene_manager->active_scene()->get_entity_with_uuid(child_uuid);
             render_entity_r(child);
         }
 
@@ -80,7 +82,7 @@ bool EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
         if (m_selected_entity == entity)
             m_selected_entity = {};
 
-        m_scene->destroy_entity(entity);
+        m_scene_manager->active_scene()->destroy_entity(entity);
     }
 
     return hovered;

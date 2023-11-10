@@ -3,6 +3,7 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include "asset_tools/editor_asset.h"
 #include "imgui/imgui_utils.h"
+#include "editor_scene_manager.h"
 
 #include "scene/scene.h"
 #include "asset/editor_asset_manager.h"
@@ -14,10 +15,8 @@
 
 static std::shared_ptr<Phos::EditorAssetManager> s_asset_manager;
 
-ComponentsPanel::ComponentsPanel(std::string name,
-                                 std::shared_ptr<Phos::Scene> scene,
-                                 std::shared_ptr<Phos::EditorAssetManager> asset_manager)
-      : m_name(std::move(name)), m_scene(std::move(scene)) {
+ComponentsPanel::ComponentsPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager)
+      : m_name(std::move(name)) {
     s_asset_manager = std::move(asset_manager);
 }
 

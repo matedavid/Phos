@@ -21,6 +21,35 @@ Scene::Scene(std::string name) : m_name(std::move(name)) {
     m_registry->register_component<Phos::ScriptComponent>();
 }
 
+#define COPY_COMPONENT(T)                              \
+    if (entity.has_component<T>()) {                   \
+        const auto c = entity.get_component<T>();      \
+        if (copy_entity.has_component<T>()) {          \
+            auto& cc = copy_entity.get_component<T>(); \
+            cc = c;                                    \
+        } else {                                       \
+            copy_entity.add_component<T>(c);           \
+        }                                              \
+    }
+
+Scene::Scene(Scene& other) : Scene(other.name() + "Copy") {
+    // @TODO: Probably very slow, look into more efficient way
+    // Leaving for the moment because there will not be many copies
+    for (const auto& entity : other.get_all_entities()) {
+        auto copy_entity = create_entity(entity.uuid());
+
+        COPY_COMPONENT(NameComponent);
+        COPY_COMPONENT(RelationshipComponent);
+        COPY_COMPONENT(TransformComponent);
+        COPY_COMPONENT(LightComponent);
+        COPY_COMPONENT(MeshRendererComponent);
+        COPY_COMPONENT(CameraComponent);
+        COPY_COMPONENT(ScriptComponent);
+    }
+
+    m_renderer_config = other.m_renderer_config;
+}
+
 Scene::~Scene() {
     for (auto& [_, entity] : m_id_to_entity) {
         delete entity;

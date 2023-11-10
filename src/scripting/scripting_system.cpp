@@ -18,8 +18,6 @@ ScriptingSystem::ScriptingSystem(std::shared_ptr<Project> project) : m_project(s
     m_dll_path = project_path / "bin" / "Debug" / (m_project->name() + ".dll");
 
     ScriptingEngine::set_dll_path(m_dll_path);
-
-    ScriptGlue::set_scene(m_project->scene());
     ScriptGlue::set_asset_manager(m_project->asset_manager());
 }
 
@@ -29,11 +27,12 @@ void ScriptingSystem::on_update(double ts) {
     }
 }
 
-void ScriptingSystem::start() {
+void ScriptingSystem::start(std::shared_ptr<Scene> scene) {
     m_entity_script_instance.clear();
 
     // Make copy of current scene
-    m_scene_copy = m_project->scene(); // @TODO: The copy :)
+    m_scene_copy = std::move(scene);
+    ScriptGlue::set_scene(m_scene_copy);
 
     // Create class instances for entities
     for (const auto& entity : m_scene_copy->get_entities_with<ScriptComponent>()) {
@@ -42,7 +41,9 @@ void ScriptingSystem::start() {
 }
 
 void ScriptingSystem::shutdown() {
-    PS_ERROR("[ScriptingSystem::shutdown] Unimplemented");
+    ScriptGlue::set_scene(nullptr);
+    m_scene_copy.reset();
+    m_entity_script_instance.clear();
 }
 
 std::shared_ptr<ClassInstanceHandle> ScriptingSystem::create_entity_instance(const Entity& entity) {
