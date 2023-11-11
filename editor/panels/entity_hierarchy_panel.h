@@ -11,17 +11,21 @@ class Scene;
 
 } // namespace Phos
 
+// Forward declarations
+class EditorSceneManager;
+
 class EntityHierarchyPanel : public IImGuiPanel {
   public:
-    EntityHierarchyPanel(std::string name, std::shared_ptr<Phos::Scene> m_scene);
+    EntityHierarchyPanel(std::string name, std::shared_ptr<EditorSceneManager> scene_manager);
     ~EntityHierarchyPanel() override = default;
 
     void on_imgui_render() override;
     [[nodiscard]] std::optional<Phos::Entity> get_selected_entity() const { return m_selected_entity; }
+    void clear_selected_entity() { m_selected_entity = {}; }
 
   private:
     std::string m_name;
-    std::shared_ptr<Phos::Scene> m_scene;
+    std::shared_ptr<EditorSceneManager> m_scene_manager;
 
     std::optional<Phos::Entity> m_selected_entity;
 

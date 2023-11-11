@@ -62,8 +62,13 @@ void DeferredRenderer::change_config(const SceneRendererConfig& config) {
 }
 
 void DeferredRenderer::set_scene(std::shared_ptr<Scene> scene) {
-    (void)scene;
-    PS_FAIL("Unimplemented")
+    Renderer::wait_idle();
+
+    m_scene = std::move(scene);
+    m_config = m_scene->config();
+
+    init_bloom_pipeline(m_config.bloom_config);
+    init_skybox_pipeline(m_config.environment_config);
 }
 
 void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {

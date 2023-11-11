@@ -3,6 +3,8 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
+#include "asset/asset_parsing_utils.h"
+
 #include "scene/entity.h"
 #include "scene/scene.h"
 
@@ -29,7 +31,9 @@ void SceneSerializer::serialize(const std::shared_ptr<Scene>& scene, const std::
 
     YAML::Emitter out;
     out << YAML::BeginMap;
+    emit_yaml(out, "assetType", "scene");
     emit_yaml(out, "name", scene->name());
+    emit_yaml(out, "id", (uint64_t)scene->id);
 
     // Emit config
     const auto& config = scene->config();
@@ -94,6 +98,7 @@ void SceneSerializer::serialize_entity(YAML::Emitter& out, const Entity& entity)
     SERIALIZE_COMPONENT(MeshRendererComponent);
     SERIALIZE_COMPONENT(LightComponent);
     SERIALIZE_COMPONENT(CameraComponent);
+    SERIALIZE_COMPONENT(ScriptComponent);
 
     out << YAML::EndMap;
 }
@@ -228,6 +233,50 @@ void serialize_component_t<CameraComponent>(YAML::Emitter& out, const CameraComp
     emit_yaml(out, "znear", component.znear);
     emit_yaml(out, "zfar", component.zfar);
     emit_yaml(out, "depth", component.depth);
+
+    out << YAML::EndMap;
+}
+
+template <>
+void serialize_component_t<ScriptComponent>(YAML::Emitter& out, const ScriptComponent& component) {
+    emit_yaml(out, "ScriptComponent");
+    out << YAML::BeginMap;
+
+    emit_yaml(out, "className", component.class_name);
+    emit_yaml(out, "script", (uint64_t)component.script);
+
+    emit_yaml(out, "fields");
+    out << YAML::BeginMap;
+    {
+        for (const auto& [field_name, value] : component.field_values) {
+            emit_yaml(out, field_name);
+            out << YAML::BeginMap;
+
+            std::string type_name;
+            if (std::holds_alternative<int>(value)) {
+                emit_yaml(out, "type", "int");
+                AssetParsingUtils::dump(out, "data", std::get<int>(value));
+            } else if (std::holds_alternative<float>(value)) {
+                emit_yaml(out, "type", "float");
+                AssetParsingUtils::dump(out, "data", std::get<float>(value));
+            } else if (std::holds_alternative<glm::vec3>(value)) {
+                emit_yaml(out, "type", "vec3");
+                AssetParsingUtils::dump_vec3(out, "data", std::get<glm::vec3>(value));
+            } else if (std::holds_alternative<std::string>(value)) {
+                emit_yaml(out, "type", "string");
+                AssetParsingUtils::dump(out, "data", std::get<std::string>(value));
+            } else if (std::holds_alternative<PrefabRef>(value)) {
+                emit_yaml(out, "type", "prefab");
+                AssetParsingUtils::dump(out, "data", (uint64_t)std::get<PrefabRef>(value).id);
+            } else if (std::holds_alternative<EntityRef>(value)) {
+                emit_yaml(out, "type", "entity");
+                AssetParsingUtils::dump(out, "data", (uint64_t)std::get<EntityRef>(value).id);
+            }
+
+            out << YAML::EndMap;
+        }
+    }
+    out << YAML::EndMap;
 
     out << YAML::EndMap;
 }

@@ -10,7 +10,6 @@ namespace Phos {
 // Forward declarations
 class ISceneRenderer;
 class Window;
-class Scene;
 class PerspectiveCamera;
 class Camera;
 
@@ -19,11 +18,14 @@ class KeyPressedEvent;
 
 } // namespace Phos
 
+// Forward declarations
+class EditorSceneManager;
+
 class ViewportPanel : public IImGuiPanel {
   public:
     ViewportPanel(std::string name,
                   std::shared_ptr<Phos::ISceneRenderer> renderer,
-                  std::shared_ptr<Phos::Scene> scene,
+                  std::shared_ptr<EditorSceneManager> scene_manager,
                   std::shared_ptr<EditorStateManager> state_manager);
     ~ViewportPanel() override = default;
 
@@ -35,7 +37,7 @@ class ViewportPanel : public IImGuiPanel {
   private:
     std::string m_name;
     std::shared_ptr<Phos::ISceneRenderer> m_renderer;
-    std::shared_ptr<Phos::Scene> m_scene;
+    std::shared_ptr<EditorSceneManager> m_scene_manager;
     std::shared_ptr<EditorStateManager> m_state_manager;
 
     std::shared_ptr<Phos::PerspectiveCamera> m_editor_camera;
@@ -44,5 +46,5 @@ class ViewportPanel : public IImGuiPanel {
     uint32_t m_width, m_height;
     ImTextureID m_texture_id;
 
-    std::shared_ptr<Phos::Camera> get_camera() const;
+    [[nodiscard]] std::shared_ptr<Phos::Camera> get_camera() const;
 };

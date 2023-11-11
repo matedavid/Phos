@@ -11,4 +11,5 @@ class AssetImporter {
   private:
     static void import_texture(const std::filesystem::path& asset_path, const std::filesystem::path& containing_folder);
     static void import_model(const std::filesystem::path& asset_path, const std::filesystem::path& containing_folder);
+    static void import_script(const std::filesystem::path& asset_path, const std::filesystem::path& containing_folder);
 };

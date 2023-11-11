@@ -79,9 +79,6 @@ class MaterialParser : public IAssetParser {
     AssetManagerBase* m_manager;
 
     [[nodiscard]] std::shared_ptr<Texture> parse_texture(const YAML::Node& node) const;
-    [[nodiscard]] glm::vec3 parse_vec3(const YAML::Node& node) const;
-    [[nodiscard]] glm::vec4 parse_vec4(const YAML::Node& node) const;
-    [[nodiscard]] float parse_float(const YAML::Node& node) const;
 };
 
 class MeshParser : public IAssetParser {
@@ -121,6 +118,17 @@ class SceneParser : public IAssetParser {
     explicit SceneParser(AssetManagerBase* manager) : m_manager(manager) {}
 
     [[nodiscard]] AssetType type() override { return AssetType::Scene; }
+    std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
+
+  private:
+    AssetManagerBase* m_manager;
+};
+
+class ScriptParser : public IAssetParser {
+  public:
+    explicit ScriptParser(AssetManagerBase* manager) : m_manager(manager) {}
+
+    [[nodiscard]] AssetType type() override { return AssetType::Script; }
     std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
 
   private:

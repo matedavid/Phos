@@ -44,6 +44,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/scripting/class_handle.cpp
         src/scripting/class_instance_handle.cpp
         src/scripting/script_glue.cpp
+        src/scripting/scripting_system.cpp
 
         # Input
         src/input/input.cpp
@@ -176,6 +177,7 @@ add_executable(PhosEditor
         editor/main.cpp
         editor/asset_watcher.cpp
         editor/file_dialog.cpp
+        editor/editor_scene_manager.cpp
 
         editor/asset_tools/editor_material_helper.cpp
         editor/asset_tools/editor_cubemap_helper.cpp

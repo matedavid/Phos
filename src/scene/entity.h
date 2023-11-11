@@ -9,13 +9,9 @@
 
 #include "scene/registry.h"
 #include "scene/components.h"
-
-#include "scene/scene.h"
+#include "scene/scene_definition.h"
 
 namespace Phos {
-
-// Forward declarations
-class Scene;
 
 class Entity {
   public:
@@ -44,7 +40,7 @@ class Entity {
         return m_scene->m_registry->get_component<T>(m_id);
     }
 
-    template<typename T>
+    template <typename T>
     [[nodiscard]] bool has_component() const {
         return m_scene->m_registry->has_component<T>(m_id);
     }

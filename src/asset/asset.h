@@ -17,6 +17,7 @@ enum class AssetType {
     Model,
     Prefab,
     Scene,
+    Script,
 };
 
 class IAsset {

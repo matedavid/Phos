@@ -17,6 +17,7 @@
 #include "asset/asset_manager.h"
 #include "asset/model_asset.h"
 #include "asset/prefab_asset.h"
+#include "asset/asset_parsing_utils.h"
 
 #include "renderer/backend/renderer.h"
 
@@ -24,6 +25,8 @@
 #include "renderer/backend/texture.h"
 #include "renderer/backend/cubemap.h"
 #include "renderer/backend/material.h"
+
+#include "scripting/class_instance_handle.h"
 
 namespace Phos {
 
@@ -44,6 +47,8 @@ static AssetType string_to_asset_type(const std::string& str) {
         return AssetType::Prefab;
     else if (str == "scene")
         return AssetType::Scene;
+    else if (str == "script")
+        return AssetType::Script;
 
     PS_FAIL("Asset type: {} is not valid", str)
 }
@@ -59,6 +64,7 @@ AssetLoader::AssetLoader(AssetManagerBase* manager) : m_manager(manager) {
     REGISTER_PARSER(ModelParser);
     REGISTER_PARSER(PrefabParser);
     REGISTER_PARSER(SceneParser);
+    REGISTER_PARSER(ScriptParser);
 }
 
 UUID AssetLoader::get_id(const std::string& path) const {
@@ -187,13 +193,13 @@ std::shared_ptr<IAsset> MaterialParser::parse(const YAML::Node& node, [[maybe_un
             const auto texture = parse_texture(data_node);
             material->set(property_name, texture);
         } else if (property_type == "vec3") {
-            const auto data = parse_vec3(data_node);
+            const auto data = AssetParsingUtils::parse_vec3(data_node);
             material->set(property_name, data);
         } else if (property_type == "vec4") {
-            const auto data = parse_vec4(data_node);
+            const auto data = AssetParsingUtils::parse_vec4(data_node);
             material->set(property_name, data);
         } else if (property_type == "float") {
-            const auto data = parse_float(data_node);
+            const auto data = AssetParsingUtils::parse_numeric<float>(data_node);
             material->set(property_name, data);
         } else {
             PS_WARNING("Property type '{}' is not valid", property_type);
@@ -211,27 +217,6 @@ std::shared_ptr<Texture> MaterialParser::parse_texture(const YAML::Node& node) c
         return Phos::Renderer::texture_manager()->get_white_texture();
 
     return m_manager->load_by_id_type<Texture>(id);
-}
-
-glm::vec3 MaterialParser::parse_vec3(const YAML::Node& node) const {
-    return {
-        node["x"].as<float>(),
-        node["y"].as<float>(),
-        node["z"].as<float>(),
-    };
-}
-
-glm::vec4 MaterialParser::parse_vec4(const YAML::Node& node) const {
-    return {
-        node["x"].as<float>(),
-        node["y"].as<float>(),
-        node["z"].as<float>(),
-        node["w"].as<float>(),
-    };
-}
-
-float MaterialParser::parse_float(const YAML::Node& node) const {
-    return node.as<float>();
 }
 
 //
@@ -386,6 +371,17 @@ std::shared_ptr<IAsset> SceneParser::parse(const YAML::Node& node, [[maybe_unuse
     }
 
     return scene;
+}
+
+//
+// ScriptParser
+//
+
+std::shared_ptr<IAsset> ScriptParser::parse([[maybe_unused]] const YAML::Node& node,
+                                            [[maybe_unused]] const std::string& path) {
+    // First stem to remove .psa and second to remove .cs
+    const auto class_name = std::filesystem::path(path).stem().stem();
+    return ClassHandle::create("", class_name);
 }
 
 } // namespace Phos

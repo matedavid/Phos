@@ -1,7 +1,6 @@
 #include "model_asset.h"
 
 #include "scene/scene.h"
-#include "scene/entity.h"
 
 namespace Phos {
 

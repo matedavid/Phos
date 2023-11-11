@@ -4,6 +4,7 @@
 
 #include "core/window.h"
 #include "renderer/backend/renderer.h"
+#include "scripting/scripting_engine.h"
 
 namespace Phos {
 
@@ -19,11 +20,15 @@ Application::Application(std::string_view title, uint32_t width, uint32_t height
         .num_frames = 2,
     });
 
+    ScriptingEngine::initialize();
+
     m_instance = this;
 }
 
 Application::~Application() {
     m_layers.clear();
+
+    ScriptingEngine::shutdown();
     Renderer::shutdown();
 
     m_instance = nullptr;

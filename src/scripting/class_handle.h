@@ -7,15 +7,16 @@
 
 #include <mono/jit/jit.h>
 
+#include "asset/asset.h"
+
 namespace Phos {
 
 struct ClassFieldInfo {
     enum class Type {
         Int,
         Float,
-
+        Vec3,
         String,
-
         Entity,
         Prefab,
     };
@@ -25,10 +26,13 @@ struct ClassFieldInfo {
     Type field_type;
 };
 
-class ClassHandle {
+class ClassHandle : public IAsset {
   public:
-    explicit ClassHandle(MonoClass* klass, std::string name);
-    ~ClassHandle();
+    virtual ~ClassHandle();
+
+    static std::shared_ptr<ClassHandle> create(const std::string& namespace_, const std::string& class_name);
+
+    [[nodiscard]] AssetType asset_type() override { return AssetType::Script; }
 
     [[nodiscard]] std::optional<MonoMethod*> get_method(const std::string& name, uint32_t num_params = 0) const;
     [[nodiscard]] std::optional<ClassFieldInfo> get_field(const std::string& name) const;
@@ -60,6 +64,8 @@ class ClassHandle {
     std::unordered_map<MethodId, MonoMethod*, MethodId_Hash> m_methods;
 
     std::unordered_map<std::string, ClassFieldInfo> m_fields;
+
+    ClassHandle(MonoClass* klass, std::string name);
 };
 
 } // namespace Phos
