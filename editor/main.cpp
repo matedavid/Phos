@@ -27,13 +27,7 @@
 #include "scene/scene_renderer.h"
 #include "scene/scene_serializer.h"
 
-#include "renderer/mesh.h"
 #include "renderer/deferred_renderer.h"
-
-#include "renderer/backend/material.h"
-#include "renderer/backend/shader.h"
-#include "renderer/backend/texture.h"
-#include "renderer/backend/cubemap.h"
 
 #include "scripting/scripting_system.h"
 
