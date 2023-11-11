@@ -7,6 +7,7 @@
 
 #define IS_TEXTURE(path) path.extension() == ".jpg" || path.extension() == ".png" || path.extension() == ".jpeg"
 #define IS_MODEL(path) path.extension() == ".fbx" || path.extension() == ".obj"
+#define IS_SCRIPT(path) path.extension() == ".cs"
 
 void AssetImporter::import_asset(const std::filesystem::path& asset_path,
                                  const std::filesystem::path& containing_folder) {
@@ -14,6 +15,8 @@ void AssetImporter::import_asset(const std::filesystem::path& asset_path,
         import_texture(asset_path, containing_folder);
     else if (IS_MODEL(asset_path))
         import_model(asset_path, containing_folder);
+    else if (IS_SCRIPT(asset_path))
+        import_script(asset_path, containing_folder);
     else
         PS_ERROR("[AssetImporter] Unsupported file extension: {}", asset_path.extension().string());
 }
@@ -25,9 +28,10 @@ void AssetImporter::import_asset(const std::filesystem::path& asset_path,
 void AssetImporter::import_texture(const std::filesystem::path& asset_path,
                                    const std::filesystem::path& containing_folder) {
     const auto imported_asset_path = containing_folder / asset_path.filename();
-    std::filesystem::copy(asset_path, imported_asset_path);
+    if (!std::filesystem::exists(imported_asset_path))
+        std::filesystem::copy(asset_path, imported_asset_path);
 
-    const auto imported_phos_asset_path = containing_folder / (asset_path.stem().string() + ".psa");
+    const auto imported_phos_asset_path = containing_folder / (asset_path.filename().string() + ".psa");
 
     YAML::Emitter out;
     out << YAML::BeginMap;
@@ -46,5 +50,27 @@ void AssetImporter::import_texture(const std::filesystem::path& asset_path,
 
 void AssetImporter::import_model(const std::filesystem::path& asset_path,
                                  const std::filesystem::path& containing_folder) {
-    PS_FAIL("Unimplemented")
+    (void)asset_path;
+    (void)containing_folder;
+    PS_ERROR("[AssetImporter::import_model] Unimplemented");
+}
+
+void AssetImporter::import_script(const std::filesystem::path& asset_path,
+                                  const std::filesystem::path& containing_folder) {
+    const auto imported_asset_path = containing_folder / asset_path.filename();
+    if (!std::filesystem::exists(imported_asset_path))
+        std::filesystem::copy(asset_path, imported_asset_path);
+
+    const auto imported_phos_asset_path = containing_folder / (asset_path.filename().string() + ".psa");
+
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+
+    out << YAML::Key << "assetType" << YAML::Value << "script";
+    out << YAML::Key << "id" << YAML::Value << (uint64_t)Phos::UUID();
+
+    out << YAML::EndMap;
+
+    std::ofstream file(imported_phos_asset_path);
+    file << out.c_str();
 }

@@ -57,6 +57,10 @@ void AssetInspectorPanel::on_imgui_render() {
         break;
     case Phos::AssetType::Prefab:
         break;
+    case Phos::AssetType::Scene:
+        break;
+    case Phos::AssetType::Script:
+        break;
     }
 
     ImGui::End();
@@ -82,16 +86,30 @@ void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
     if (m_selected_asset->is_directory)
         return;
 
-    if (m_selected_asset->type == Phos::AssetType::Texture) {
+    switch (m_selected_asset->type) {
+    case Phos::AssetType::Texture:
         m_texture = m_asset_manager->load_by_id_type<Phos::Texture>(m_selected_asset->uuid);
         m_imgui_texture_id = ImGuiImpl::add_texture(m_texture);
-    } else if (m_selected_asset->type == Phos::AssetType::Material) {
-        m_material_helper = EditorMaterialHelper::open(m_selected_asset->path);
-    } else if (m_selected_asset->type == Phos::AssetType::Cubemap) {
+        break;
+    case Phos::AssetType::Cubemap:
         m_cubemap_helper = EditorCubemapHelper::open(m_selected_asset->path);
         setup_cubemap_info();
-    } else {
-        PS_FAIL("Not implemented")
+        break;
+    case Phos::AssetType::Shader:
+        break;
+    case Phos::AssetType::Material:
+        m_material_helper = EditorMaterialHelper::open(m_selected_asset->path);
+        break;
+    case Phos::AssetType::Mesh:
+        break;
+    case Phos::AssetType::Model:
+        break;
+    case Phos::AssetType::Prefab:
+        break;
+    case Phos::AssetType::Scene:
+        break;
+    case Phos::AssetType::Script:
+        break;
     }
 }
 

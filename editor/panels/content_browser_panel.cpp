@@ -283,6 +283,20 @@ void ContentBrowserPanel::display_asset(const EditorAsset& asset, std::size_t as
     ImGui::EndGroup();
 }
 
+static bool file_is_internal(const std::string& extension) {
+    const bool editor_internal = extension == ".psproj";
+    const bool scripting_internal = extension == ".csproj" || extension == ".sln" || extension == ".user";
+
+    return editor_internal || scripting_internal;
+}
+
+static bool directory_is_internal(const std::filesystem::path& path) {
+    const bool scripting_internal =
+        path.filename() == "bin" || path.filename() == "obj" || path.filename() == "Properties";
+
+    return scripting_internal;
+}
+
 void ContentBrowserPanel::update() {
     m_partial_select_idx = {};
     m_selected_asset_idx = {};
@@ -290,7 +304,15 @@ void ContentBrowserPanel::update() {
     m_assets.clear();
 
     for (const auto& path : std::filesystem::directory_iterator(m_current_path)) {
+        // Hidden files / folders
+        if (path.path().filename().string().starts_with('.'))
+            continue;
+
+        // Directories
         if (path.is_directory()) {
+            if (directory_is_internal(path.path()))
+                continue;
+
             m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
                 .is_directory = true,
                 .path = path.path(),
@@ -300,8 +322,20 @@ void ContentBrowserPanel::update() {
             continue;
         }
 
-        if (path.path().extension() != ".psa")
+        const auto extension = path.path().extension();
+        if (file_is_internal(extension))
             continue;
+
+        if (extension != ".psa") {
+            // Check if non .psa files have a corresponding phos asset file
+            const auto psa_path = path.path().string() + ".psa";
+            if (!std::filesystem::exists(psa_path)) {
+                PS_WARNING("Non .psa file does not have corresponding psa file: {}", path.path().string());
+                AssetImporter::import_asset(path, m_current_path);
+            }
+
+            continue;
+        }
 
         try {
             const auto id = m_asset_manager->get_asset_id(path);
@@ -312,7 +346,7 @@ void ContentBrowserPanel::update() {
                 .uuid = id,
             }));
         } catch (std::exception&) {
-            PS_ERROR("Error loading asset with path: {}\n", path.path().string());
+            PS_ERROR("File '{}' does not have corresponding .psa file\n", path.path().string());
         }
     }
 
@@ -362,11 +396,18 @@ bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
         return false;
     }
 
+    case Phos::AssetType::Script: {
+        const auto script_file = asset.path.parent_path() / asset.path.stem();
+        return std::filesystem::remove(asset.path) && std ::filesystem::remove(script_file);
+
+    } break;
+
     case Phos::AssetType::Cubemap:
     case Phos::AssetType::Material:
     case Phos::AssetType::Mesh:
     case Phos::AssetType::Prefab:
     case Phos::AssetType::Shader:
+    case Phos::AssetType::Scene:
         return std::filesystem::remove(asset.path);
     }
 }
@@ -392,7 +433,7 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
 
 void ContentBrowserPanel::import_asset() {
     // @TODO: Should move to another place, maybe near AssetImporter
-    constexpr auto asset_filter = "jpg,jpeg,png;fbx,obj";
+    constexpr auto asset_filter = "jpg,jpeg,png;fbx,obj;cs";
 
     const auto paths = FileDialog::open_file_dialog_multiple(asset_filter);
     if (paths.empty())
