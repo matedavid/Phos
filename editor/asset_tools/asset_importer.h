@@ -6,10 +6,10 @@
 
 class AssetImporter {
   public:
-    static void import_asset(const std::filesystem::path& asset_path, const std::filesystem::path& containing_folder);
+    static std::filesystem::path import_asset(const std::filesystem::path& asset_path, const std::filesystem::path& containing_folder);
 
   private:
-    static void import_texture(const std::filesystem::path& asset_path, const std::filesystem::path& containing_folder);
-    static void import_model(const std::filesystem::path& asset_path, const std::filesystem::path& containing_folder);
-    static void import_script(const std::filesystem::path& asset_path, const std::filesystem::path& containing_folder);
+    static std::filesystem::path import_texture(const std::filesystem::path& asset_path, const std::filesystem::path& containing_folder);
+    static std::filesystem::path import_model(const std::filesystem::path& asset_path, const std::filesystem::path& containing_folder);
+    static std::filesystem::path import_script(const std::filesystem::path& asset_path, const std::filesystem::path& containing_folder);
 };

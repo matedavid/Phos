@@ -231,7 +231,6 @@ void AssetInspectorPanel::render_material_asset() const {
     // @TODO: Temporary button...??
     if (ImGui::Button("Save")) {
         m_material_helper->save();
-        m_asset_modified_callback(m_selected_asset->uuid);
     }
 }
 
@@ -361,6 +360,5 @@ void AssetInspectorPanel::render_cubemap_asset() {
     // @TODO: Temporary button...??
     if (ImGui::Button("Save")) {
         m_cubemap_helper->save();
-        m_asset_modified_callback(m_selected_asset->uuid);
     }
 }

@@ -16,9 +16,14 @@ class Texture;
 
 } // namespace Phos
 
+// Forward declarations
+class AssetWatcher;
+
 class ContentBrowserPanel : public IImGuiPanel {
   public:
-    ContentBrowserPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager);
+    ContentBrowserPanel(std::string name,
+                        std::shared_ptr<Phos::EditorAssetManager> asset_manager,
+                        std::shared_ptr<AssetWatcher> asset_watcher);
     ~ContentBrowserPanel() override = default;
 
     void on_imgui_render() override;
@@ -30,6 +35,7 @@ class ContentBrowserPanel : public IImGuiPanel {
   private:
     std::string m_name;
     std::shared_ptr<Phos::EditorAssetManager> m_asset_manager;
+    std::shared_ptr<AssetWatcher> m_asset_watcher;
 
     std::filesystem::path m_current_path;
 

@@ -29,17 +29,12 @@ class AssetInspectorPanel : public IImGuiPanel {
     void on_imgui_render() override;
 
     void set_selected_asset(std::optional<EditorAsset> asset);
-    void set_asset_modified_callback(std::function<void(const Phos::UUID&)> func) {
-        m_asset_modified_callback = std::move(func);
-    }
 
   private:
     std::string m_name;
     std::optional<EditorAsset> m_selected_asset;
 
     std::shared_ptr<Phos::EditorAssetManager> m_asset_manager;
-
-    std::function<void(const Phos::UUID&)> m_asset_modified_callback;
 
     bool m_locked = false;
 
@@ -59,8 +54,7 @@ class AssetInspectorPanel : public IImGuiPanel {
     std::vector<ImTextureID> m_cubemap_face_ids;
 
     std::shared_ptr<Phos::Texture> m_cubemap_equirectangular_texture;
-    ImTextureID m_cubemap_equirectangular_id;
-
+    ImTextureID m_cubemap_equirectangular_id{};
 
     // Render functions
     void render_texture_asset() const;

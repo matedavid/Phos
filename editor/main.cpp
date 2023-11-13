@@ -193,18 +193,16 @@ class EditorLayer : public Phos::Layer {
             break;
         }
 
-        auto windowWidth = ImGui::GetWindowSize().x;
-        auto textWidth = ImGui::CalcTextSize(control_button_text.c_str()).x;
+        const auto window_width = ImGui::GetWindowSize().x;
+        const auto text_width = ImGui::CalcTextSize(control_button_text.c_str()).x;
 
         auto change_state_to = m_state_manager->get_state();
-        ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
+        ImGui::SetCursorPosX((window_width - text_width) * 0.5f);
         if (ImGui::Button(control_button_text.c_str())) {
             if (m_state_manager->get_state() == EditorState::Editing)
                 change_state_to = EditorState::Playing;
-            // m_state_manager->set_state(EditorState::Playing);
             else if (m_state_manager->get_state() == EditorState::Playing)
                 change_state_to = EditorState::Editing;
-            // m_state_manager->set_state(EditorState::Editing);
         }
 
         ImGui::End();
@@ -220,7 +218,7 @@ class EditorLayer : public Phos::Layer {
         // Rendering
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
-        const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
+        const bool is_minimized = draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f;
         if (!is_minimized) {
             ImGuiImpl::render_frame(draw_data);
             ImGuiImpl::present_frame();
@@ -229,6 +227,9 @@ class EditorLayer : public Phos::Layer {
         // Change state if requested
         if (change_state_to != m_state_manager->get_state())
             m_state_manager->set_state(change_state_to);
+
+        // Check if any asset has been modified
+        m_asset_watcher->check_asset_modified();
     }
 
   private:
@@ -245,7 +246,7 @@ class EditorLayer : public Phos::Layer {
     std::unique_ptr<AssetInspectorPanel> m_asset_inspector_panel;
     std::unique_ptr<SceneConfigurationPanel> m_scene_configuration_panel;
 
-    std::unique_ptr<AssetWatcher> m_asset_watcher;
+    std::shared_ptr<AssetWatcher> m_asset_watcher;
 
     ImGuiID m_dockspace_id{0};
 
@@ -266,19 +267,17 @@ class EditorLayer : public Phos::Layer {
             std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
         PS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager")
 
-        m_asset_watcher = std::make_unique<AssetWatcher>(m_project->scene(), m_renderer, editor_asset_manager);
+        m_asset_watcher = std::make_shared<AssetWatcher>(m_project->scene(), m_renderer, editor_asset_manager);
 
         // Panels
         m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene_manager, m_state_manager);
         m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_scene_manager);
         m_components_panel = std::make_unique<ComponentsPanel>("Components", editor_asset_manager);
-        m_content_browser_panel = std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager);
+        m_content_browser_panel =
+            std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager, m_asset_watcher);
         m_asset_inspector_panel = std::make_unique<AssetInspectorPanel>("Inspector", editor_asset_manager);
         m_scene_configuration_panel = std::make_unique<SceneConfigurationPanel>(
             "Scene Configuration", m_project->scene()->config(), editor_asset_manager);
-
-        m_asset_inspector_panel->set_asset_modified_callback(
-            [&](const Phos::UUID& id) { m_asset_watcher->asset_modified(id); });
 
         m_scene_configuration_panel->set_scene_config_updated_callback([&](Phos::SceneRendererConfig config) {
             m_project->scene()->config() = std::move(config);

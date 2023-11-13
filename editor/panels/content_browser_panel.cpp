@@ -9,6 +9,7 @@
 #include "imgui/imgui_utils.h"
 
 #include "file_dialog.h"
+#include "asset_watcher.h"
 
 #include "asset_tools/editor_material_helper.h"
 #include "asset_tools/editor_cubemap_helper.h"
@@ -22,8 +23,10 @@
 #include "renderer/backend/texture.h"
 #include "renderer/backend/shader.h"
 
-ContentBrowserPanel::ContentBrowserPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager)
-      : m_name(std::move(name)), m_asset_manager(std::move(asset_manager)) {
+ContentBrowserPanel::ContentBrowserPanel(std::string name,
+                                         std::shared_ptr<Phos::EditorAssetManager> asset_manager,
+                                         std::shared_ptr<AssetWatcher> asset_watcher)
+      : m_name(std::move(name)), m_asset_manager(std::move(asset_manager)), m_asset_watcher(std::move(asset_watcher)) {
     m_file_texture = Phos::Texture::create("../editor/icons/file_icon.png");
     m_directory_texture = Phos::Texture::create("../editor/icons/directory_icon.png");
 
@@ -377,8 +380,11 @@ std::vector<std::string> ContentBrowserPanel::get_path_components(const std::fil
 
 bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
     if (asset.is_directory) {
+        // @TODO: Should revisit, maybe do not let user delete folder if not empty
         return std::filesystem::remove_all(asset.path);
     }
+
+    m_asset_watcher->asset_removed(asset.path);
 
     switch (asset.type) {
     default:
@@ -399,8 +405,7 @@ bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
     case Phos::AssetType::Script: {
         const auto script_file = asset.path.parent_path() / asset.path.stem();
         return std::filesystem::remove(asset.path) && std ::filesystem::remove(script_file);
-
-    } break;
+    }
 
     case Phos::AssetType::Cubemap:
     case Phos::AssetType::Material:
@@ -425,8 +430,20 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
         return;
     }
 
+    if (asset.type == Phos::AssetType::Texture) {
+        const auto node = YAML::LoadFile(asset.path);
+        const auto texture_path = asset.path.parent_path() / node["path"].as<std::string>();
+
+        const auto new_texture_path = texture_path.parent_path() / m_renaming_asset_tmp_name;
+        PS_INFO("{} -> {}", texture_path.string(), new_texture_path.string());
+
+        std::filesystem::rename(texture_path, new_texture_path);
+    }
+
     PS_INFO("[ContentBrowserPanel] Renaming asset from {} to {}", asset.path.string(), new_path.string());
     std::filesystem::rename(asset.path, new_path);
+
+    m_asset_watcher->asset_renamed(asset.path, new_path);
 
     update();
 }
@@ -445,7 +462,9 @@ void ContentBrowserPanel::import_asset() {
             continue;
         }
 
-        AssetImporter::import_asset(path, m_current_path);
+        const auto new_path = AssetImporter::import_asset(path, m_current_path);
+        m_asset_watcher->asset_created(new_path);
+
         update();
     }
 }
@@ -468,6 +487,8 @@ void ContentBrowserPanel::move_into_folder(const EditorAsset& asset, const Edito
 
     std::filesystem::rename(asset.path, new_asset_path);
 
+    m_asset_watcher->asset_renamed(asset.path, new_asset_path);
+
     update();
 }
 
@@ -485,6 +506,8 @@ void ContentBrowserPanel::create_material(const std::string& name) {
 
     const auto helper = EditorMaterialHelper::create(shader, material_path.stem());
     helper->save(material_path);
+
+    m_asset_watcher->asset_created(material_path);
 }
 
 void ContentBrowserPanel::create_cubemap(const std::string& name) {
@@ -498,4 +521,6 @@ void ContentBrowserPanel::create_cubemap(const std::string& name) {
 
     const auto helper = EditorCubemapHelper::create(cubemap_path.stem());
     helper->save(cubemap_path);
+
+    m_asset_watcher->asset_created(cubemap_path);
 }
