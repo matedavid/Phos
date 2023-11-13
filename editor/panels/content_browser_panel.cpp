@@ -21,7 +21,6 @@
 
 #include "renderer/backend/renderer.h"
 #include "renderer/backend/texture.h"
-#include "renderer/backend/shader.h"
 
 ContentBrowserPanel::ContentBrowserPanel(std::string name,
                                          std::shared_ptr<Phos::EditorAssetManager> asset_manager,
@@ -356,10 +355,10 @@ void ContentBrowserPanel::update() {
     std::ranges::sort(m_assets, [](const std::unique_ptr<EditorAsset>& a, const std::unique_ptr<EditorAsset>& b) {
         if (a->is_directory && !b->is_directory)
             return true;
-        else if (!a->is_directory && b->is_directory)
+        if (!a->is_directory && b->is_directory)
             return false;
-        else
-            return a->path.stem() < b->path.stem();
+
+        return a->path.stem() < b->path.stem();
     });
 }
 

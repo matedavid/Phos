@@ -73,7 +73,36 @@ void AssetWatcher::asset_created(const std::filesystem::path& path) {
 void AssetWatcher::asset_renamed(const std::filesystem::path& old_path, const std::filesystem::path& new_path) {
     PS_INFO("[AssetWatcher::asset_renamed] Renamed asset '{}' to '{}'", old_path.string(), new_path.string());
 
-    // @TODO: Implement
+    if (!m_path_to_info.contains(old_path))
+        return;
+
+    const auto& [id, type] = m_path_to_info[old_path];
+
+    Phos::Renderer::wait_idle();
+
+    if (type == Phos::AssetType::Cubemap) {
+        if (m_scene->config().environment_config.skybox->id == id) {
+            m_scene->config().environment_config.skybox =
+                m_asset_manager->load_by_id_type_force_reload<Phos::Cubemap>(id);
+            m_renderer->change_config(m_scene->config());
+        }
+    } else if (type == Phos::AssetType::Material) {
+        for (const auto& entity : m_scene->get_all_entities()) {
+            if (entity.has_component<Phos::MeshRendererComponent>()) {
+                auto& mr = entity.get_component<Phos::MeshRendererComponent>();
+                if (mr.material != nullptr && mr.material->id == id) {
+                    mr.material = m_asset_manager->load_by_id_type_force_reload<Phos::Material>(id);
+                }
+            }
+        }
+    } else if (type == Phos::AssetType::Script) {
+        PS_ERROR("[AssetWatcher::asset_renamed Script] Unimplemented");
+    }
+
+    m_watching.erase(old_path);
+    m_path_to_info.erase(new_path);
+
+    start_watching_asset(new_path, type, id);
 }
 
 void AssetWatcher::asset_removed(const std::filesystem::path& path) {

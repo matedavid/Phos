@@ -2,12 +2,8 @@
 
 #include "core.h"
 
-#include <glm/glm.hpp>
-
 #include "imgui_panel.h"
 #include "content_browser_panel.h"
-
-#include "core/uuid.h"
 
 namespace Phos {
 
