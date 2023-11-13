@@ -40,7 +40,7 @@ class ClassInstanceHandle {
     explicit ClassInstanceHandle(std::shared_ptr<ClassHandle> class_handle);
 
     template <typename T>
-    void set_field_value_internal(const ClassFieldInfo& info, T* value);
+    void set_field_value_internal(const ClassField& info, T* value);
 };
 
 } // namespace Phos

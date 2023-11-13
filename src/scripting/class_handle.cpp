@@ -20,7 +20,7 @@ std::shared_ptr<ClassHandle> ClassHandle::create(const std::string& namespace_, 
 
     auto* klass = mono_class_from_name(image, namespace_.data(), class_name.data());
     if (klass == nullptr) {
-        PS_ERROR("No class found with name: '{}'", full_name);
+        PS_ERROR("[ClassHandle::create] No class found with name: '{}'", full_name);
         return nullptr;
     }
 
@@ -58,7 +58,7 @@ ClassHandle::ClassHandle(MonoClass* klass, std::string name) : m_klass(klass), m
         if (!(flags & FIELD_ATTRIBUTE_PUBLIC))
             continue;
 
-        ClassFieldInfo::Type internal_type;
+        ClassField::Type internal_type;
         switch (mono_type_get_type(field_type)) {
         case MONO_TYPE_I2:
         case MONO_TYPE_I4:
@@ -66,29 +66,29 @@ ClassHandle::ClassHandle(MonoClass* klass, std::string name) : m_klass(klass), m
         case MONO_TYPE_U2:
         case MONO_TYPE_U4:
         case MONO_TYPE_U8:
-            internal_type = ClassFieldInfo::Type::Int;
+            internal_type = ClassField::Type::Int;
             break;
         case MONO_TYPE_R4:
-            internal_type = ClassFieldInfo::Type::Float;
+            internal_type = ClassField::Type::Float;
             break;
         case MONO_TYPE_STRING:
-            internal_type = ClassFieldInfo::Type::String;
+            internal_type = ClassField::Type::String;
             break;
         case MONO_TYPE_VALUETYPE:
         case MONO_TYPE_CLASS: {
             const std::string type_name = mono_type_get_name(field_type);
             if (type_name == "PhosEngine.Vector3")
-                internal_type = ClassFieldInfo::Type::Vec3;
+                internal_type = ClassField::Type::Vec3;
             else if (type_name == "PhosEngine.Entity")
-                internal_type = ClassFieldInfo::Type::Entity;
+                internal_type = ClassField::Type::Entity;
             else if (type_name == "PhosEngine.Prefab")
-                internal_type = ClassFieldInfo::Type::Prefab;
+                internal_type = ClassField::Type::Prefab;
             else
                 continue;
         } break;
         }
 
-        const auto field_info = ClassFieldInfo{
+        const auto field_info = ClassField{
             .name = field_name,
             .field = field,
             .field_type = internal_type,
@@ -98,9 +98,14 @@ ClassHandle::ClassHandle(MonoClass* klass, std::string name) : m_klass(klass), m
 }
 
 ClassHandle::~ClassHandle() {
+    // @TODO: Really don't like this, but doing because, when unloading the current image, then we cant free
+    // objects from that image. For example, when updating a script.
+
+    /*
     for (const auto& [name, method] : m_methods) {
         mono_free_method(method);
     }
+    */
 }
 
 std::optional<MonoMethod*> ClassHandle::get_method(const std::string& name, uint32_t num_params) const {
@@ -114,7 +119,7 @@ std::optional<MonoMethod*> ClassHandle::get_method(const std::string& name, uint
     return {};
 }
 
-std::optional<ClassFieldInfo> ClassHandle::get_field(const std::string& name) const {
+std::optional<ClassField> ClassHandle::get_field(const std::string& name) const {
     const auto& iter = m_fields.find(name);
     if (iter != m_fields.end()) {
         return iter->second;
@@ -123,10 +128,10 @@ std::optional<ClassFieldInfo> ClassHandle::get_field(const std::string& name) co
     return {};
 }
 
-std::vector<ClassFieldInfo> ClassHandle::get_all_fields() const {
+std::vector<ClassField> ClassHandle::get_all_fields() const {
     // @TODO: Probably can optimize
 
-    std::vector<ClassFieldInfo> fields;
+    std::vector<ClassField> fields;
     fields.reserve(m_fields.size());
 
     for (const auto& [name, info] : m_fields) {

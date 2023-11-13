@@ -152,7 +152,7 @@ DESERIALIZE_COMPONENT_T(CameraComponent) {
 }
 
 DESERIALIZE_COMPONENT_T(ScriptComponent) {
-    std::unordered_map<std::string, ScriptFieldValue> field_values;
+    std::unordered_map<std::string, ClassField::Value> field_values;
 
     const auto fields = node["fields"];
     for (const auto& field : fields) {
@@ -160,7 +160,7 @@ DESERIALIZE_COMPONENT_T(ScriptComponent) {
         const auto field_type_str = fields[field_name]["type"].as<std::string>();
         const auto data_node = fields[field_name]["data"];
 
-        ScriptFieldValue v;
+        ClassField::Value v;
         if (field_type_str == "int") {
             v = AssetParsingUtils::parse_numeric<int32_t>(data_node);
         } else if (field_type_str == "float") {

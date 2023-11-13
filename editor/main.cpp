@@ -30,6 +30,7 @@
 #include "renderer/deferred_renderer.h"
 
 #include "scripting/scripting_system.h"
+#include "scripting/class_handle.h"
 
 #include "editor_state_manager.h"
 #include "asset_watcher.h"
@@ -255,7 +256,9 @@ class EditorLayer : public Phos::Layer {
     void open_project(const std::filesystem::path& path) {
         m_project = Phos::Project::open(path);
         m_renderer = std::make_shared<Phos::DeferredRenderer>(m_project->scene(), m_project->scene()->config());
+
         m_scripting_system = std::make_shared<Phos::ScriptingSystem>(m_project);
+        check_script_updates();
 
         m_scene_manager = std::make_shared<EditorSceneManager>(m_project->scene());
 
@@ -267,7 +270,7 @@ class EditorLayer : public Phos::Layer {
             std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
         PS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager")
 
-        m_asset_watcher = std::make_shared<AssetWatcher>(m_project->scene(), m_renderer, editor_asset_manager);
+        m_asset_watcher = std::make_shared<AssetWatcher>(m_project->scene(), m_project, m_renderer);
 
         // Panels
         m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene_manager, m_state_manager);
@@ -307,6 +310,27 @@ class EditorLayer : public Phos::Layer {
     }
 
     void save_project() { Phos::SceneSerializer::serialize(m_project->scene(), "../projects/project1/scene.psa"); }
+
+    void check_script_updates() const {
+        for (const auto& entity : m_project->scene()->get_entities_with<Phos::ScriptComponent>()) {
+            auto& sc = entity.get_component<Phos::ScriptComponent>();
+            const auto& handle = m_project->asset_manager()->load_by_id_type<Phos::ClassHandle>(sc.script);
+
+            // Remove fields that do not longer exist in class
+            for (const auto& name : sc.field_values | std::views::keys) {
+                if (!handle->get_field(name).has_value()) {
+                    sc.field_values.erase(name);
+                }
+            }
+
+            // Add fields present in class and not present in component
+            for (const auto& [name, _, type] : handle->get_all_fields()) {
+                if (!sc.field_values.contains(name)) {
+                    sc.field_values.insert({name, Phos::ClassField::get_default_value(type)});
+                }
+            }
+        }
+    }
 
     void on_mouse_moved(Phos::MouseMovedEvent& mouse_moved) override {
         m_viewport_panel->on_mouse_moved(mouse_moved, m_dockspace_id);

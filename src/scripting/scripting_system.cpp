@@ -5,7 +5,6 @@
 #include "asset/asset_manager.h"
 
 #include "scene/scene.h"
-#include "scene/entity.h"
 
 #include "scripting/scripting_engine.h"
 #include "scripting/script_glue.h"

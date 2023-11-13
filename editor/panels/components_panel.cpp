@@ -3,7 +3,6 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include "asset_tools/editor_asset.h"
 #include "imgui/imgui_utils.h"
-#include "editor_scene_manager.h"
 
 #include "scene/scene.h"
 #include "asset/editor_asset_manager.h"
@@ -451,31 +450,8 @@ void render_component<Phos::ScriptComponent>(Phos::ScriptComponent& component) {
         component.class_name = handle->class_name();
         component.field_values = {};
 
-        for (const auto& field : handle->get_all_fields()) {
-            auto v = Phos::ScriptFieldValue();
-
-            switch (field.field_type) {
-            case Phos::ClassFieldInfo::Type::Int:
-                v = 0;
-                break;
-            case Phos::ClassFieldInfo::Type::Float:
-                v = 0.0f;
-                break;
-            case Phos::ClassFieldInfo::Type::Vec3:
-                v = glm::vec3();
-                break;
-            case Phos::ClassFieldInfo::Type::String:
-                v = std::string();
-                break;
-            case Phos::ClassFieldInfo::Type::Prefab:
-                v = Phos::PrefabRef{.id = Phos::UUID(0)};
-                break;
-            case Phos::ClassFieldInfo::Type::Entity:
-                v = Phos::EntityRef{.id = Phos::UUID(0)};
-                break;
-            }
-
-            component.field_values[field.name] = v;
+        for (const auto& [name, _, type] : handle->get_all_fields()) {
+            component.field_values[name] = Phos::ClassField::get_default_value(type);
         }
     }
 

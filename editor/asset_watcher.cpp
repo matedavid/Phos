@@ -1,20 +1,27 @@
 #include "asset_watcher.h"
 
 #include "core/uuid.h"
+#include "core/project.h"
+
+#include "asset/editor_asset_manager.h"
 
 #include "scene/scene.h"
 #include "scene/scene_renderer.h"
 
-#include "asset/editor_asset_manager.h"
+#include "scripting/class_handle.h"
+#include "scripting/scripting_engine.h"
 
 #include "renderer/backend/renderer.h"
 #include "renderer/backend/material.h"
 #include "renderer/backend/cubemap.h"
 
 AssetWatcher::AssetWatcher(std::shared_ptr<Phos::Scene> scene,
-                           std::shared_ptr<Phos::ISceneRenderer> renderer,
-                           std::shared_ptr<Phos::EditorAssetManager> asset_manager)
-      : m_scene(std::move(scene)), m_renderer(std::move(renderer)), m_asset_manager(std::move(asset_manager)) {
+                           std::shared_ptr<Phos::Project> project,
+                           std::shared_ptr<Phos::ISceneRenderer> renderer)
+      : m_scene(std::move(scene)), m_project(std::move(project)), m_renderer(std::move(renderer)) {
+    m_asset_manager = std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
+    PS_ASSERT(m_asset_manager != nullptr, "[AssetWatcher] Asset Manager must be of type EditorAssetManager")
+
     for (const auto& entry : std::filesystem::recursive_directory_iterator(m_asset_manager->path())) {
         if (entry.path().extension() != ".psa" || entry.is_directory())
             continue;
@@ -26,6 +33,10 @@ AssetWatcher::AssetWatcher(std::shared_ptr<Phos::Scene> scene,
             start_watching_asset(entry.path(), type, id);
         }
     }
+
+    // Also watch dll project path to listen for script updates
+    m_dll_path = m_project->path() / "bin" / "Debug" / (m_project->name() + ".dll");
+    start_watching_asset(m_dll_path, Phos::AssetType::Script, Phos::UUID(0));
 }
 
 void AssetWatcher::check_asset_modified() {
@@ -45,7 +56,7 @@ void AssetWatcher::check_asset_modified() {
                 update_material(id);
                 break;
             case Phos::AssetType::Script:
-                update_script(id);
+                update_script();
                 break;
             case Phos::AssetType::Prefab:
             case Phos::AssetType::Shader:
@@ -139,7 +150,7 @@ void AssetWatcher::asset_removed(const std::filesystem::path& path) {
 }
 
 bool AssetWatcher::is_watchable_asset_type(Phos::AssetType type) {
-    return type == Phos::AssetType::Material || type == Phos::AssetType::Script || type == Phos::AssetType::Cubemap;
+    return type == Phos::AssetType::Material || type == Phos::AssetType::Cubemap;
 }
 
 void AssetWatcher::start_watching_asset(const std::filesystem::path& path, Phos::AssetType type, Phos::UUID id) {
@@ -159,17 +170,39 @@ void AssetWatcher::update_cubemap(const Phos::UUID& asset_id) const {
 void AssetWatcher::update_material(const Phos::UUID& asset_id) const {
     Phos::Renderer::wait_idle();
 
-    for (const auto& entity : m_scene->get_all_entities()) {
-        if (entity.has_component<Phos::MeshRendererComponent>()) {
-            auto& mr = entity.get_component<Phos::MeshRendererComponent>();
-            if (mr.material != nullptr && mr.material->id == asset_id) {
-                mr.material = m_asset_manager->load_by_id_type_force_reload<Phos::Material>(asset_id);
-            }
+    for (const auto& entity : m_scene->get_entities_with<Phos::MeshRendererComponent>()) {
+        auto& mr = entity.get_component<Phos::MeshRendererComponent>();
+        if (mr.material != nullptr && mr.material->id == asset_id) {
+            mr.material = m_asset_manager->load_by_id_type_force_reload<Phos::Material>(asset_id);
         }
     }
 }
 
-void AssetWatcher::update_script(const Phos::UUID& asset_id) const {
-    (void)asset_id;
-    PS_ERROR("[AssetWatcher::update_script] Unimplemented");
+void AssetWatcher::update_script() const {
+    Phos::ScriptingEngine::set_dll_path(m_dll_path);
+
+    for (const auto& entity : m_scene->get_entities_with<Phos::ScriptComponent>()) {
+        auto& sc = entity.get_component<Phos::ScriptComponent>();
+
+        const auto handle = m_asset_manager->load_by_id_type_force_reload<Phos::ClassHandle>(sc.script);
+        sc.class_name = handle->class_name();
+
+        const auto field_values = sc.field_values;
+
+        // Remove fields that do not longer exist in class
+        for (const auto& name : field_values | std::views::keys) {
+            if (!handle->get_field(name).has_value()) {
+                sc.field_values.erase(name);
+                PS_INFO("[AssetWatcher::update_script] Removing not longer existing field: {}", name);
+            }
+        }
+
+        // Add fields present in class and not present in component
+        for (const auto& [name, _, type] : handle->get_all_fields()) {
+            if (!sc.field_values.contains(name)) {
+                sc.field_values.insert({name, Phos::ClassField::get_default_value(type)});
+                PS_INFO("[AssetWatcher::update_script] Adding new field: {}", name);
+            }
+        }
+    }
 }

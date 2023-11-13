@@ -10,6 +10,7 @@ namespace Phos {
 
 // Forward declarations
 class Scene;
+class Project;
 class EditorAssetManager;
 class Entity;
 class ISceneRenderer;
@@ -19,8 +20,8 @@ class ISceneRenderer;
 class AssetWatcher {
   public:
     AssetWatcher(std::shared_ptr<Phos::Scene> scene,
-                 std::shared_ptr<Phos::ISceneRenderer> renderer,
-                 std::shared_ptr<Phos::EditorAssetManager> asset_manager);
+                 std::shared_ptr<Phos::Project> project,
+                 std::shared_ptr<Phos::ISceneRenderer> renderer);
     ~AssetWatcher() = default;
 
     void check_asset_modified();
@@ -31,9 +32,11 @@ class AssetWatcher {
 
   private:
     std::shared_ptr<Phos::Scene> m_scene;
+    std::shared_ptr<Phos::Project> m_project;
     std::shared_ptr<Phos::ISceneRenderer> m_renderer;
     std::shared_ptr<Phos::EditorAssetManager> m_asset_manager;
 
+    std::filesystem::path m_dll_path;
     std::unordered_map<std::filesystem::path, uint64_t> m_watching;
     std::unordered_map<std::filesystem::path, std::pair<Phos::UUID, Phos::AssetType>> m_path_to_info;
 
@@ -42,5 +45,5 @@ class AssetWatcher {
 
     void update_cubemap(const Phos::UUID& asset_id) const;
     void update_material(const Phos::UUID& asset_id) const;
-    void update_script(const Phos::UUID& asset_id) const;
+    void update_script() const;
 };

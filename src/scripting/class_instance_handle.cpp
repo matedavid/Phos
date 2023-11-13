@@ -59,9 +59,9 @@ void ClassInstanceHandle::invoke_on_update(double delta_time) {
 
 #define SET_FIELD_VALUE_INTERNAL_FUNC(T) \
     template <>                          \
-    void ClassInstanceHandle::set_field_value_internal<T>(const ClassFieldInfo& info, T* value)
+    void ClassInstanceHandle::set_field_value_internal<T>(const ClassField& info, T* value)
 
-void check_type(const ClassFieldInfo& info, ClassFieldInfo::Type expected, std::string_view actual_name) {
+void check_type(const ClassField& info, ClassField::Type expected, std::string_view actual_name) {
     PS_ASSERT(info.field_type == expected,
               "Trying to set field '{}' value with invalid type, provided type was: '{}'",
               info.name,
@@ -69,25 +69,25 @@ void check_type(const ClassFieldInfo& info, ClassFieldInfo::Type expected, std::
 }
 
 SET_FIELD_VALUE_INTERNAL_FUNC(int32_t) {
-    check_type(info, ClassFieldInfo::Type::Int, "int");
+    check_type(info, ClassField::Type::Int, "int");
 
     mono_field_set_value(m_instance, info.field, value);
 }
 
 SET_FIELD_VALUE_INTERNAL_FUNC(float) {
-    check_type(info, ClassFieldInfo::Type::Float, "float");
+    check_type(info, ClassField::Type::Float, "float");
 
     mono_field_set_value(m_instance, info.field, value);
 }
 
 SET_FIELD_VALUE_INTERNAL_FUNC(glm::vec3) {
-    check_type(info, ClassFieldInfo::Type::Vec3, "vec3");
+    check_type(info, ClassField::Type::Vec3, "vec3");
 
     mono_field_set_value(m_instance, info.field, value);
 }
 
 SET_FIELD_VALUE_INTERNAL_FUNC(std::string) {
-    check_type(info, ClassFieldInfo::Type::String, "string");
+    check_type(info, ClassField::Type::String, "string");
 
     auto* mono_string = mono_string_new(ScriptingEngine::m_context.app_domain, value->c_str());
     mono_field_set_value(m_instance, info.field, mono_string);
@@ -96,7 +96,7 @@ SET_FIELD_VALUE_INTERNAL_FUNC(std::string) {
 }
 
 SET_FIELD_VALUE_INTERNAL_FUNC(UUID) {
-    check_type(info, ClassFieldInfo::Type::String, "entity, prefab");
+    check_type(info, ClassField::Type::String, "entity, prefab");
 
     auto asset_id = (uint64_t)value;
     mono_field_set_value(m_instance, info.field, &asset_id);
