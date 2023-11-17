@@ -26,12 +26,7 @@ AssetWatcher::AssetWatcher(std::shared_ptr<Phos::Scene> scene,
         if (entry.path().extension() != ".psa" || entry.is_directory())
             continue;
 
-        const auto id = m_asset_manager->get_asset_id(entry.path());
-        const auto type = m_asset_manager->get_asset_type(id);
-
-        if (is_watchable_asset_type(type)) {
-            start_watching_asset(entry.path(), type, id);
-        }
+        add_file(entry.path());
     }
 
     // Also watch dll project path to listen for script updates
@@ -71,13 +66,10 @@ void AssetWatcher::check_asset_modified() {
 }
 
 void AssetWatcher::asset_created(const std::filesystem::path& path) {
-    PS_INFO("[AssetWatcher::asset_created] Added asset: '{}'", path.string());
-
-    const auto id = m_asset_manager->get_asset_id(path);
-    const auto type = m_asset_manager->get_asset_type(id);
-
-    if (is_watchable_asset_type(type)) {
-        start_watching_asset(path, type, id);
+    if (std::filesystem::is_directory(path)) {
+        add_directory(path);
+    } else {
+        add_file(path);
     }
 }
 
@@ -117,13 +109,16 @@ void AssetWatcher::asset_renamed(const std::filesystem::path& old_path, const st
 }
 
 void AssetWatcher::asset_removed(const std::filesystem::path& path) {
-    PS_INFO("[AssetWatcher::asset_removed] Removed asset: '{}'", path.string());
+    if (std::filesystem::is_directory(path) || path.extension() != ".psa")
+        return;
 
     const auto id = m_asset_manager->get_asset_id(path);
     const auto type = m_asset_manager->get_asset_type(id);
 
     if (!is_watchable_asset_type(type))
         return;
+
+    PS_INFO("[AssetWatcher::asset_removed] Removed asset: '{}'", path.string());
 
     Phos::Renderer::wait_idle();
 
@@ -147,6 +142,23 @@ void AssetWatcher::asset_removed(const std::filesystem::path& path) {
 
     m_watching.erase(path);
     m_path_to_info.erase(path);
+}
+
+void AssetWatcher::add_file(const std::filesystem::path& path) {
+    const auto id = m_asset_manager->get_asset_id(path);
+    const auto type = m_asset_manager->get_asset_type(id);
+
+    if (is_watchable_asset_type(type)) {
+        PS_INFO("[AssetWatcher::asset_created] Added asset: '{}'", path.string());
+        start_watching_asset(path, type, id);
+    }
+}
+
+void AssetWatcher::add_directory(const std::filesystem::path& path) {
+    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        if (!entry.is_directory() && entry.path().extension() == ".psa")
+            add_file(entry.path());
+    }
 }
 
 bool AssetWatcher::is_watchable_asset_type(Phos::AssetType type) {
@@ -189,7 +201,7 @@ void AssetWatcher::update_script() const {
 
         const auto field_values = sc.field_values;
 
-        // Remove fields that do not longer exist in class
+        // Remove fields that no longer exist in class
         for (const auto& name : field_values | std::views::keys) {
             if (!handle->get_field(name).has_value()) {
                 sc.field_values.erase(name);

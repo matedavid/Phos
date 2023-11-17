@@ -183,6 +183,7 @@ add_executable(PhosEditor
         editor/asset_tools/editor_material_helper.cpp
         editor/asset_tools/editor_cubemap_helper.cpp
         editor/asset_tools/asset_importer.cpp
+        editor/asset_tools/assimp_importer.cpp
 
         editor/panels/viewport_panel.cpp
         editor/panels/entity_hierarchy_panel.cpp
@@ -203,6 +204,7 @@ target_link_libraries(PhosEditor PRIVATE imgui)
 target_link_libraries(PhosEditor PRIVATE imgui_impl_glfw)
 target_link_libraries(PhosEditor PRIVATE imgui_impl_vulkan)
 target_link_libraries(PhosEditor PRIVATE nativefiledialog)
+target_link_libraries(PhosEditor PRIVATE assimp)
 
 #
 # Application

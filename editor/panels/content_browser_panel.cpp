@@ -288,8 +288,9 @@ void ContentBrowserPanel::display_asset(const EditorAsset& asset, std::size_t as
 static bool file_is_internal(const std::string& extension) {
     const bool editor_internal = extension == ".psproj";
     const bool scripting_internal = extension == ".csproj" || extension == ".sln" || extension == ".user";
+    const bool model_internal = extension == ".bin";
 
-    return editor_internal || scripting_internal;
+    return editor_internal || scripting_internal || model_internal;
 }
 
 static bool directory_is_internal(const std::filesystem::path& path) {
@@ -333,7 +334,8 @@ void ContentBrowserPanel::update() {
             const auto psa_path = path.path().string() + ".psa";
             if (!std::filesystem::exists(psa_path)) {
                 PS_WARNING("Non .psa file does not have corresponding psa file: {}", path.path().string());
-                AssetImporter::import_asset(path, m_current_path);
+                const auto new_path = AssetImporter::import_asset(path, m_current_path);
+                m_asset_watcher->asset_created(new_path);
             }
 
             continue;
@@ -380,6 +382,12 @@ std::vector<std::string> ContentBrowserPanel::get_path_components(const std::fil
 bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
     if (asset.is_directory) {
         // @TODO: Should revisit, maybe do not let user delete folder if not empty
+
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(asset.path)) {
+            if (entry.path().extension() == ".psa" && !entry.is_directory())
+                m_asset_watcher->asset_removed(entry.path());
+        }
+
         return std::filesystem::remove_all(asset.path);
     }
 
@@ -449,7 +457,7 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
 
 void ContentBrowserPanel::import_asset() {
     // @TODO: Should move to another place, maybe near AssetImporter
-    constexpr auto asset_filter = "jpg,jpeg,png;fbx,obj;cs";
+    constexpr auto asset_filter = "jpg,jpeg,png;fbx,obj,gltf;cs";
 
     const auto paths = FileDialog::open_file_dialog_multiple(asset_filter);
     if (paths.empty())

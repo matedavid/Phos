@@ -46,6 +46,7 @@ class EditorMaterialHelper {
 
     [[nodiscard]] std::string get_material_name() const { return m_material_name; }
     [[nodiscard]] const std::vector<Phos::ShaderProperty>& get_properties() const { return m_properties; }
+    [[nodiscard]] Phos::UUID get_material_id() const { return m_material_id; }
 
   private:
     std::string m_material_name;

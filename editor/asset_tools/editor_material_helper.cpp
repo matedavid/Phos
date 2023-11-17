@@ -151,6 +151,8 @@ void EditorMaterialHelper::input_default_value(const std::string& property_name,
     switch (type) {
     case Phos::ShaderProperty::Type::Float:
         m_float_properties[property_name] = DEFAULT_FLOAT_VALUE;
+        if (property_name == "uMaterialInfo.emissionIntensity") // @TODO: Ugly hack, but necessary
+            m_float_properties[property_name] = 0.0f;
         break;
     case Phos::ShaderProperty::Type::Vec3:
         m_vec3_properties[property_name] = glm::vec3(DEFAULT_FLOAT_VALUE);
