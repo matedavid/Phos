@@ -289,8 +289,9 @@ static bool file_is_internal(const std::string& extension) {
     const bool editor_internal = extension == ".psproj";
     const bool scripting_internal = extension == ".csproj" || extension == ".sln" || extension == ".user";
     const bool model_internal = extension == ".bin";
+    const bool other_internal = extension == ".md";
 
-    return editor_internal || scripting_internal || model_internal;
+    return editor_internal || scripting_internal || model_internal || other_internal;
 }
 
 static bool directory_is_internal(const std::filesystem::path& path) {

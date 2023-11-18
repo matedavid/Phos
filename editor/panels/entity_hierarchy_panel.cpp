@@ -52,8 +52,8 @@ bool EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
     if (children.empty())
         flags |= ImGuiTreeNodeFlags_Leaf;
 
-    const bool opened = ImGui::TreeNodeEx((void*)(uint64_t)entity.uuid(), flags, "%s", name.c_str());
-    const bool hovered = ImGui::IsItemHovered();
+    const bool opened = ImGui::TreeNodeEx((void*)static_cast<uint64_t>(entity.uuid()), flags, "%s", name.c_str());
+    bool hovered = ImGui::IsItemHovered();
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
         select_entity(entity);
     }
@@ -61,6 +61,11 @@ bool EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
     bool delete_entity = false;
     if (ImGui::BeginPopupContextItem()) {
         select_entity(entity);
+
+        if (ImGui::MenuItem("Create Child Entity")) {
+            const auto child = m_scene_manager->active_scene()->create_entity();
+            entity.add_child(child);
+        }
 
         if (ImGui::MenuItem("Remove Entity")) {
             delete_entity = true;
@@ -72,7 +77,7 @@ bool EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
     if (opened) {
         for (const auto& child_uuid : children) {
             const auto& child = m_scene_manager->active_scene()->get_entity_with_uuid(child_uuid);
-            render_entity_r(child);
+            hovered |= render_entity_r(child);
         }
 
         ImGui::TreePop();
