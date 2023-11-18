@@ -45,6 +45,8 @@ class Scene : public IAsset {
     std::unordered_map<std::size_t, Entity*> m_id_to_entity;
     std::unordered_map<UUID, Entity*> m_uuid_to_entity;
 
+    void destroy_entity_r(Entity entity);
+
     friend class Entity;
 };
 

@@ -84,7 +84,24 @@ Entity Scene::create_entity(const std::string& name, const UUID uuid) {
 }
 
 void Scene::destroy_entity(Entity entity) {
+    destroy_entity_r(entity);
+}
+
+void Scene::destroy_entity_r(Phos::Entity entity) {
     auto* e = m_id_to_entity[entity.id()];
+
+    // Remove entity from parent children
+    const auto relationship = entity.get_component<RelationshipComponent>();
+    if (relationship.parent) {
+        const auto parent = get_entity_with_uuid(*relationship.parent);
+        parent.remove_child(entity);
+    }
+
+    // Remove child entities
+    for (const auto& child_id : relationship.children) {
+        const auto child = get_entity_with_uuid(child_id);
+        destroy_entity_r(child);
+    }
 
     m_id_to_entity.erase(entity.id());
     m_uuid_to_entity.erase(entity.uuid());
@@ -104,7 +121,7 @@ std::vector<Entity> Scene::get_all_entities() const {
     std::vector<Entity> entities(m_uuid_to_entity.size());
 
     uint32_t i = 0;
-    for (auto& [_, entity] : m_uuid_to_entity) {
+    for (const auto& [_, entity] : m_uuid_to_entity) {
         entities[i++] = *entity;
     }
 

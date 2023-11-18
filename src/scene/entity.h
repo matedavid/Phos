@@ -66,6 +66,7 @@ class Entity {
         }
 
         relationship.children.push_back(child.uuid());
+        child.get_component<RelationshipComponent>().parent = uuid();
     }
 
     void remove_child(const Entity& child) const {
@@ -76,7 +77,7 @@ class Entity {
             return;
         }
 
-        std::ranges::remove(relationship.children, child.uuid());
+        std::erase(relationship.children, child.uuid());
     }
 
     [[nodiscard]] UUID uuid() const { return get_component<UUIDComponent>().uuid; }

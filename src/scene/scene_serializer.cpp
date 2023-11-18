@@ -55,7 +55,9 @@ void SceneSerializer::serialize(const std::shared_ptr<Scene>& scene, const std::
     {
         out << YAML::BeginMap;
 
-        emit_yaml(out, "skybox", (uint64_t)config.environment_config.skybox->id);
+        const auto skybox_id =
+            config.environment_config.skybox != nullptr ? (uint64_t)config.environment_config.skybox->id : 0;
+        emit_yaml(out, "skybox", skybox_id);
 
         out << YAML::EndMap;
     }

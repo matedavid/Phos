@@ -222,9 +222,9 @@ add_executable(tests)
 
 target_sources(tests PRIVATE
         tests/scene/registry_tests.cpp
-        src/scene/registry.cpp
-
         tests/scene/scene_tests.cpp
+
+        src/scene/registry.cpp
         src/scene/scene.cpp
         src/core/uuid.cpp
 )
@@ -232,5 +232,7 @@ target_sources(tests PRIVATE
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(tests PRIVATE spdlog::spdlog)
 target_link_libraries(tests PRIVATE glm::glm)
+target_link_libraries(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/lib/libmono-2.0.so)
+target_include_directories(tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/include/mono-2.0/)
 
 target_include_directories(tests PUBLIC src/)
