@@ -19,10 +19,16 @@ class EditorAssetManager : public AssetManagerBase {
     [[nodiscard]] std::shared_ptr<T> load_by_id_type_force_reload(UUID id) {
         static_assert(std::is_base_of<IAsset, T>());
 
-        const auto asset = std::dynamic_pointer_cast<T>(load_by_id_force_reload(id));
-        PS_ASSERT(asset != nullptr, "Could not convert asset to type {}", typeid(T).name())
+        const auto asset = load_by_id_force_reload(id);
+        if (asset == nullptr)
+            return nullptr;
 
-        return asset;
+        const auto type_asset = std::dynamic_pointer_cast<T>(asset);
+        PS_ASSERT(type_asset != nullptr,
+                  "[EditorAssetManager::load_by_id_type_force_reload] Could not convert asset to type {}",
+                  typeid(T).name())
+
+        return type_asset;
     }
     [[nodiscard]] std::shared_ptr<IAsset> load_by_id_force_reload(UUID id);
 

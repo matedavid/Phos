@@ -88,10 +88,20 @@ DESERIALIZE_COMPONENT_T(MeshRendererComponent) {
     const auto mesh_uuid = UUID(node["mesh"].as<uint64_t>());
     const auto material_uuid = UUID(node["material"].as<uint64_t>());
 
-    entity.add_component<MeshRendererComponent>({
-        .mesh = asset_manager->load_by_id_type<Mesh>(mesh_uuid),
-        .material = asset_manager->load_by_id_type<Material>(material_uuid),
-    });
+    auto component = MeshRendererComponent{
+        .mesh = nullptr,
+        .material = nullptr,
+    };
+
+    if (mesh_uuid != UUID(0)) {
+        component.mesh = asset_manager->load_by_id_type<Mesh>(mesh_uuid);
+    }
+
+    if (material_uuid != UUID(0)) {
+        component.material = asset_manager->load_by_id_type<Material>(material_uuid);
+    }
+
+    entity.add_component<MeshRendererComponent>(component);
 }
 
 DESERIALIZE_COMPONENT_T(LightComponent) {

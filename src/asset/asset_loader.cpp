@@ -68,8 +68,13 @@ AssetLoader::AssetLoader(AssetManagerBase* manager) : m_manager(manager) {
 }
 
 UUID AssetLoader::get_id(const std::string& path) const {
-    const YAML::Node node = YAML::LoadFile(path);
-    return UUID(node["id"].as<uint64_t>());
+    try {
+        const YAML::Node node = YAML::LoadFile(path);
+        return UUID(node["id"].as<uint64_t>());
+    } catch (const std::exception&) {
+        PS_ERROR("[AssetLoader::get_id] Exception while getting id of asset with path: '{}'", path);
+        return UUID(0);
+    }
 }
 
 AssetType AssetLoader::get_type(const std::string& path) const {
@@ -78,21 +83,26 @@ AssetType AssetLoader::get_type(const std::string& path) const {
 }
 
 std::shared_ptr<IAsset> AssetLoader::load(const std::string& path) const {
-    const YAML::Node node = YAML::LoadFile(path);
+    try {
+        const YAML::Node node = YAML::LoadFile(path);
 
-    const auto type_str = node["assetType"].as<std::string>();
-    const AssetType type = string_to_asset_type(type_str);
+        const auto type_str = node["assetType"].as<std::string>();
+        const AssetType type = string_to_asset_type(type_str);
 
-    const auto id = UUID(node["id"].as<uint64_t>());
+        const auto id = UUID(node["id"].as<uint64_t>());
 
-    const auto it = std::ranges::find_if(m_parsers, [&type](const auto& parser) { return parser->type() == type; });
-    PS_ASSERT(it != m_parsers.end(), "Parser not found for asset type: {}\n", type_str)
+        const auto it = std::ranges::find_if(m_parsers, [&type](const auto& parser) { return parser->type() == type; });
+        PS_ASSERT(it != m_parsers.end(), "Parser not found for asset type: {}\n", type_str)
 
-    auto asset = (*it)->parse(node, path);
-    asset->id = id;
-    asset->asset_name = std::filesystem::path(path).filename();
+        auto asset = (*it)->parse(node, path);
+        asset->id = id;
+        asset->asset_name = std::filesystem::path(path).filename();
 
-    return asset;
+        return asset;
+    } catch (const std::exception&) {
+        PS_ERROR("[AssetLoader::load] Exception while loading asset with path: '{}'", path);
+        return nullptr;
+    }
 }
 
 //

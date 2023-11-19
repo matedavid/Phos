@@ -10,14 +10,10 @@ RuntimeAssetManager::RuntimeAssetManager(std::shared_ptr<AssetPack> asset_pack) 
 
 std::shared_ptr<IAsset> RuntimeAssetManager::load(const std::string& path) {
     const auto id = m_loader->get_id(path);
+    if (id == UUID(0))
+        return nullptr;
 
-    if (m_id_to_asset.contains(id)) {
-        return m_id_to_asset[id];
-    }
-
-    auto asset = m_loader->load(path);
-    m_id_to_asset[asset->id] = asset;
-    return asset;
+    return load_by_id(id);
 }
 
 std::shared_ptr<IAsset> RuntimeAssetManager::load_by_id(UUID id) {
@@ -26,7 +22,19 @@ std::shared_ptr<IAsset> RuntimeAssetManager::load_by_id(UUID id) {
     }
 
     const auto path = m_asset_pack->path_from_id(id);
-    return load(path);
+    if (!std::filesystem::exists(path)) {
+        PS_ERROR("[RuntimeAssetManager::load_by_id] No asset with id {} found", (uint64_t)id);
+        return nullptr;
+    }
+
+    auto asset = m_loader->load(path);
+    if (asset == nullptr) {
+        PS_ERROR("[RuntimeAssetManager::load_by_id] No asset with id {} found", (uint64_t)id);
+        return nullptr;
+    }
+
+    m_id_to_asset[asset->id] = asset;
+    return asset;
 }
 
 std::filesystem::path RuntimeAssetManager::get_asset_path(UUID id) {
