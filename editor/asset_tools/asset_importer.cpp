@@ -6,21 +6,26 @@
 #include "asset/asset.h"
 #include "asset_tools/assimp_importer.h"
 
-#define IS_TEXTURE(path) path.extension() == ".jpg" || path.extension() == ".png" || path.extension() == ".jpeg"
-#define IS_MODEL(path) path.extension() == ".fbx" || path.extension() == ".obj" || path.extension() == ".gltf"
-#define IS_SCRIPT(path) path.extension() == ".cs"
+#define IS_TEXTURE(ext) (ext == ".jpg" || ext == ".png" || ext == ".jpeg")
+#define IS_MODEL(ext) (ext == ".fbx" || ext == ".obj" || ext == ".gltf")
+#define IS_SCRIPT(ext) (ext == ".cs")
 
 std::filesystem::path AssetImporter::import_asset(const std::filesystem::path& asset_path,
                                                   const std::filesystem::path& containing_folder) {
-    if (IS_TEXTURE(asset_path))
+    const auto extension = asset_path.extension();
+    if (IS_TEXTURE(extension))
         return import_texture(asset_path, containing_folder);
-    if (IS_MODEL(asset_path))
+    if (IS_MODEL(extension))
         return import_model(asset_path, containing_folder);
-    if (IS_SCRIPT(asset_path))
+    if (IS_SCRIPT(extension))
         return import_script(asset_path, containing_folder);
 
     PS_ERROR("[AssetImporter] Unsupported file extension: {}", asset_path.extension().string());
     return {};
+}
+
+bool AssetImporter::is_automatic_importable_asset(const std::string& extension) {
+    return IS_TEXTURE(extension) || IS_SCRIPT(extension);
 }
 
 //
