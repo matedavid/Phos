@@ -6,8 +6,8 @@
 #include <imgui_internal.h>
 
 #include "file_dialog.h"
-
 #include "imgui/imgui_impl.h"
+#include "asset_tools/scene_serializer.h"
 
 #include "core/entry_point.h"
 #include "core/layer.h"
@@ -25,7 +25,6 @@
 #include "asset/editor_asset_manager.h"
 
 #include "scene/scene_renderer.h"
-#include "scene/scene_serializer.h"
 
 #include "renderer/deferred_renderer.h"
 
@@ -46,7 +45,8 @@ class EditorLayer : public Phos::Layer {
         ImGuiImpl::initialize(Phos::Application::instance()->get_window());
 
         // Open example project
-        open_project("../projects/project1/project1.psproj");
+        // open_project("../projects/project1/project1.psproj");
+        open_project("../../SpaceInvaders/SpaceInvaders.psproj");
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
@@ -309,14 +309,17 @@ class EditorLayer : public Phos::Layer {
         }
     }
 
-    void save_project() { Phos::SceneSerializer::serialize(m_project->scene(), "../projects/project1/scene.psa"); }
+    void save_project() {
+        const auto scene_path = m_project->path() / m_project->scene()->asset_name;
+        SceneSerializer::serialize(m_project->scene(), scene_path);
+    }
 
     void check_script_updates() const {
         for (const auto& entity : m_project->scene()->get_entities_with<Phos::ScriptComponent>()) {
             auto& sc = entity.get_component<Phos::ScriptComponent>();
             const auto& handle = m_project->asset_manager()->load_by_id_type<Phos::ClassHandle>(sc.script);
 
-            // Remove fields that do not longer exist in class
+            // Remove fields that do no longer exist in class
             for (const auto& name : sc.field_values | std::views::keys) {
                 if (!handle->get_field(name).has_value()) {
                     sc.field_values.erase(name);
