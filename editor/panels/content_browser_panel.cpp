@@ -325,9 +325,17 @@ void ContentBrowserPanel::update() {
             // Check if non .psa files have a corresponding phos asset file
             const auto psa_path = path.path().string() + ".psa";
             if (!std::filesystem::exists(psa_path)) {
-                PS_WARNING("Non .psa file does not have corresponding psa file: {}", path.path().string());
+                PS_WARNING("Non .psa file does not have corresponding psa file: {}, importing automatically",
+                           path.path().string());
                 const auto new_path = AssetImporter::import_asset(path, m_current_path);
                 m_asset_watcher->asset_created(new_path);
+
+                const auto asset_id = m_asset_manager->get_asset_id(new_path);
+                m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
+                    .type = m_asset_manager->get_asset_type(asset_id),
+                    .path = new_path,
+                    .uuid = asset_id,
+                }));
             }
 
             continue;
@@ -429,7 +437,7 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
         return;
     }
 
-    if (asset.type == Phos::AssetType::Texture) {
+    if (!asset.is_directory && asset.type == Phos::AssetType::Texture) {
         const auto node = YAML::LoadFile(asset.path);
         const auto texture_path = asset.path.parent_path() / node["path"].as<std::string>();
 
