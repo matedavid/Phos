@@ -11,6 +11,13 @@ namespace PhosEngine
 
         public static Vector3 Zero => new Vector3() { X = 0.0f, Y = 0.0f, Z = 0.0f };
 
+        public static Vector3 Left => new Vector3() { X = -1.0f, Y = 0.0f, Z = 0.0f };
+        public static Vector3 Right => new Vector3() { X = 1.0f, Y = 0.0f, Z = 0.0f };
+        public static Vector3 Top => new Vector3() { X = 0.0f, Y = 1.0f, Z = 0.0f };
+        public static Vector3 Bottom => new Vector3() { X = 0.0f, Y = -1.0f, Z = 0.0f };
+        public static Vector3 Front => new Vector3() { X = 0.0f, Y = 0.0f, Z = 1.0f };
+        public static Vector3 Back => new Vector3() { X = 0.0f, Y = 0.0f, Z = -1.0f };
+
         public Vector3(float x, float y, float z)
         {
             X = x;

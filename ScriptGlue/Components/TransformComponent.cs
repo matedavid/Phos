@@ -34,7 +34,12 @@ namespace PhosEngine
 
         public void Translate(float x, float y, float z)
         {
-            Position = Position + new Vector3(x, y, z);
+            Translate(new Vector3(x, y, z));
+        }
+
+        public void Translate(Vector3 vec)
+        {
+            Position = Position + vec;
         }
     }
 }
