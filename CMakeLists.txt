@@ -36,7 +36,6 @@ target_sources(${PROJECT_NAME} PRIVATE
         src/scene/registry.cpp
         src/scene/scene.cpp
         src/scene/model_loader.cpp
-        src/scene/scene_serializer.cpp
         src/scene/entity_deserializer.cpp
 
         # Scripting
@@ -184,6 +183,8 @@ add_executable(PhosEditor
         editor/asset_tools/editor_cubemap_helper.cpp
         editor/asset_tools/asset_importer.cpp
         editor/asset_tools/assimp_importer.cpp
+        editor/asset_tools/scene_serializer.cpp
+        editor/asset_tools/entity_serializer.cpp
 
         editor/panels/viewport_panel.cpp
         editor/panels/entity_hierarchy_panel.cpp
