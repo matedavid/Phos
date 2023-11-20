@@ -233,3 +233,48 @@ TEST_CASE("Removing sub-entity removes it's children and updates RelationshipCom
     REQUIRE(parent_component.children.size() == 1);
     REQUIRE(parent_component.children[0] == child_3.uuid());
 }
+
+TEST_CASE("Can clone scene", "[Scene]") {
+    auto scene = Phos::Scene("Test scene");
+
+    auto entity_1 = scene.create_entity();
+    entity_1.get_component<Phos::TransformComponent>().position = glm::vec3(1.0f, -1.0f, 2.0f);
+
+    auto entity_2 = scene.create_entity();
+    entity_2.add_component<Phos::MeshRendererComponent>();
+
+    auto clone_scene = Phos::Scene(scene);
+    REQUIRE(clone_scene.get_all_entities().size() == scene.get_all_entities().size());
+
+    auto copy_entity_1 = clone_scene.get_entity_with_uuid(entity_1.uuid());
+    REQUIRE(copy_entity_1.get_component<Phos::TransformComponent>().position ==
+            entity_1.get_component<Phos::TransformComponent>().position);
+
+    auto copy_entity_2 = clone_scene.get_entity_with_uuid(entity_2.uuid());
+    REQUIRE(copy_entity_2.has_component<Phos::MeshRendererComponent>());
+}
+
+TEST_CASE("Modifying cloned scene does not modify original", "[Scene]") {
+    auto scene = Phos::Scene("Test scene");
+
+    auto entity_1 = scene.create_entity();
+    entity_1.get_component<Phos::TransformComponent>().position = glm::vec3(1.0f, -1.0f, 2.0f);
+
+    auto entity_2 = scene.create_entity();
+    entity_2.add_component<Phos::MeshRendererComponent>();
+
+    auto clone_scene = Phos::Scene(scene);
+    auto clone_entity_1 = clone_scene.get_entity_with_uuid(entity_1.uuid());
+    auto clone_entity_2 = clone_scene.get_entity_with_uuid(entity_2.uuid());
+
+    clone_entity_1.get_component<Phos::TransformComponent>().position = glm::vec3(-1.0f, -2.0f, -3.0f);
+    clone_entity_2.remove_component<Phos::MeshRendererComponent>();
+    clone_entity_2.add_component<Phos::CameraComponent>();
+
+    auto check_entity_1 = scene.get_entity_with_uuid(entity_1.uuid());
+    auto check_entity_2 = scene.get_entity_with_uuid(entity_2.uuid());
+
+    REQUIRE(check_entity_1.get_component<Phos::TransformComponent>().position == glm::vec3(1.0f, -1.0f, 2.0f));
+    REQUIRE(check_entity_2.has_component<Phos::MeshRendererComponent>());
+    REQUIRE_FALSE(check_entity_2.has_component<Phos::CameraComponent>());
+}
