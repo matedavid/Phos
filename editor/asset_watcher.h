@@ -15,6 +15,10 @@ class EditorAssetManager;
 class Entity;
 class ISceneRenderer;
 
+class Cubemap;
+class Material;
+class Mesh;
+
 } // namespace Phos
 
 class AssetWatcher {
@@ -40,13 +44,14 @@ class AssetWatcher {
     std::unordered_map<std::filesystem::path, uint64_t> m_watching;
     std::unordered_map<std::filesystem::path, std::pair<Phos::UUID, Phos::AssetType>> m_path_to_info;
 
-    void add_file(const std::filesystem::path & path);
+    void add_file(const std::filesystem::path& path);
     void add_directory(const std::filesystem::path& path);
 
     [[nodiscard]] static bool is_watchable_asset_type(Phos::AssetType type);
     void start_watching_asset(const std::filesystem::path& path, Phos::AssetType type, Phos::UUID id);
 
-    void update_cubemap(const Phos::UUID& asset_id) const;
-    void update_material(const Phos::UUID& asset_id) const;
+    void update_cubemap(const std::shared_ptr<Phos::Cubemap>& cubemap) const;
+    void update_material(const std::shared_ptr<Phos::Material>& mat) const;
+    void update_mesh(const std::shared_ptr<Phos::Mesh>& mesh) const;
     void update_script() const;
 };

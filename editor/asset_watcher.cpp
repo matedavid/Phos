@@ -11,6 +11,7 @@
 #include "scripting/class_handle.h"
 #include "scripting/scripting_engine.h"
 
+#include "renderer/mesh.h"
 #include "renderer/backend/renderer.h"
 #include "renderer/backend/material.h"
 #include "renderer/backend/cubemap.h"
@@ -41,22 +42,23 @@ void AssetWatcher::check_asset_modified() {
         const auto last_time = std::filesystem::last_write_time(path).time_since_epoch().count();
         if (last_time != saved_last_time) {
             PS_INFO("[AssetWatcher] Asset updated: '{}'", path.string());
-            saved_last_time = last_time;
+            saved_last_time = last_time; // saved_last_time is reference, so it's modifying the value in m_watching
 
             switch (type) {
             case Phos::AssetType::Cubemap:
-                update_cubemap(id);
+                update_cubemap(m_asset_manager->load_by_id_type_force_reload<Phos::Cubemap>(id));
                 break;
             case Phos::AssetType::Material:
-                update_material(id);
+                update_material(m_asset_manager->load_by_id_type_force_reload<Phos::Material>(id));
                 break;
+            case Phos::AssetType::Mesh:
+                update_mesh(m_asset_manager->load_by_id_type_force_reload<Phos::Mesh>(id));
             case Phos::AssetType::Script:
                 update_script();
                 break;
             case Phos::AssetType::Prefab:
             case Phos::AssetType::Shader:
             case Phos::AssetType::Texture:
-            case Phos::AssetType::Mesh:
             case Phos::AssetType::Model:
             case Phos::AssetType::Scene:
                 break;
@@ -84,20 +86,11 @@ void AssetWatcher::asset_renamed(const std::filesystem::path& old_path, const st
     Phos::Renderer::wait_idle();
 
     if (type == Phos::AssetType::Cubemap) {
-        if (m_scene->config().environment_config.skybox->id == id) {
-            m_scene->config().environment_config.skybox =
-                m_asset_manager->load_by_id_type_force_reload<Phos::Cubemap>(id);
-            m_renderer->change_config(m_scene->config());
-        }
+        update_cubemap(m_asset_manager->load_by_id_type_force_reload<Phos::Cubemap>(id));
     } else if (type == Phos::AssetType::Material) {
-        for (const auto& entity : m_scene->get_all_entities()) {
-            if (entity.has_component<Phos::MeshRendererComponent>()) {
-                auto& mr = entity.get_component<Phos::MeshRendererComponent>();
-                if (mr.material != nullptr && mr.material->id == id) {
-                    mr.material = m_asset_manager->load_by_id_type_force_reload<Phos::Material>(id);
-                }
-            }
-        }
+        update_material(m_asset_manager->load_by_id_type_force_reload<Phos::Material>(id));
+    } else if (type == Phos::AssetType::Mesh) {
+        update_mesh(m_asset_manager->load_by_id_type_force_reload<Phos::Mesh>(id));
     } else if (type == Phos::AssetType::Script) {
         PS_ERROR("[AssetWatcher::asset_renamed Script] Unimplemented");
     }
@@ -128,12 +121,17 @@ void AssetWatcher::asset_removed(const std::filesystem::path& path) {
             m_renderer->change_config(m_scene->config());
         }
     } else if (type == Phos::AssetType::Material) {
-        for (const auto& entity : m_scene->get_all_entities()) {
-            if (entity.has_component<Phos::MeshRendererComponent>()) {
-                auto& mr = entity.get_component<Phos::MeshRendererComponent>();
-                if (mr.material != nullptr && mr.material->id == id) {
-                    mr.material = nullptr;
-                }
+        for (const auto& entity : m_scene->get_entities_with<Phos::MeshRendererComponent>()) {
+            auto& mr = entity.get_component<Phos::MeshRendererComponent>();
+            if (mr.material != nullptr && mr.material->id == id) {
+                mr.material = nullptr;
+            }
+        }
+    } else if (type == Phos::AssetType::Mesh) {
+        for (const auto& entity : m_scene->get_entities_with<Phos::MeshRendererComponent>()) {
+            auto& mr = entity.get_component<Phos::MeshRendererComponent>();
+            if (mr.mesh != nullptr && mr.mesh->id == id) {
+                mr.mesh = nullptr;
             }
         }
     } else if (type == Phos::AssetType::Script) {
@@ -162,7 +160,7 @@ void AssetWatcher::add_directory(const std::filesystem::path& path) {
 }
 
 bool AssetWatcher::is_watchable_asset_type(Phos::AssetType type) {
-    return type == Phos::AssetType::Material || type == Phos::AssetType::Cubemap;
+    return type == Phos::AssetType::Material || type == Phos::AssetType::Cubemap || type == Phos::AssetType::Mesh;
 }
 
 void AssetWatcher::start_watching_asset(const std::filesystem::path& path, Phos::AssetType type, Phos::UUID id) {
@@ -171,21 +169,31 @@ void AssetWatcher::start_watching_asset(const std::filesystem::path& path, Phos:
     m_path_to_info.insert({path, {id, type}});
 }
 
-void AssetWatcher::update_cubemap(const Phos::UUID& asset_id) const {
-    if (m_scene->config().environment_config.skybox->id == asset_id) {
-        m_scene->config().environment_config.skybox =
-            m_asset_manager->load_by_id_type_force_reload<Phos::Cubemap>(asset_id);
+void AssetWatcher::update_cubemap(const std::shared_ptr<Phos::Cubemap>& cubemap) const {
+    if (m_scene->config().environment_config.skybox->id == cubemap->id) {
+        m_scene->config().environment_config.skybox = cubemap;
         m_renderer->change_config(m_scene->config());
     }
 }
 
-void AssetWatcher::update_material(const Phos::UUID& asset_id) const {
+void AssetWatcher::update_material(const std::shared_ptr<Phos::Material>& mat) const {
     Phos::Renderer::wait_idle();
 
     for (const auto& entity : m_scene->get_entities_with<Phos::MeshRendererComponent>()) {
         auto& mr = entity.get_component<Phos::MeshRendererComponent>();
-        if (mr.material != nullptr && mr.material->id == asset_id) {
-            mr.material = m_asset_manager->load_by_id_type_force_reload<Phos::Material>(asset_id);
+        if (mr.material != nullptr && mr.material->id == mat->id) {
+            mr.material = mat;
+        }
+    }
+}
+
+void AssetWatcher::update_mesh(const std::shared_ptr<Phos::Mesh>& mesh) const {
+    Phos::Renderer::wait_idle();
+
+    for (const auto& entity : m_scene->get_entities_with<Phos::MeshRendererComponent>()) {
+        auto& mr = entity.get_component<Phos::MeshRendererComponent>();
+        if (mr.mesh != nullptr && mr.mesh->id == mesh->id) {
+            mr.mesh = mesh;
         }
     }
 }
