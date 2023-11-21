@@ -12,15 +12,9 @@
 
 #include "scripting/class_handle.h"
 
-static std::shared_ptr<Phos::EditorAssetManager> s_asset_manager;
-
 ComponentsPanel::ComponentsPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager)
       : m_name(std::move(name)) {
-    s_asset_manager = std::move(asset_manager);
-}
-
-ComponentsPanel::~ComponentsPanel() {
-    s_asset_manager.reset();
+    m_asset_manager = std::move(asset_manager);
 }
 
 void ComponentsPanel::set_selected_entity(const Phos::Entity& entity) {
@@ -49,16 +43,18 @@ void render_label_input(const std::string& label, const std::string& group, T* v
 }
 
 template <typename T>
-void render_component(T& component);
+void render_component(T& component, const std::shared_ptr<Phos::EditorAssetManager>& asset_manager);
 
 template <typename T>
-void render_component(Phos::Entity& entity, bool right_click = true) {
+void render_component(Phos::Entity& entity,
+                      const std::shared_ptr<Phos::EditorAssetManager>& asset_manager,
+                      bool right_click = true) {
     if (!entity.has_component<T>())
         return;
 
     ImGui::BeginGroup();
 
-    render_component<T>(entity.get_component<T>());
+    render_component<T>(entity.get_component<T>(), asset_manager);
     ImGui::Separator();
 
     ImGui::EndGroup();
@@ -92,12 +88,12 @@ void ComponentsPanel::on_imgui_render() {
         auto& entity = *m_selected_entity;
 
         // Components
-        render_component<Phos::NameComponent>(entity, false);
-        render_component<Phos::TransformComponent>(entity, false);
-        render_component<Phos::MeshRendererComponent>(entity);
-        render_component<Phos::LightComponent>(entity);
-        render_component<Phos::CameraComponent>(entity);
-        render_component<Phos::ScriptComponent>(entity);
+        render_component<Phos::NameComponent>(entity, m_asset_manager, false);
+        render_component<Phos::TransformComponent>(entity, m_asset_manager, false);
+        render_component<Phos::MeshRendererComponent>(entity, m_asset_manager);
+        render_component<Phos::LightComponent>(entity, m_asset_manager);
+        render_component<Phos::CameraComponent>(entity, m_asset_manager);
+        render_component<Phos::ScriptComponent>(entity, m_asset_manager);
 
         // Add component on Right Click
         if (ImGui::Button("Add Component")) {
@@ -126,8 +122,12 @@ void ComponentsPanel::on_imgui_render() {
 // Specific render_component
 //
 
-template <>
-void render_component<Phos::NameComponent>(Phos::NameComponent& component) {
+#define RENDER_COMPONENT(T)                 \
+    template <>                             \
+    void render_component<T>(T & component, \
+                             [[maybe_unused]] const std::shared_ptr<Phos::EditorAssetManager>& asset_manager)
+
+RENDER_COMPONENT(Phos::NameComponent) {
     ImGui::AlignTextToFramePadding();
 
     ImGui::Text("Name:");
@@ -135,8 +135,7 @@ void render_component<Phos::NameComponent>(Phos::NameComponent& component) {
     ImGui::InputText("##NameInput", &component.name);
 }
 
-template <>
-void render_component<Phos::TransformComponent>(Phos::TransformComponent& component) {
+RENDER_COMPONENT(Phos::TransformComponent) {
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Transform");
 
@@ -194,8 +193,7 @@ void render_component<Phos::TransformComponent>(Phos::TransformComponent& compon
     ImGui::EndTable();
 }
 
-template <>
-void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& component) {
+RENDER_COMPONENT(Phos::MeshRendererComponent) {
     ImGui::AlignTextToFramePadding();
     ImGui::Text("MeshRenderer");
 
@@ -215,7 +213,7 @@ void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& 
 
     const auto mesh_asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
     if (mesh_asset.has_value() && !mesh_asset->is_directory && mesh_asset->type == Phos::AssetType::Mesh)
-        component.mesh = s_asset_manager->load_by_id_type<Phos::Mesh>(mesh_asset->uuid);
+        component.mesh = asset_manager->load_by_id_type<Phos::Mesh>(mesh_asset->uuid);
 
     ImGui::TableNextRow();
 
@@ -230,13 +228,12 @@ void render_component<Phos::MeshRendererComponent>(Phos::MeshRendererComponent& 
 
     const auto mat_asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
     if (mat_asset.has_value() && !mat_asset->is_directory && mat_asset->type == Phos::AssetType::Material)
-        component.material = s_asset_manager->load_by_id_type<Phos::Material>(mat_asset->uuid);
+        component.material = asset_manager->load_by_id_type<Phos::Material>(mat_asset->uuid);
 
     ImGui::EndTable();
 }
 
-template <>
-void render_component<Phos::LightComponent>(Phos::LightComponent& component) {
+RENDER_COMPONENT(Phos::LightComponent) {
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Light");
 
@@ -338,8 +335,7 @@ void render_component<Phos::LightComponent>(Phos::LightComponent& component) {
     ImGui::EndTable();
 }
 
-template <>
-void render_component<Phos::CameraComponent>(Phos::CameraComponent& component) {
+RENDER_COMPONENT(Phos::CameraComponent) {
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Camera");
 
@@ -422,8 +418,7 @@ void render_component<Phos::CameraComponent>(Phos::CameraComponent& component) {
     ImGui::EndTable();
 }
 
-template <>
-void render_component<Phos::ScriptComponent>(Phos::ScriptComponent& component) {
+RENDER_COMPONENT(Phos::ScriptComponent) {
     ImGui::Text("Script");
 
     if (!ImGui::BeginTable("Script", 2))
@@ -446,7 +441,7 @@ void render_component<Phos::ScriptComponent>(Phos::ScriptComponent& component) {
     if (asset.has_value() && !asset->is_directory && asset->type == Phos::AssetType::Script) {
         component.script = asset->uuid;
 
-        const auto handle = s_asset_manager->load_by_id_type<Phos::ClassHandle>(component.script);
+        const auto handle = asset_manager->load_by_id_type<Phos::ClassHandle>(component.script);
         component.class_name = handle->class_name();
         component.field_values = {};
 
@@ -504,7 +499,7 @@ void render_component<Phos::ScriptComponent>(Phos::ScriptComponent& component) {
             ImGui::InputText(id.c_str(), &v);
         } else if (std::holds_alternative<Phos::PrefabRef>(value)) {
             auto& v = const_cast<Phos::PrefabRef&>(std::get<Phos::PrefabRef>(value));
-            auto prefab_name = v.id == Phos::UUID(0) ? "" : s_asset_manager->get_asset_name(v.id);
+            auto prefab_name = v.id == Phos::UUID(0) ? "" : asset_manager->get_asset_name(v.id);
             ImGui::InputText(id.c_str(), &prefab_name, ImGuiInputTextFlags_ReadOnly);
 
             const auto prefab_asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");

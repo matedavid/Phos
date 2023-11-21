@@ -14,7 +14,7 @@ class EditorAssetManager;
 class ComponentsPanel : public IImGuiPanel {
   public:
     ComponentsPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager);
-    ~ComponentsPanel() override;
+    ~ComponentsPanel() override = default;
 
     void on_imgui_render() override;
     void set_selected_entity(const Phos::Entity& entity);
@@ -23,4 +23,5 @@ class ComponentsPanel : public IImGuiPanel {
   private:
     std::string m_name;
     std::optional<Phos::Entity> m_selected_entity;
+    std::shared_ptr<Phos::EditorAssetManager> m_asset_manager;
 };
