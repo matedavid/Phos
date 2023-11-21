@@ -10,7 +10,9 @@ namespace Phos {
 class Entity;
 }
 
+class AssetBuilder;
+
 class EntitySerializer {
   public:
-    static void serialize(YAML::Emitter& out, const Phos::Entity& entity);
+    static AssetBuilder serialize(const Phos::Entity& entity);
 };

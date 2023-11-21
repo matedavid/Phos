@@ -10,10 +10,7 @@
 struct aiMaterial;
 struct aiScene;
 struct aiNode;
-
-namespace YAML {
-class Emitter;
-}
+class AssetBuilder;
 
 class AssimpImporter {
   public:
@@ -36,10 +33,8 @@ class AssimpImporter {
     [[nodiscard]] static Phos::UUID load_texture(const std::filesystem::path& texture_path,
                                                  const std::filesystem::path& new_texture_path);
 
-    static void process_model_node_r(YAML::Emitter& out,
-                                     const aiNode* node,
-                                     const aiScene* scene,
-                                     const std::vector<Phos::UUID>& mesh_ids,
-                                     const std::vector<Phos::UUID>& material_ids,
-                                     std::size_t child_number);
+    static AssetBuilder process_model_node_r(const aiNode* node,
+                                             const aiScene* scene,
+                                             const std::vector<Phos::UUID>& mesh_ids,
+                                             const std::vector<Phos::UUID>& material_ids);
 };

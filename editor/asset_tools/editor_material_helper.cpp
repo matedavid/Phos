@@ -1,10 +1,12 @@
 #include "editor_material_helper.h"
 
-#include <yaml-cpp/yaml.h>
 #include <fstream>
+
+#include "asset_tools/asset_builder.h"
 
 #include "core/uuid.h"
 #include "managers/shader_manager.h"
+#include "asset/asset_parsing_utils.h"
 
 #include "renderer/backend/renderer.h"
 
@@ -54,16 +56,16 @@ EditorMaterialHelper::EditorMaterialHelper(const std::filesystem::path& path) : 
 
         switch (property.type) {
         case Phos::ShaderProperty::Type::Float:
-            m_float_properties[property.name] = parse_float(data_node);
+            m_float_properties[property.name] = Phos::AssetParsingUtils::parse_numeric<float>(data_node);
             break;
         case Phos::ShaderProperty::Type::Vec3:
-            m_vec3_properties[property.name] = parse_vec3(data_node);
+            m_vec3_properties[property.name] = Phos::AssetParsingUtils::parse_vec3(data_node);
             break;
         case Phos::ShaderProperty::Type::Vec4:
-            m_vec4_properties[property.name] = parse_vec4(data_node);
+            m_vec4_properties[property.name] = Phos::AssetParsingUtils::parse_vec4(data_node);
             break;
         case Phos::ShaderProperty::Type::Texture:
-            m_texture_properties[property.name] = parse_texture(data_node);
+            m_texture_properties[property.name] = Phos::AssetParsingUtils::parse_uuid(data_node);
             break;
         }
     }
@@ -79,68 +81,48 @@ void EditorMaterialHelper::save() const {
 }
 
 void EditorMaterialHelper::save(const std::filesystem::path& path) const {
-    YAML::Emitter out;
-    out << YAML::BeginMap;
+    auto material_builder = AssetBuilder();
 
-    out << YAML::Key << "assetType" << YAML::Value << "material";
-    out << YAML::Key << "id" << YAML::Value << (uint64_t)m_material_id;
+    material_builder.dump("assetType", "material");
+    material_builder.dump("id", m_material_id);
+    material_builder.dump("name", m_material_name);
 
-    out << YAML::Key << "name" << YAML::Value << m_material_name;
-
-    out << YAML::Key << "shader";
-    out << YAML::BeginMap;
     {
-        out << YAML::Key << "type" << YAML::Value << "builtin";
-        out << YAML::Key << "name" << YAML::Value << "PBR.Geometry.Deferred";
+        auto shader_builder = AssetBuilder();
+        shader_builder.dump("type", "builtin");
+        shader_builder.dump("name", "PBR.Geometry.Deferred");
+
+        material_builder.dump("shader", shader_builder);
     }
-    out << YAML::EndMap;
 
-    out << YAML::Key << "properties";
-    out << YAML::BeginMap;
+    {
+        auto properties_builder = AssetBuilder();
 
-    for (const auto& property : m_properties) {
-        out << YAML::Key << property.name << YAML::BeginMap;
+        for (const auto& property : m_properties) {
+            auto property_builder = AssetBuilder();
 
-        if (property.type == Phos::ShaderProperty::Type::Float) {
-            out << YAML::Key << "type" << YAML::Value << "float";
-            out << YAML::Key << "data" << YAML::Value << m_float_properties.at(property.name);
-        } else if (property.type == Phos::ShaderProperty::Type::Vec3) {
-            out << YAML::Key << "type" << YAML::Value << "vec3";
-
-            out << YAML::Key << "data" << YAML::BeginMap;
-            {
-                const auto data = m_vec3_properties.at(property.name);
-
-                out << YAML::Key << "x" << YAML::Value << data.x;
-                out << YAML::Key << "y" << YAML::Value << data.y;
-                out << YAML::Key << "z" << YAML::Value << data.z;
+            if (property.type == Phos::ShaderProperty::Type::Float) {
+                property_builder.dump("type", "float");
+                property_builder.dump("data", m_float_properties.at(property.name));
+            } else if (property.type == Phos::ShaderProperty::Type::Vec3) {
+                property_builder.dump("type", "vec3");
+                property_builder.dump("data", m_vec3_properties.at(property.name));
+            } else if (property.type == Phos::ShaderProperty::Type::Vec4) {
+                property_builder.dump("type", "vec4");
+                property_builder.dump("data", m_vec4_properties.at(property.name));
+            } else if (property.type == Phos::ShaderProperty::Type::Texture) {
+                property_builder.dump("type", "texture");
+                property_builder.dump("data", m_texture_properties.at(property.name));
             }
-            out << YAML::EndMap;
-        } else if (property.type == Phos::ShaderProperty::Type::Vec4) {
-            out << YAML::Key << "type" << YAML::Value << "vec3";
 
-            out << YAML::Key << "data" << YAML::BeginMap;
-            {
-                const auto data = m_vec4_properties.at(property.name);
-
-                out << YAML::Key << "x" << YAML::Value << data.x;
-                out << YAML::Key << "y" << YAML::Value << data.y;
-                out << YAML::Key << "z" << YAML::Value << data.z;
-                out << YAML::Key << "w" << YAML::Value << data.w;
-            }
-            out << YAML::EndMap;
-        } else if (property.type == Phos::ShaderProperty::Type::Texture) {
-            out << YAML::Key << "type" << YAML::Value << "texture";
-            out << YAML::Key << "data" << YAML::Value << (uint64_t)m_texture_properties.at(property.name);
+            properties_builder.dump(property.name, property_builder);
         }
 
-        out << YAML::EndMap;
+        material_builder.dump("properties", properties_builder);
     }
 
-    out << YAML::EndMap << YAML::EndMap;
-
     std::ofstream output_file(path);
-    output_file << out.c_str();
+    output_file << material_builder;
 }
 
 void EditorMaterialHelper::input_default_value(const std::string& property_name, Phos::ShaderProperty::Type type) {
@@ -164,20 +146,4 @@ void EditorMaterialHelper::input_default_value(const std::string& property_name,
         m_texture_properties[property_name] = Phos::UUID(0);
         break;
     }
-}
-
-float EditorMaterialHelper::parse_float(const YAML::Node& node) {
-    return node.as<float>();
-}
-
-glm::vec3 EditorMaterialHelper::parse_vec3(const YAML::Node& node) {
-    return {node["x"].as<float>(), node["y"].as<float>(), node["z"].as<float>()};
-}
-
-glm::vec4 EditorMaterialHelper::parse_vec4(const YAML::Node& node) {
-    return {node["x"].as<float>(), node["y"].as<float>(), node["z"].as<float>(), node["w"].as<float>()};
-}
-
-Phos::UUID EditorMaterialHelper::parse_texture(const YAML::Node& node) {
-    return Phos::UUID(node.as<uint64_t>());
 }

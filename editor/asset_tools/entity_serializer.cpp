@@ -1,8 +1,6 @@
 #include "entity_serializer.h"
 
-#include <yaml-cpp/yaml.h>
-
-#include "asset_tools/asset_dumping_utils.h"
+#include "asset_tools/asset_builder.h"
 
 #include "scene/entity.h"
 
@@ -10,21 +8,20 @@
 #include "renderer/backend/material.h"
 
 template <typename T>
-static void serialize_component_t(YAML::Emitter& out, const T& component);
+static void serialize_component_t(const T& component, AssetBuilder& builder);
 
 template <typename T>
-void serialize_component(YAML::Emitter& out, const Phos::Entity& entity) {
+void serialize_component(const Phos::Entity& entity, AssetBuilder& builder) {
     if (!entity.has_component<T>())
         return;
 
-    serialize_component_t<T>(out, entity.get_component<T>());
+    serialize_component_t<T>(entity.get_component<T>(), builder);
 }
 
-#define SERIALIZE_COMPONENT(T) serialize_component<T>(out, entity)
+#define SERIALIZE_COMPONENT(T) serialize_component<T>(entity, builder)
 
-void EntitySerializer::serialize(YAML::Emitter& out, const Phos::Entity& entity) {
-    AssetDumpingUtils::AssetDumpingUtils::emit_yaml(out, static_cast<uint64_t>(entity.uuid()));
-    out << YAML::BeginMap;
+AssetBuilder EntitySerializer::serialize(const Phos::Entity& entity) {
+    auto builder = AssetBuilder();
 
     SERIALIZE_COMPONENT(Phos::NameComponent);
     SERIALIZE_COMPONENT(Phos::RelationshipComponent);
@@ -34,7 +31,7 @@ void EntitySerializer::serialize(YAML::Emitter& out, const Phos::Entity& entity)
     SERIALIZE_COMPONENT(Phos::CameraComponent);
     SERIALIZE_COMPONENT(Phos::ScriptComponent);
 
-    out << YAML::EndMap;
+    return builder;
 }
 
 //
@@ -43,171 +40,138 @@ void EntitySerializer::serialize(YAML::Emitter& out, const Phos::Entity& entity)
 
 #define SERIALIZE_COMPONENT_T(T) \
     template <>                  \
-    void serialize_component_t<T>(YAML::Emitter & out, const T& component)
+    void serialize_component_t<T>(const T& component, AssetBuilder& builder)
 
 SERIALIZE_COMPONENT_T(Phos::NameComponent) {
-    AssetDumpingUtils::AssetDumpingUtils::emit_yaml(out, "NameComponent", component.name);
+    builder.dump("NameComponent", component.name);
 }
 
 SERIALIZE_COMPONENT_T(Phos::RelationshipComponent) {
-    AssetDumpingUtils::emit_yaml(out, "RelationshipComponent");
-    out << YAML::BeginMap;
+    auto component_builder = AssetBuilder();
 
     if (component.parent.has_value()) {
-        AssetDumpingUtils::emit_yaml(out, "parent", (uint64_t)*component.parent);
+        component_builder.dump("parent", *component.parent);
     }
 
     if (!component.children.empty()) {
-        AssetDumpingUtils::emit_yaml(out, "children");
-        out << YAML::BeginSeq;
+        auto children_list = std::vector<uint64_t>();
 
         for (const auto& child : component.children)
-            AssetDumpingUtils::emit_yaml(out, (uint64_t)child);
+            children_list.push_back(static_cast<uint64_t>(child));
 
-        out << YAML::EndSeq;
+        component_builder.dump("children", children_list);
     }
 
-    out << YAML::EndMap;
+    builder.dump("RelationshipComponent", component_builder);
 }
 
 SERIALIZE_COMPONENT_T(Phos::TransformComponent) {
-    AssetDumpingUtils::emit_yaml(out, "TransformComponent");
-    out << YAML::BeginMap;
+    auto component_builder = AssetBuilder();
 
-    AssetDumpingUtils::emit_yaml(out, "position");
-    {
-        out << YAML::BeginMap;
+    // Position
+    component_builder.dump("position", component.position);
+    // Rotation
+    component_builder.dump("rotation", component.rotation);
+    // Scale
+    component_builder.dump("scale", component.scale);
 
-        AssetDumpingUtils::emit_yaml(out, "x", component.position.x);
-        AssetDumpingUtils::emit_yaml(out, "y", component.position.y);
-        AssetDumpingUtils::emit_yaml(out, "z", component.position.z);
-
-        out << YAML::EndMap;
-    }
-
-    AssetDumpingUtils::emit_yaml(out, "rotation");
-    {
-        out << YAML::BeginMap;
-
-        AssetDumpingUtils::emit_yaml(out, "x", component.rotation.x);
-        AssetDumpingUtils::emit_yaml(out, "y", component.rotation.y);
-        AssetDumpingUtils::emit_yaml(out, "z", component.rotation.z);
-
-        out << YAML::EndMap;
-    }
-
-    AssetDumpingUtils::emit_yaml(out, "scale");
-    {
-        out << YAML::BeginMap;
-
-        AssetDumpingUtils::emit_yaml(out, "x", component.scale.x);
-        AssetDumpingUtils::emit_yaml(out, "y", component.scale.y);
-        AssetDumpingUtils::emit_yaml(out, "z", component.scale.z);
-
-        out << YAML::EndMap;
-    }
-
-    out << YAML::EndMap;
+    builder.dump("TransformComponent", component_builder);
 }
 
 SERIALIZE_COMPONENT_T(Phos::MeshRendererComponent) {
-    AssetDumpingUtils::emit_yaml(out, "MeshRendererComponent");
-    out << YAML::BeginMap;
+    auto component_builder = AssetBuilder();
 
-    AssetDumpingUtils::emit_yaml(out, "mesh", (uint64_t)component.mesh->id);
-    AssetDumpingUtils::emit_yaml(out, "material", (uint64_t)component.material->id);
+    component_builder.dump("mesh", component.mesh->id);
+    component_builder.dump("material", component.material->id);
 
-    out << YAML::EndMap;
+    builder.dump("MeshRendererComponent", component_builder);
 }
 
 SERIALIZE_COMPONENT_T(Phos::LightComponent) {
-    AssetDumpingUtils::emit_yaml(out, "LightComponent");
-    out << YAML::BeginMap;
+    auto component_builder = AssetBuilder();
 
-    if (component.type == Phos::Light::Type::Point)
-        AssetDumpingUtils::emit_yaml(out, "type", "point");
-    else if (component.type == Phos::Light::Type::Directional)
-        AssetDumpingUtils::emit_yaml(out, "type", "directional");
-
-    AssetDumpingUtils::emit_yaml(out, "radius", component.radius);
-
-    AssetDumpingUtils::emit_yaml(out, "color");
-    {
-        out << YAML::BeginMap;
-
-        AssetDumpingUtils::emit_yaml(out, "x", component.color.x);
-        AssetDumpingUtils::emit_yaml(out, "y", component.color.y);
-        AssetDumpingUtils::emit_yaml(out, "z", component.color.z);
-        AssetDumpingUtils::emit_yaml(out, "w", component.color.w);
-
-        out << YAML::EndMap;
+    switch (component.type) {
+    case Phos::Light::Type::Point:
+        component_builder.dump("type", "point");
+        break;
+    case Phos::Light::Type::Directional:
+        component_builder.dump("type", "directional");
+        break;
     }
 
-    if (component.shadow_type == Phos::Light::ShadowType::None)
-        AssetDumpingUtils::emit_yaml(out, "shadow", "none");
-    else if (component.shadow_type == Phos::Light::ShadowType::Hard)
-        AssetDumpingUtils::emit_yaml(out, "shadow", "hard");
+    component_builder.dump("radius", component.radius);
+    component_builder.dump("color", component.color);
 
-    out << YAML::EndMap;
+    switch (component.shadow_type) {
+    case Phos::Light::ShadowType::None:
+        component_builder.dump("shadow", "none");
+        break;
+    case Phos::Light::ShadowType::Hard:
+        component_builder.dump("shadow", "hard");
+        break;
+    }
+
+    builder.dump("LightComponent", component_builder);
 }
 
 SERIALIZE_COMPONENT_T(Phos::CameraComponent) {
-    AssetDumpingUtils::emit_yaml(out, "CameraComponent");
-    out << YAML::BeginMap;
+    auto component_builder = AssetBuilder();
 
-    if (component.type == Phos::Camera::Type::Perspective)
-        AssetDumpingUtils::emit_yaml(out, "type", "perspective");
-    else if (component.type == Phos::Camera::Type::Orthographic)
-        AssetDumpingUtils::emit_yaml(out, "type", "orthographic");
+    switch (component.type) {
+    case Phos::Camera::Type::Perspective:
+        component_builder.dump("type", "perspective");
+        break;
+    case Phos::Camera::Type::Orthographic:
+        component_builder.dump("type", "orthographic");
+        break;
+    }
 
-    AssetDumpingUtils::emit_yaml(out, "fov", component.fov);
-    AssetDumpingUtils::emit_yaml(out, "size", component.size);
-    AssetDumpingUtils::emit_yaml(out, "znear", component.znear);
-    AssetDumpingUtils::emit_yaml(out, "zfar", component.zfar);
-    AssetDumpingUtils::emit_yaml(out, "depth", component.depth);
+    component_builder.dump("fov", component.fov);
+    component_builder.dump("size", component.size);
+    component_builder.dump("znear", component.znear);
+    component_builder.dump("zfar", component.zfar);
+    component_builder.dump("depth", component.depth);
 
-    out << YAML::EndMap;
+    builder.dump("CameraComponent", component_builder);
 }
 
 SERIALIZE_COMPONENT_T(Phos::ScriptComponent) {
-    AssetDumpingUtils::emit_yaml(out, "ScriptComponent");
-    out << YAML::BeginMap;
+    auto component_builder = AssetBuilder();
 
-    AssetDumpingUtils::emit_yaml(out, "className", component.class_name);
-    AssetDumpingUtils::emit_yaml(out, "script", (uint64_t)component.script);
+    component_builder.dump("className", component.class_name);
+    component_builder.dump("script", component.script);
 
-    AssetDumpingUtils::emit_yaml(out, "fields");
-    out << YAML::BeginMap;
     {
-        for (const auto& [field_name, value] : component.field_values) {
-            AssetDumpingUtils::emit_yaml(out, field_name);
-            out << YAML::BeginMap;
+        auto fields_builder = AssetBuilder();
 
-            std::string type_name;
+        for (const auto& [field_name, value] : component.field_values) {
+            auto field_builder = AssetBuilder();
+
             if (std::holds_alternative<int>(value)) {
-                AssetDumpingUtils::emit_yaml(out, "type", "int");
-                AssetDumpingUtils::dump(out, "data", std::get<int>(value));
+                field_builder.dump("type", "int");
+                field_builder.dump("data", std::get<int>(value));
             } else if (std::holds_alternative<float>(value)) {
-                AssetDumpingUtils::emit_yaml(out, "type", "float");
-                AssetDumpingUtils::dump(out, "data", std::get<float>(value));
+                field_builder.dump("type", "float");
+                field_builder.dump("data", std::get<float>(value));
             } else if (std::holds_alternative<glm::vec3>(value)) {
-                AssetDumpingUtils::emit_yaml(out, "type", "vec3");
-                AssetDumpingUtils::dump_vec3(out, "data", std::get<glm::vec3>(value));
+                field_builder.dump("type", "vec3");
+                field_builder.dump("data", std::get<glm::vec3>(value));
             } else if (std::holds_alternative<std::string>(value)) {
-                AssetDumpingUtils::emit_yaml(out, "type", "string");
-                AssetDumpingUtils::dump(out, "data", std::get<std::string>(value));
+                field_builder.dump("type", "string");
+                field_builder.dump("data", std::get<std::string>(value));
             } else if (std::holds_alternative<Phos::PrefabRef>(value)) {
-                AssetDumpingUtils::emit_yaml(out, "type", "prefab");
-                AssetDumpingUtils::dump(out, "data", (uint64_t)std::get<Phos::PrefabRef>(value).id);
+                field_builder.dump("type", "prefab");
+                field_builder.dump("data", std::get<Phos::PrefabRef>(value).id);
             } else if (std::holds_alternative<Phos::EntityRef>(value)) {
-                AssetDumpingUtils::emit_yaml(out, "type", "entity");
-                AssetDumpingUtils::dump(out, "data", (uint64_t)std::get<Phos::EntityRef>(value).id);
+                field_builder.dump("type", "entity");
+                field_builder.dump("data", std::get<Phos::EntityRef>(value).id);
             }
 
-            out << YAML::EndMap;
+            fields_builder.dump(field_name, field_builder);
         }
-    }
-    out << YAML::EndMap;
 
-    out << YAML::EndMap;
+        component_builder.dump("fields", fields_builder);
+    }
+
+    builder.dump("ScriptComponent", component_builder);
 }

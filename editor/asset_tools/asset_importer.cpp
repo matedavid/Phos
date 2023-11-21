@@ -1,10 +1,10 @@
 #include "asset_importer.h"
 
-#include <yaml-cpp/yaml.h>
 #include <fstream>
 
 #include "asset/asset.h"
 #include "asset_tools/assimp_importer.h"
+#include "asset_tools/asset_builder.h"
 
 #define IS_TEXTURE(ext) (ext == ".jpg" || ext == ".png" || ext == ".jpeg")
 #define IS_MODEL(ext) (ext == ".fbx" || ext == ".obj" || ext == ".gltf")
@@ -40,19 +40,16 @@ std::filesystem::path AssetImporter::import_texture(const std::filesystem::path&
 
     const auto imported_phos_asset_path = containing_folder / (asset_path.filename().string() + ".psa");
 
-    YAML::Emitter out;
-    out << YAML::BeginMap;
+    auto texture_builder = AssetBuilder();
 
-    out << YAML::Key << "assetType" << YAML::Value << "texture";
-    out << YAML::Key << "id" << YAML::Value << (uint64_t)Phos::UUID();
+    texture_builder.dump("assetType", "texture");
+    texture_builder.dump("id", Phos::UUID());
 
-    out << YAML::Key << "path" << YAML::Value
-        << std::filesystem::relative(imported_asset_path, imported_phos_asset_path.parent_path());
-
-    out << YAML::EndMap;
+    const auto relative_path = std::filesystem::relative(imported_asset_path, imported_phos_asset_path.parent_path());
+    texture_builder.dump("path", relative_path);
 
     std::ofstream file(imported_phos_asset_path);
-    file << out.c_str();
+    file << texture_builder;
 
     return imported_phos_asset_path;
 }
@@ -70,16 +67,13 @@ std::filesystem::path AssetImporter::import_script(const std::filesystem::path& 
 
     const auto imported_phos_asset_path = containing_folder / (asset_path.filename().string() + ".psa");
 
-    YAML::Emitter out;
-    out << YAML::BeginMap;
+    auto script_builder = AssetBuilder();
 
-    out << YAML::Key << "assetType" << YAML::Value << "script";
-    out << YAML::Key << "id" << YAML::Value << (uint64_t)Phos::UUID();
-
-    out << YAML::EndMap;
+    script_builder.dump("assetType", "script");
+    script_builder.dump("id", Phos::UUID());
 
     std::ofstream file(imported_phos_asset_path);
-    file << out.c_str();
+    file << script_builder;
 
     return imported_phos_asset_path;
 }

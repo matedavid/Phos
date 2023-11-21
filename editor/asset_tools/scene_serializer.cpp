@@ -1,10 +1,9 @@
 #include "scene_serializer.h"
 
 #include <fstream>
-#include <yaml-cpp/yaml.h>
 
 #include "asset_tools/entity_serializer.h"
-#include "asset_tools/asset_dumping_utils.h"
+#include "asset_tools/asset_builder.h"
 
 #include "scene/scene.h"
 #include "renderer/backend/cubemap.h"
@@ -12,50 +11,49 @@
 void SceneSerializer::serialize(const std::shared_ptr<Phos::Scene>& scene, const std::filesystem::path& path) {
     const auto& entities = scene->get_all_entities();
 
-    YAML::Emitter out;
-    out << YAML::BeginMap;
-    AssetDumpingUtils::emit_yaml(out, "assetType", "scene");
-    AssetDumpingUtils::emit_yaml(out, "name", scene->name());
-    AssetDumpingUtils::emit_yaml(out, "id", (uint64_t)scene->id);
+    auto builder = AssetBuilder();
 
-    // Emit config
+    builder.dump("assetType", "scene");
+    builder.dump("name", scene->name());
+    builder.dump("id", scene->id);
+
+    // Config
     const auto& config = scene->config();
+    auto config_builder = AssetBuilder();
 
-    AssetDumpingUtils::emit_yaml(out, "config");
-    out << YAML::BeginMap;
-
-    AssetDumpingUtils::emit_yaml(out, "bloomConfig");
     {
-        out << YAML::BeginMap;
+        // Bloom config
+        auto bloom_config = AssetBuilder();
+        bloom_config.dump("enabled", config.bloom_config.enabled);
+        bloom_config.dump("threshold", config.bloom_config.threshold);
 
-        AssetDumpingUtils::emit_yaml(out, "enabled", config.bloom_config.enabled);
-        AssetDumpingUtils::emit_yaml(out, "threshold", config.bloom_config.threshold);
-
-        out << YAML::EndMap;
+        config_builder.dump("bloomConfig", bloom_config);
     }
 
-    AssetDumpingUtils::emit_yaml(out, "environmentConfig");
     {
-        out << YAML::BeginMap;
-
+        // Environment config
+        auto environment_config = AssetBuilder();
         const auto skybox_id =
             config.environment_config.skybox != nullptr ? (uint64_t)config.environment_config.skybox->id : 0;
-        AssetDumpingUtils::emit_yaml(out, "skybox", skybox_id);
+        environment_config.dump("skybox", skybox_id);
 
-        out << YAML::EndMap;
+        config_builder.dump("environmentConfig", environment_config);
     }
 
-    out << YAML::EndMap;
+    builder.dump("config", config_builder);
 
-    // Emit entities
-    AssetDumpingUtils::emit_yaml(out, "entities");
-    out << YAML::BeginMap;
+    // Entities
+    auto entities_builder = AssetBuilder();
 
-    for (const auto& entity : entities)
-        EntitySerializer::serialize(out, entity);
+    for (const auto& entity : entities) {
+        auto entity_builder = EntitySerializer::serialize(entity);
 
-    out << YAML::EndMap << YAML::EndMap;
+        const std::string str_id = std::to_string(static_cast<uint64_t>(entity.uuid()));
+        entities_builder.dump(str_id, entity_builder);
+    }
+
+    builder.dump("entities", entities_builder);
 
     std::ofstream file(path);
-    file << out.c_str();
+    file << builder;
 }

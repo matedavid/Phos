@@ -1,7 +1,7 @@
 #include "editor_cubemap_helper.h"
 
-#include <yaml-cpp/yaml.h>
 #include <fstream>
+#include "asset_tools/asset_builder.h"
 
 std::shared_ptr<EditorCubemapHelper> EditorCubemapHelper::create(std::string name) {
     return std::shared_ptr<EditorCubemapHelper>(new EditorCubemapHelper(std::move(name)));
@@ -93,36 +93,32 @@ void EditorCubemapHelper::save() const {
 }
 
 void EditorCubemapHelper::save(const std::filesystem::path& path) const {
-    YAML::Emitter out;
+    auto cubemap_builder = AssetBuilder();
 
-    out << YAML::BeginMap;
-
-    out << YAML::Key << "assetType" << YAML::Value << "cubemap";
-    out << YAML::Key << "id" << YAML::Value << (uint64_t)m_cubemap_id;
+    cubemap_builder.dump("assetType", "cubemap");
+    cubemap_builder.dump("id", m_cubemap_id);
 
     switch (m_type) {
     case Type::Faces: {
-        out << YAML::Key << "type" << YAML::Value << "faces";
+        cubemap_builder.dump("type", "faces");
 
-        out << YAML::Key << "faces" << YAML::BeginMap;
+        auto faces_builder = AssetBuilder();
 
-        out << YAML::Key << "left" << YAML::Value << (uint64_t)m_faces.left;
-        out << YAML::Key << "right" << YAML::Value << (uint64_t)m_faces.right;
-        out << YAML::Key << "top" << YAML::Value << (uint64_t)m_faces.top;
-        out << YAML::Key << "bottom" << YAML::Value << (uint64_t)m_faces.bottom;
-        out << YAML::Key << "front" << YAML::Value << (uint64_t)m_faces.front;
-        out << YAML::Key << "back" << YAML::Value << (uint64_t)m_faces.back;
+        faces_builder.dump("left", m_faces.left);
+        faces_builder.dump("right", m_faces.right);
+        faces_builder.dump("top", m_faces.top);
+        faces_builder.dump("bottom", m_faces.bottom);
+        faces_builder.dump("front", m_faces.front);
+        faces_builder.dump("back", m_faces.back);
 
-        out << YAML::EndMap;
+        cubemap_builder.dump("faces", faces_builder);
     } break;
     case Type::Equirectangular: {
-        out << YAML::Key << "type" << YAML::Value << "equirectangular";
-        out << YAML::Key << "texture" << YAML::Value << (uint64_t)m_equirectangular_id;
+        cubemap_builder.dump("type", "equirectangular");
+        cubemap_builder.dump("texture", m_equirectangular_id);
     } break;
     }
 
-    out << YAML::EndMap;
-
     std::ofstream output_file(path);
-    output_file << out.c_str();
+    output_file << cubemap_builder;
 }

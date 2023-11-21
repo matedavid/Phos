@@ -2,11 +2,12 @@
 
 #include <fstream>
 
-#include <yaml-cpp/yaml.h>
-
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+
+#include "asset_tools/asset_builder.h"
+#include "asset_tools/asset_importer.h"
 
 #include "editor_material_helper.h"
 
@@ -86,19 +87,17 @@ std::filesystem::path AssimpImporter::import_model(const std::filesystem::path& 
     }
 
     // Process scene
-    YAML::Emitter out;
-    out << YAML::BeginMap;
+    auto model_builder = AssetBuilder();
 
-    out << YAML::Key << "assetType" << YAML::Value << "model";
-    out << YAML::Key << "id" << YAML::Value << static_cast<uint64_t>(Phos::UUID());
+    model_builder.dump("assetType", "model");
+    model_builder.dump("id", Phos::UUID());
 
-    process_model_node_r(out, scene->mRootNode, scene, mesh_ids, material_ids, 0);
-
-    out << YAML::EndMap;
+    const auto root_node_builder = process_model_node_r(scene->mRootNode, scene, mesh_ids, material_ids);
+    model_builder.dump("node_0", root_node_builder);
 
     const auto model_psa_path = output_folder_path / (path.filename().string() + ".psa");
     std::ofstream file(model_psa_path);
-    file << out.c_str();
+    file << model_builder;
 
     return output_folder_path;
 }
@@ -108,20 +107,17 @@ Phos::UUID AssimpImporter::load_mesh(std::size_t idx,
                                      const std::filesystem::path& output_path) {
     const auto asset_id = Phos::UUID();
 
-    YAML::Emitter out;
-    out << YAML::BeginMap;
+    auto mesh_builder = AssetBuilder();
 
-    out << YAML::Key << "assetType" << YAML::Value << "mesh";
-    out << YAML::Key << "id" << YAML::Value << static_cast<uint64_t>(asset_id);
+    mesh_builder.dump("assetType", "mesh");
+    mesh_builder.dump("id", asset_id);
 
-    out << YAML::Key << "path" << YAML::Value << model_path;
-    out << YAML::Key << "index" << YAML::Value << idx;
-
-    out << YAML::EndMap;
+    mesh_builder.dump("path", model_path);
+    mesh_builder.dump("index", idx);
 
     const auto path = output_path / ("mesh_" + std::to_string(idx) + ".psa");
     std::ofstream file(path);
-    file << out.c_str();
+    file << mesh_builder;
 
     return asset_id;
 }
@@ -202,51 +198,46 @@ Phos::UUID AssimpImporter::load_texture(const std::filesystem::path& texture_pat
 
     const auto asset_id = Phos::UUID();
 
-    YAML::Emitter out;
-    out << YAML::BeginMap;
+    auto texture_builder = AssetBuilder();
 
-    out << YAML::Key << "assetType" << YAML::Value << "texture";
-    out << YAML::Key << "id" << YAML::Value << static_cast<uint64_t>(asset_id);
+    texture_builder.dump("assetType", "texture");
+    texture_builder.dump("id", asset_id);
 
-    out << YAML::Key << "path" << YAML::Value << new_texture_path.filename();
-
-    out << YAML::EndMap;
+    texture_builder.dump("path", new_texture_path.filename());
 
     const auto texture_psa_path = new_texture_path.parent_path() / (new_texture_path.filename().string() + ".psa");
     std::ofstream file(texture_psa_path);
-    file << out.c_str();
+    file << texture_builder;
 
     return asset_id;
 }
 
-void AssimpImporter::process_model_node_r(YAML::Emitter& out,
-                                          const aiNode* node,
-                                          const aiScene* scene,
-                                          const std::vector<Phos::UUID>& mesh_ids,
-                                          const std::vector<Phos::UUID>& material_ids,
-                                          std::size_t child_number) {
-    const std::string node_name = "node_" + std::to_string(child_number);
-    out << YAML::Key << node_name;
-    out << YAML::BeginMap;
+AssetBuilder AssimpImporter::process_model_node_r(const aiNode* node,
+                                                  const aiScene* scene,
+                                                  const std::vector<Phos::UUID>& mesh_ids,
+                                                  const std::vector<Phos::UUID>& material_ids) {
+    auto node_builder = AssetBuilder();
 
     if (node->mNumMeshes) {
         const auto mesh = scene->mMeshes[node->mMeshes[0]];
         const auto material_idx = mesh->mMaterialIndex;
 
-        out << YAML::Key << "mesh" << YAML::Value << static_cast<uint64_t>(mesh_ids[node->mMeshes[0]]);
-        out << YAML::Key << "material" << YAML::Value << static_cast<uint64_t>(material_ids[material_idx]);
+        node_builder.dump("mesh", mesh_ids[node->mMeshes[0]]);
+        node_builder.dump("material", material_ids[material_idx]);
     }
 
     if (node->mNumChildren) {
-        out << YAML::Key << "children";
-        out << YAML::BeginMap;
+        auto children_builder = AssetBuilder();
 
         for (std::size_t i = 0; i < node->mNumChildren; ++i) {
-            process_model_node_r(out, node->mChildren[i], scene, mesh_ids, material_ids, i);
+            const std::string child_name = "node_" + std::to_string(i);
+            const auto child_builder = process_model_node_r(node->mChildren[i], scene, mesh_ids, material_ids);
+
+            children_builder.dump(child_name, child_builder);
         }
 
-        out << YAML::EndMap;
+        node_builder.dump("children", children_builder);
     }
 
-    out << YAML::EndMap;
+    return node_builder;
 }

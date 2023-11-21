@@ -65,9 +65,4 @@ class EditorMaterialHelper {
     explicit EditorMaterialHelper(const std::filesystem::path& path);
 
     void input_default_value(const std::string& property_name, Phos::ShaderProperty::Type type);
-
-    [[nodiscard]] static float parse_float(const YAML::Node& node);
-    [[nodiscard]] static glm::vec3 parse_vec3(const YAML::Node& node);
-    [[nodiscard]] static glm::vec4 parse_vec4(const YAML::Node& node);
-    [[nodiscard]] static Phos::UUID parse_texture(const YAML::Node& node);
 };
