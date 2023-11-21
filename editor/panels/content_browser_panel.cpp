@@ -217,12 +217,14 @@ void ContentBrowserPanel::on_imgui_render() {
 
             if (ImGui::MenuItem("Material")) {
                 create_material("NewMaterial");
-                update();
             }
 
             if (ImGui::MenuItem("Cubemap")) {
                 create_cubemap("NewCubemap");
-                update();
+            }
+
+            if (ImGui::MenuItem("Prefab")) {
+                PS_ERROR("[ContentBrowserPanel] Prefab creation unimplemented");
             }
 
             ImGui::EndMenu();
@@ -256,8 +258,9 @@ void ContentBrowserPanel::display_asset(const EditorAsset& asset, std::size_t as
     if (m_renaming_asset_idx.has_value() && *m_renaming_asset_idx == asset_idx) {
         // Asset renaming input
         ImGui::PushItemWidth(CELL_SIZE + PADDING);
-        if (ImGui::InputText(
-                "##RenamingAssetInput", &m_renaming_asset_tmp_name, ImGuiInputTextFlags_EnterReturnsTrue)) {
+        if (ImGui::InputText("##RenamingAssetInput",
+                             &m_renaming_asset_tmp_name,
+                             ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
             rename_currently_renaming_asset();
         }
         ImGui::PopItemWidth();
@@ -515,6 +518,14 @@ void ContentBrowserPanel::create_material(const std::string& name) {
     helper->save(material_path);
 
     m_asset_watcher->asset_created(material_path);
+
+    m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
+        .type = Phos::AssetType::Material,
+        .path = material_path,
+        .uuid = m_asset_manager->get_asset_id(material_path),
+    }));
+    m_renaming_asset_idx = m_assets.size() - 1;
+    m_renaming_asset_tmp_name = material_path.stem();
 }
 
 void ContentBrowserPanel::create_cubemap(const std::string& name) {
@@ -530,4 +541,12 @@ void ContentBrowserPanel::create_cubemap(const std::string& name) {
     helper->save(cubemap_path);
 
     m_asset_watcher->asset_created(cubemap_path);
+
+    m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
+        .type = Phos::AssetType::Cubemap,
+        .path = cubemap_path,
+        .uuid = m_asset_manager->get_asset_id(cubemap_path),
+    }));
+    m_renaming_asset_idx = m_assets.size() - 1;
+    m_renaming_asset_tmp_name = cubemap_path.stem();
 }

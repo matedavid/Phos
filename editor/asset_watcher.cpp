@@ -116,7 +116,8 @@ void AssetWatcher::asset_removed(const std::filesystem::path& path) {
     Phos::Renderer::wait_idle();
 
     if (type == Phos::AssetType::Cubemap) {
-        if (m_scene->config().environment_config.skybox->id == id) {
+        const auto& current_skybox = m_scene->config().environment_config.skybox;
+        if (current_skybox != nullptr && current_skybox->id == id) {
             m_scene->config().environment_config.skybox = nullptr;
             m_renderer->change_config(m_scene->config());
         }
@@ -170,7 +171,8 @@ void AssetWatcher::start_watching_asset(const std::filesystem::path& path, Phos:
 }
 
 void AssetWatcher::update_cubemap(const std::shared_ptr<Phos::Cubemap>& cubemap) const {
-    if (m_scene->config().environment_config.skybox->id == cubemap->id) {
+    const auto& current_skybox = m_scene->config().environment_config.skybox;
+    if (current_skybox != nullptr && current_skybox->id == cubemap->id) {
         m_scene->config().environment_config.skybox = cubemap;
         m_renderer->change_config(m_scene->config());
     }
