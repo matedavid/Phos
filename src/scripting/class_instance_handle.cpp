@@ -63,7 +63,7 @@ void ClassInstanceHandle::invoke_on_update(double delta_time) {
 
 void check_type(const ClassField& info, ClassField::Type expected, std::string_view actual_name) {
     PS_ASSERT(info.field_type == expected,
-              "Trying to set field '{}' value with invalid type, provided type was: '{}'",
+              "Trying to set field '{}' value with invalid type, expected type is: '{}'",
               info.name,
               actual_name);
 }
@@ -96,9 +96,12 @@ SET_FIELD_VALUE_INTERNAL_FUNC(std::string) {
 }
 
 SET_FIELD_VALUE_INTERNAL_FUNC(UUID) {
-    check_type(info, ClassField::Type::String, "entity, prefab");
+    PS_ASSERT(info.field_type == ClassField::Type::Prefab || info.field_type == ClassField::Type::Entity,
+              "Trying to set field '{}' value with invalid type, expected type is: '{}'",
+              info.name,
+              "entity or prefab");
 
-    auto asset_id = (uint64_t)value;
+    auto asset_id = static_cast<uint64_t>(*value);
     mono_field_set_value(m_instance, info.field, &asset_id);
 }
 

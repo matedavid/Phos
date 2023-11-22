@@ -28,9 +28,9 @@ namespace PhosEngine
             return component;
         }
 
-        protected Entity Instantiate(ulong prefabId)
+        protected Entity Instantiate(Prefab prefab)
         {
-            InternalCalls.Entity_Instantiate(prefabId, out var id);
+            InternalCalls.Entity_Instantiate(prefab.Id, out var id);
             return new Entity(id);
         }
 
