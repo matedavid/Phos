@@ -13,6 +13,7 @@ namespace Phos {
 // Forward declarations
 class EditorAssetManager;
 class Texture;
+class Entity;
 
 } // namespace Phos
 
@@ -68,4 +69,7 @@ class ContentBrowserPanel : public IImGuiPanel {
 
     void create_material(const std::string& name);
     void create_cubemap(const std::string& name);
+    void create_prefab(const std::string& name, const Phos::Entity& entity);
+
+    friend class EntityHierarchyPanel;
 };

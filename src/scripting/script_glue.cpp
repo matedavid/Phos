@@ -4,9 +4,9 @@
 
 #include "asset/asset_manager.h"
 #include "asset/prefab_loader.h"
+#include "asset/prefab_asset.h"
 
 #include "scene/scene.h"
-#include "scene/entity.h"
 
 #include "input/input.h"
 
@@ -50,7 +50,14 @@ void ScriptGlue::set_asset_manager(std::shared_ptr<AssetManagerBase> asset_manag
 //
 
 void ScriptGlue::Entity_Instantiate(uint64_t prefab_asset_id, uint64_t* id) {
-    const auto entity = PrefabLoader::load(UUID(prefab_asset_id), s_scene, s_asset_manager);
+    const auto prefab_asset = s_asset_manager->load_by_id_type<PrefabAsset>(UUID(prefab_asset_id));
+    if (prefab_asset == nullptr) {
+        PS_ERROR("[ScriptGlue::Entity_Instantiate] Could not create Prefab with id: {}",
+                 static_cast<uint64_t>(prefab_asset_id));
+        return;
+    }
+
+    const auto entity = PrefabLoader::load(*prefab_asset, s_scene, s_asset_manager);
     *id = (uint64_t)entity.uuid();
 }
 

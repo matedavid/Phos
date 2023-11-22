@@ -13,10 +13,13 @@ class Scene;
 
 // Forward declarations
 class EditorSceneManager;
+class ContentBrowserPanel;
 
 class EntityHierarchyPanel : public IImGuiPanel {
   public:
-    EntityHierarchyPanel(std::string name, std::shared_ptr<EditorSceneManager> scene_manager);
+    EntityHierarchyPanel(std::string name,
+                         std::shared_ptr<EditorSceneManager> scene_manager,
+                         ContentBrowserPanel* content_browser_panel);
     ~EntityHierarchyPanel() override = default;
 
     void on_imgui_render() override;
@@ -26,6 +29,8 @@ class EntityHierarchyPanel : public IImGuiPanel {
   private:
     std::string m_name;
     std::shared_ptr<EditorSceneManager> m_scene_manager;
+
+    ContentBrowserPanel* m_content_browser_panel;
 
     std::optional<Phos::Entity> m_selected_entity;
 

@@ -11,16 +11,13 @@
 
 #include "scene/scene.h"
 
-std::shared_ptr<EditorPrefabHelper> EditorPrefabHelper::create(
-    std::shared_ptr<Phos::EditorAssetManager> asset_manager) {
-    return std::shared_ptr<EditorPrefabHelper>(new EditorPrefabHelper(std::move(asset_manager)));
+std::shared_ptr<EditorPrefabHelper> EditorPrefabHelper::create(const Phos::Entity& entity) {
+    return std::shared_ptr<EditorPrefabHelper>(new EditorPrefabHelper(entity));
 }
 
 // create constructor
-EditorPrefabHelper::EditorPrefabHelper(std::shared_ptr<Phos::EditorAssetManager> asset_manager)
-      : m_asset_manager(std::move(asset_manager)) {
-    // @TODO:
-}
+EditorPrefabHelper::EditorPrefabHelper(const Phos::Entity& entity)
+      : m_prefab_entity(entity), m_prefab_id(Phos::UUID()) {}
 
 std::shared_ptr<EditorPrefabHelper> EditorPrefabHelper::open(const std::filesystem::path& path,
                                                              std::shared_ptr<Phos::EditorAssetManager> asset_manager) {

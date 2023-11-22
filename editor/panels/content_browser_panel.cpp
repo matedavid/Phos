@@ -13,6 +13,7 @@
 
 #include "asset_tools/editor_material_helper.h"
 #include "asset_tools/editor_cubemap_helper.h"
+#include "asset_tools/editor_prefab_helper.h"
 #include "asset_tools/asset_importer.h"
 
 #include "asset/editor_asset_manager.h"
@@ -549,4 +550,27 @@ void ContentBrowserPanel::create_cubemap(const std::string& name) {
     }));
     m_renaming_asset_idx = m_assets.size() - 1;
     m_renaming_asset_tmp_name = cubemap_path.stem();
+}
+
+void ContentBrowserPanel::create_prefab(const std::string& name, const Phos::Entity& entity) {
+    // Find available path for prefab
+    auto prefab_path = m_current_path / (name + ".psa");
+    uint32_t i = 1;
+    while (std::filesystem::exists(prefab_path)) {
+        prefab_path = m_current_path / (name + std::to_string(i) + ".psa");
+        ++i;
+    }
+
+    const auto helper = EditorPrefabHelper::create(entity);
+    helper->save(prefab_path);
+
+    m_asset_watcher->asset_created(prefab_path);
+
+    m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
+        .type = Phos::AssetType::Prefab,
+        .path = prefab_path,
+        .uuid = m_asset_manager->get_asset_id(prefab_path),
+    }));
+    m_renaming_asset_idx = m_assets.size() - 1;
+    m_renaming_asset_tmp_name = prefab_path.stem();
 }

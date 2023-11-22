@@ -17,8 +17,7 @@ class EditorPrefabHelper {
   public:
     ~EditorPrefabHelper() = default;
 
-    [[nodiscard]] static std::shared_ptr<EditorPrefabHelper> create(
-        std::shared_ptr<Phos::EditorAssetManager> asset_manager);
+    [[nodiscard]] static std::shared_ptr<EditorPrefabHelper> create(const Phos::Entity& entity);
     [[nodiscard]] static std::shared_ptr<EditorPrefabHelper> open(
         const std::filesystem::path& path,
         std::shared_ptr<Phos::EditorAssetManager> asset_manager);
@@ -36,7 +35,7 @@ class EditorPrefabHelper {
     Phos::UUID m_prefab_id{};
     std::filesystem::path m_path;
 
-    explicit EditorPrefabHelper(std::shared_ptr<Phos::EditorAssetManager> asset_manager);
+    explicit EditorPrefabHelper(const Phos::Entity& entity);
     explicit EditorPrefabHelper(const std::filesystem::path& path,
                                 std::shared_ptr<Phos::EditorAssetManager> asset_manager);
 };

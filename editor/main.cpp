@@ -275,9 +275,10 @@ class EditorLayer : public Phos::Layer {
 
         // Panels
         m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene_manager, m_state_manager);
-        m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_scene_manager);
         m_content_browser_panel =
             std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager, m_asset_watcher);
+        m_entity_panel =
+            std::make_unique<EntityHierarchyPanel>("Entities", m_scene_manager, m_content_browser_panel.get());
         m_asset_inspector_panel = std::make_unique<AssetInspectorPanel>("Inspector", editor_asset_manager);
         m_scene_configuration_panel = std::make_unique<SceneConfigurationPanel>(
             "Scene Configuration", m_project->scene()->config(), editor_asset_manager);

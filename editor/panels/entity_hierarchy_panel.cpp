@@ -1,12 +1,17 @@
 #include "entity_hierarchy_panel.h"
 
+#include "panels/content_browser_panel.h"
+
 #include "editor_scene_manager.h"
 
 #include "scene/scene.h"
 #include "scene/entity.h"
 
-EntityHierarchyPanel::EntityHierarchyPanel(std::string name, std::shared_ptr<EditorSceneManager> scene_manager)
-      : m_name(std::move(name)), m_scene_manager(std::move(scene_manager)) {}
+EntityHierarchyPanel::EntityHierarchyPanel(std::string name,
+                                           std::shared_ptr<EditorSceneManager> scene_manager,
+                                           ContentBrowserPanel* content_browser_panel)
+      : m_name(std::move(name)), m_scene_manager(std::move(scene_manager)),
+        m_content_browser_panel(content_browser_panel) {}
 
 void EntityHierarchyPanel::on_imgui_render() {
     ImGui::Begin(m_name.c_str());
@@ -69,6 +74,10 @@ bool EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
 
         if (ImGui::MenuItem("Remove Entity")) {
             delete_entity = true;
+        }
+
+        if (ImGui::MenuItem("Create Prefab")) {
+            m_content_browser_panel->create_prefab(entity.get_component<Phos::NameComponent>().name, entity);
         }
 
         ImGui::EndPopup();
