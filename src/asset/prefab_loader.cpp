@@ -10,12 +10,10 @@
 
 namespace Phos {
 
-Entity Phos::PrefabLoader::load(const UUID& prefab_id,
-                                const std::shared_ptr<Scene>& scene,
-                                const std::shared_ptr<AssetManagerBase>& asset_manager) {
-    const auto prefab = asset_manager->load_by_id_type<PrefabAsset>(prefab_id);
-
-    const auto components_node = YAML::Load(prefab->components_string_representation);
+Entity PrefabLoader::load(const PrefabAsset& prefab,
+                          const std::shared_ptr<Scene>& scene,
+                          const std::shared_ptr<AssetManagerBase>& asset_manager) {
+    const auto components_node = YAML::Load(prefab.components_string_representation);
     return EntityDeserializer::deserialize(components_node, UUID(), scene, asset_manager.get());
 }
 

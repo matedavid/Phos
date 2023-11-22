@@ -181,6 +181,7 @@ add_executable(PhosEditor
 
         editor/asset_tools/editor_material_helper.cpp
         editor/asset_tools/editor_cubemap_helper.cpp
+        editor/asset_tools/editor_prefab_helper.cpp
         editor/asset_tools/asset_importer.cpp
         editor/asset_tools/assimp_importer.cpp
         editor/asset_tools/scene_serializer.cpp
@@ -188,10 +189,11 @@ add_executable(PhosEditor
 
         editor/panels/viewport_panel.cpp
         editor/panels/entity_hierarchy_panel.cpp
-        editor/panels/components_panel.cpp
         editor/panels/content_browser_panel.cpp
         editor/panels/asset_inspector_panel.cpp
         editor/panels/scene_configuration_panel.cpp
+
+        editor/panels/functional/entity_components_renderer.cpp
 
         editor/imgui/imgui_impl.cpp
         editor/imgui/vulkan/imgui_vulkan_impl.cpp

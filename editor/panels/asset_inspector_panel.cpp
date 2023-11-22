@@ -7,10 +7,15 @@
 
 #include "asset_tools/editor_material_helper.h"
 #include "asset_tools/editor_cubemap_helper.h"
+#include "asset_tools/editor_prefab_helper.h"
 #include "asset_tools/editor_asset.h"
+
+#include "panels/functional/entity_components_renderer.h"
 
 #include "asset/asset.h"
 #include "asset/editor_asset_manager.h"
+
+#include "scene/scene.h"
 
 #include "managers/texture_manager.h"
 
@@ -56,6 +61,7 @@ void AssetInspectorPanel::on_imgui_render() {
     case Phos::AssetType::Model:
         break;
     case Phos::AssetType::Prefab:
+        render_prefab_asset();
         break;
     case Phos::AssetType::Scene:
         break;
@@ -78,6 +84,7 @@ void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
     m_cubemap_helper.reset();
     m_cubemap_face_textures.clear();
     m_cubemap_face_ids.clear();
+    m_prefab_helper.reset();
 
     if (!m_selected_asset.has_value())
         return;
@@ -105,6 +112,7 @@ void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
     case Phos::AssetType::Model:
         break;
     case Phos::AssetType::Prefab:
+        m_prefab_helper = EditorPrefabHelper::open(m_selected_asset->path, m_asset_manager);
         break;
     case Phos::AssetType::Scene:
         break;
@@ -360,5 +368,20 @@ void AssetInspectorPanel::render_cubemap_asset() {
     // @TODO: Temporary button...??
     if (ImGui::Button("Save")) {
         m_cubemap_helper->save();
+    }
+}
+
+void AssetInspectorPanel::render_prefab_asset() const {
+    auto entity = m_prefab_helper->get_entity();
+
+    ImGui::Text("%s (Prefab)", entity.get_component<Phos::NameComponent>().name.c_str());
+
+    ImGui::Separator();
+
+    EntityComponentsRenderer::display(entity, m_asset_manager);
+
+    // @TODO: Temporary button...??
+    if (ImGui::Button("Save")) {
+        m_prefab_helper->save();
     }
 }

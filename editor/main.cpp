@@ -17,10 +17,10 @@
 
 #include "panels/viewport_panel.h"
 #include "panels/entity_hierarchy_panel.h"
-#include "panels/components_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/asset_inspector_panel.h"
 #include "panels/scene_configuration_panel.h"
+#include "panels/functional/entity_components_renderer.h"
 
 #include "asset/editor_asset_manager.h"
 
@@ -143,13 +143,15 @@ class EditorLayer : public Phos::Layer {
         //
         // Components
         //
-        const auto selected_entity = m_entity_panel->get_selected_entity();
-        if (selected_entity.has_value())
-            m_components_panel->set_selected_entity(selected_entity.value());
-        else
-            m_components_panel->deselect_entity();
+        ImGui::Begin("Components");
 
-        m_components_panel->on_imgui_render();
+        auto selected_entity = m_entity_panel->get_selected_entity();
+        if (selected_entity.has_value()) {
+            EntityComponentsRenderer::display(
+                *selected_entity, std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager()));
+        }
+
+        ImGui::End();
 
         //
         // Asset Browser
@@ -242,7 +244,6 @@ class EditorLayer : public Phos::Layer {
 
     std::unique_ptr<ViewportPanel> m_viewport_panel;
     std::unique_ptr<EntityHierarchyPanel> m_entity_panel;
-    std::unique_ptr<ComponentsPanel> m_components_panel;
     std::unique_ptr<ContentBrowserPanel> m_content_browser_panel;
     std::unique_ptr<AssetInspectorPanel> m_asset_inspector_panel;
     std::unique_ptr<SceneConfigurationPanel> m_scene_configuration_panel;
@@ -275,7 +276,6 @@ class EditorLayer : public Phos::Layer {
         // Panels
         m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene_manager, m_state_manager);
         m_entity_panel = std::make_unique<EntityHierarchyPanel>("Entities", m_scene_manager);
-        m_components_panel = std::make_unique<ComponentsPanel>("Components", editor_asset_manager);
         m_content_browser_panel =
             std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager, m_asset_watcher);
         m_asset_inspector_panel = std::make_unique<AssetInspectorPanel>("Inspector", editor_asset_manager);

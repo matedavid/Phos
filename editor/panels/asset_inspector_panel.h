@@ -5,17 +5,21 @@
 #include "imgui_panel.h"
 #include "content_browser_panel.h"
 
+#include "scene/entity.h"
+
 namespace Phos {
 
 // Forward declarations
 class EditorAssetManager;
 class Material;
+class Scene;
 
 } // namespace Phos
 
 // Forward declarations
 class EditorMaterialHelper;
 class EditorCubemapHelper;
+class EditorPrefabHelper;
 
 class AssetInspectorPanel : public IImGuiPanel {
   public:
@@ -52,8 +56,12 @@ class AssetInspectorPanel : public IImGuiPanel {
     std::shared_ptr<Phos::Texture> m_cubemap_equirectangular_texture;
     ImTextureID m_cubemap_equirectangular_id{};
 
+    // Prefab type
+    std::shared_ptr<EditorPrefabHelper> m_prefab_helper;
+
     // Render functions
     void render_texture_asset() const;
     void render_material_asset() const;
     void render_cubemap_asset();
+    void render_prefab_asset() const;
 };

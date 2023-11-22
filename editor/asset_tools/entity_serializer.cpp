@@ -1,7 +1,5 @@
 #include "entity_serializer.h"
 
-#include "asset_tools/asset_builder.h"
-
 #include "scene/entity.h"
 
 #include "renderer/mesh.h"
@@ -81,8 +79,11 @@ SERIALIZE_COMPONENT_T(Phos::TransformComponent) {
 SERIALIZE_COMPONENT_T(Phos::MeshRendererComponent) {
     auto component_builder = AssetBuilder();
 
-    component_builder.dump("mesh", component.mesh->id);
-    component_builder.dump("material", component.material->id);
+    const auto mesh_id = component.mesh == nullptr ? Phos::UUID(0) : component.mesh->id;
+    component_builder.dump("mesh", mesh_id);
+
+    const auto material_id = component.material == nullptr ? Phos::UUID(0) : component.material->id;
+    component_builder.dump("material", material_id);
 
     builder.dump("MeshRendererComponent", component_builder);
 }
