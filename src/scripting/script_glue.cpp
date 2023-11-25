@@ -16,7 +16,9 @@ namespace Phos {
 
 static std::shared_ptr<Scene> s_scene;
 static std::shared_ptr<AssetManagerBase> s_asset_manager;
+
 static std::function<void(const Entity&)> s_entity_instantiated_callback_func;
+static std::function<void(const Entity&)> s_entity_destroyed_callback_func;
 
 void ScriptGlue::initialize() {
     ADD_INTERNAL_CALL(Entity_Instantiate);
@@ -50,6 +52,10 @@ void ScriptGlue::set_entity_instantiated_callback(const std::function<void(const
     s_entity_instantiated_callback_func = func;
 }
 
+void ScriptGlue::set_entity_destroyed_callback(const std::function<void(const Entity&)>& func) {
+    s_entity_destroyed_callback_func = func;
+}
+
 //
 // Internal calls
 //
@@ -69,6 +75,7 @@ void ScriptGlue::Entity_Instantiate(uint64_t prefab_asset_id, uint64_t* id) {
 
 void ScriptGlue::Entity_Destroy(uint64_t id) {
     const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
+    s_entity_destroyed_callback_func(entity);
     s_scene->destroy_entity(entity);
 }
 

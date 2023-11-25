@@ -19,7 +19,9 @@ class ScriptGlue {
 
     static void set_scene(std::shared_ptr<Scene> scene);
     static void set_asset_manager(std::shared_ptr<AssetManagerBase> asset_manager);
+
     static void set_entity_instantiated_callback(const std::function<void(const Entity&)>& func);
+    static void set_entity_destroyed_callback(const std::function<void(const Entity&)>& func);
 
   private:
     // region Entity
