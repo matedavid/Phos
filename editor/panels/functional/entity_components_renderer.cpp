@@ -15,7 +15,7 @@
 #include "scripting/class_handle.h"
 
 template <typename T>
-void render_label_input(const std::string& label, const std::string& group, T* value, int precision = 1) {
+void render_label_input(const std::string& label, const std::string& group, T* value, int precision = 3) {
     ImGui::AlignTextToFramePadding();
 
     ImGui::TextUnformatted(label.c_str());

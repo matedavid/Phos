@@ -145,6 +145,11 @@ void AssetWatcher::asset_removed(const std::filesystem::path& path) {
 
 void AssetWatcher::add_file(const std::filesystem::path& path) {
     const auto id = m_asset_manager->get_asset_id(path);
+    if (id == Phos::UUID(0)) {
+        PS_ERROR("[AssetWatcher::add_file] Could not add file: '{}' because it return invalid id", path.string());
+        return;
+    }
+
     const auto type = m_asset_manager->get_asset_type(id);
 
     if (is_watchable_asset_type(type)) {

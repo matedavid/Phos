@@ -18,6 +18,11 @@ ScriptingSystem::ScriptingSystem(std::shared_ptr<Project> project) : m_project(s
 
     ScriptingEngine::set_dll_path(m_dll_path);
     ScriptGlue::set_asset_manager(m_project->asset_manager());
+    ScriptGlue::set_entity_instantiated_callback([&](const Entity& entity) {
+        if (entity.has_component<ScriptComponent>() && !m_entity_script_instance.contains(entity.uuid())) {
+            m_entity_script_instance[entity.uuid()] = create_entity_instance(entity);
+        }
+    });
 }
 
 void ScriptingSystem::on_update(double ts) {

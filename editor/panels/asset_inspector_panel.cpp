@@ -383,5 +383,7 @@ void AssetInspectorPanel::render_prefab_asset() const {
     // @TODO: Temporary button...??
     if (ImGui::Button("Save")) {
         m_prefab_helper->save();
+        // Force reload of asset in asset manager
+        [[maybe_unused]] auto _ = m_asset_manager->load_by_id_force_reload(m_selected_asset->uuid);
     }
 }

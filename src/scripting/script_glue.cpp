@@ -16,6 +16,7 @@ namespace Phos {
 
 static std::shared_ptr<Scene> s_scene;
 static std::shared_ptr<AssetManagerBase> s_asset_manager;
+static std::function<void(const Entity&)> s_entity_instantiated_callback_func;
 
 void ScriptGlue::initialize() {
     ADD_INTERNAL_CALL(Entity_Instantiate);
@@ -45,6 +46,10 @@ void ScriptGlue::set_asset_manager(std::shared_ptr<AssetManagerBase> asset_manag
     s_asset_manager = std::move(asset_manager);
 }
 
+void ScriptGlue::set_entity_instantiated_callback(const std::function<void(const Entity&)>& func) {
+    s_entity_instantiated_callback_func = func;
+}
+
 //
 // Internal calls
 //
@@ -58,6 +63,7 @@ void ScriptGlue::Entity_Instantiate(uint64_t prefab_asset_id, uint64_t* id) {
     }
 
     const auto entity = PrefabLoader::load(*prefab_asset, s_scene, s_asset_manager);
+    s_entity_instantiated_callback_func(entity);
     *id = (uint64_t)entity.uuid();
 }
 
