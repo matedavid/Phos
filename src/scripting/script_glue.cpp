@@ -21,6 +21,10 @@ static std::function<void(const Entity&)> s_entity_instantiated_callback_func;
 static std::function<void(const Entity&)> s_entity_destroyed_callback_func;
 
 void ScriptGlue::initialize() {
+    ADD_INTERNAL_CALL(Logging_Info);
+    ADD_INTERNAL_CALL(Logging_Warning);
+    ADD_INTERNAL_CALL(Logging_Error);
+
     ADD_INTERNAL_CALL(Entity_Instantiate);
     ADD_INTERNAL_CALL(Entity_Destroy);
 
@@ -59,6 +63,18 @@ void ScriptGlue::set_entity_destroyed_callback(const std::function<void(const En
 //
 // Internal calls
 //
+
+void ScriptGlue::Logging_Info(MonoString* content) {
+    spdlog::info("[Script]: {}", mono_string_to_utf8(content));
+}
+
+void ScriptGlue::Logging_Warning(MonoString* content) {
+    spdlog::warn("[Script]: {}", mono_string_to_utf8(content));
+}
+
+void ScriptGlue::Logging_Error(MonoString* content) {
+    spdlog::error("[Script]: {}", mono_string_to_utf8(content));
+}
 
 void ScriptGlue::Entity_Instantiate(uint64_t prefab_asset_id, uint64_t* id) {
     const auto prefab_asset = s_asset_manager->load_by_id_type<PrefabAsset>(UUID(prefab_asset_id));

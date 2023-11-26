@@ -24,6 +24,14 @@ class ScriptGlue {
     static void set_entity_destroyed_callback(const std::function<void(const Entity&)>& func);
 
   private:
+    // region Logging
+
+    static void Logging_Info(MonoString* content);
+    static void Logging_Warning(MonoString* content);
+    static void Logging_Error(MonoString* content);
+
+    // endregion
+
     // region Entity
 
     static void Entity_Instantiate(uint64_t prefab_asset_id, uint64_t* id);
