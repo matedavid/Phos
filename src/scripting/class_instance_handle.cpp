@@ -4,6 +4,8 @@
 
 #include "core/uuid.h"
 
+#include "scene/entity.h"
+
 #include "scripting/class_handle.h"
 #include "scripting/scripting_engine.h"
 
@@ -95,14 +97,18 @@ SET_FIELD_VALUE_INTERNAL_FUNC(std::string) {
     mono_free(mono_string);
 }
 
-SET_FIELD_VALUE_INTERNAL_FUNC(UUID) {
-    PS_ASSERT(info.field_type == ClassField::Type::Prefab || info.field_type == ClassField::Type::Entity,
-              "Trying to set field '{}' value with invalid type, expected type is: '{}'",
-              info.name,
-              "entity or prefab");
+SET_FIELD_VALUE_INTERNAL_FUNC(PrefabRef) {
+    check_type(info, ClassField::Type::Prefab, "prefab");
 
-    auto asset_id = static_cast<uint64_t>(*value);
-    mono_field_set_value(m_instance, info.field, &asset_id);
+    auto prefab_id = static_cast<uint64_t>(value->id);
+    mono_field_set_value(m_instance, info.field, &prefab_id);
+}
+
+SET_FIELD_VALUE_INTERNAL_FUNC(EntityRef) {
+    check_type(info, ClassField::Type::Entity, "entity");
+
+    auto entity_id = static_cast<uint64_t>(value->id);
+    mono_field_set_value(m_instance, info.field, &entity_id);
 }
 
 } // namespace Phos

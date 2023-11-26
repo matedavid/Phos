@@ -21,7 +21,7 @@ void ScriptingEngine::initialize() {
     const std::filesystem::path CORE_DLL_PATH = "../ScriptGlue/bin/Debug/PhosEngine.dll"; // @TODO: Careful with path!
     load_mono_assembly(CORE_DLL_PATH, "CoreDomain", m_context.core_domain, m_context.core_image);
 
-    m_context.entity_class_handle = ClassHandle::create("PhosEngine", "Entity");
+    m_context.entity_class_handle = ClassHandle::create("PhosEngine", "ScriptableEntity");
 
     // Initialize ScriptGlue
     ScriptGlue::initialize();

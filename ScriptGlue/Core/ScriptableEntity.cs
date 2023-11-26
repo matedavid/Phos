@@ -9,11 +9,7 @@ namespace PhosEngine
 
         public ScriptableEntity() => Id = 0;
 
-        public ScriptableEntity(ulong id)
-        {
-            Id = id;
-            Logging.Info($"Entity id: {Id}");
-        }
+        public ScriptableEntity(ulong id) => Id = id;
 
         public virtual void OnCreate()
         {
@@ -29,18 +25,18 @@ namespace PhosEngine
             where T : Component, new()
         {
             var component = new T();
-            component.ScriptableEntity = this;
+            component.Entity = this;
 
             return component;
         }
 
-        protected ScriptableEntity Instantiate(Prefab prefab)
+        protected Entity Instantiate(Prefab prefab)
         {
             InternalCalls.Entity_Instantiate(prefab.Id, out var id);
-            return new ScriptableEntity(id);
+            return new Entity() { Id = id };
         }
 
-        protected void Destroy(ScriptableEntity entity)
+        protected void Destroy(Entity entity)
         {
             InternalCalls.Entity_Destroy(entity.Id);
         }

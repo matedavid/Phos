@@ -148,7 +148,9 @@ class EditorLayer : public Phos::Layer {
         auto selected_entity = m_entity_panel->get_selected_entity();
         if (selected_entity.has_value()) {
             EntityComponentsRenderer::display(
-                *selected_entity, std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager()));
+                *selected_entity,
+                m_project->scene(),
+                std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager()));
         }
 
         ImGui::End();
@@ -279,7 +281,8 @@ class EditorLayer : public Phos::Layer {
             std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager, m_asset_watcher);
         m_entity_panel =
             std::make_unique<EntityHierarchyPanel>("Entities", m_scene_manager, m_content_browser_panel.get());
-        m_asset_inspector_panel = std::make_unique<AssetInspectorPanel>("Inspector", editor_asset_manager);
+        m_asset_inspector_panel =
+            std::make_unique<AssetInspectorPanel>("Inspector", m_project->scene(), editor_asset_manager);
         m_scene_configuration_panel = std::make_unique<SceneConfigurationPanel>(
             "Scene Configuration", m_project->scene()->config(), editor_asset_manager);
 

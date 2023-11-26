@@ -2,9 +2,9 @@ namespace PhosEngine
 {
     public abstract class Component
     {
-        internal Entity Entity;
+        internal ScriptableEntity Entity;
 
         public Component() => Entity = null;
-        public Component(Entity entity) => Entity = entity;
+        public Component(ScriptableEntity entity) => Entity = entity;
     }
 }

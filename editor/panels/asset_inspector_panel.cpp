@@ -23,8 +23,10 @@
 #include "renderer/backend/shader.h"
 #include "renderer/backend/texture.h"
 
-AssetInspectorPanel::AssetInspectorPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager)
-      : m_name(std::move(name)), m_asset_manager(std::move(asset_manager)) {}
+AssetInspectorPanel::AssetInspectorPanel(std::string name,
+                                         std::shared_ptr<Phos::Scene> scene,
+                                         std::shared_ptr<Phos::EditorAssetManager> asset_manager)
+      : m_name(std::move(name)), m_scene(std::move(scene)), m_asset_manager(std::move(asset_manager)) {}
 
 void AssetInspectorPanel::on_imgui_render() {
     ImGui::Begin(m_name.c_str());
@@ -378,7 +380,7 @@ void AssetInspectorPanel::render_prefab_asset() const {
 
     ImGui::Separator();
 
-    EntityComponentsRenderer::display(entity, m_asset_manager);
+    EntityComponentsRenderer::display(entity, m_scene, m_asset_manager);
 
     // @TODO: Temporary button...??
     if (ImGui::Button("Save")) {

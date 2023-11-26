@@ -80,10 +80,10 @@ std::shared_ptr<ClassInstanceHandle> ScriptingSystem::create_entity_instance(con
             instance->set_field_value(name, v);
         } else if (std::holds_alternative<PrefabRef>(value)) {
             auto v = std::get<PrefabRef>(value);
-            instance->set_field_value(name, v.id);
+            instance->set_field_value(name, v);
         } else if (std::holds_alternative<EntityRef>(value)) {
             auto v = std::get<EntityRef>(value);
-            instance->set_field_value(name, v.id);
+            instance->set_field_value(name, v);
         }
     }
 
