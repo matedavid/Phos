@@ -38,6 +38,7 @@ PerspectiveCamera::PerspectiveCamera(float fov, float aspect, float znear, float
       : m_fov(fov), m_aspect(aspect), m_znear(znear), m_zfar(zfar) {
     recalculate_projection_matrix();
     recalculate_view_matrix();
+    set_aspect_ratio(aspect);
 }
 
 void PerspectiveCamera::set_aspect_ratio(float aspect) {
