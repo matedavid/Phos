@@ -1,7 +1,6 @@
 #pragma once
 
 #include "imgui_panel.h"
-#include "editor_state_manager.h"
 
 #include <glm/glm.hpp>
 
@@ -25,8 +24,7 @@ class ViewportPanel : public IImGuiPanel {
   public:
     ViewportPanel(std::string name,
                   std::shared_ptr<Phos::ISceneRenderer> renderer,
-                  std::shared_ptr<EditorSceneManager> scene_manager,
-                  std::shared_ptr<EditorStateManager> state_manager);
+                  std::shared_ptr<EditorSceneManager> scene_manager);
     ~ViewportPanel() override = default;
 
     void on_imgui_render() override;
@@ -38,7 +36,6 @@ class ViewportPanel : public IImGuiPanel {
     std::string m_name;
     std::shared_ptr<Phos::ISceneRenderer> m_renderer;
     std::shared_ptr<EditorSceneManager> m_scene_manager;
-    std::shared_ptr<EditorStateManager> m_state_manager;
 
     std::shared_ptr<Phos::PerspectiveCamera> m_editor_camera;
     glm::vec2 m_mouse_pos{};

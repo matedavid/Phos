@@ -1,5 +1,7 @@
 #include "asset_watcher.h"
 
+#include "editor_state_manager.h"
+
 #include "core/uuid.h"
 #include "core/project.h"
 
@@ -10,6 +12,7 @@
 
 #include "scripting/class_handle.h"
 #include "scripting/scripting_engine.h"
+#include "scripting/scripting_system.h"
 
 #include "renderer/mesh.h"
 #include "renderer/backend/renderer.h"
@@ -18,8 +21,10 @@
 
 AssetWatcher::AssetWatcher(std::shared_ptr<Phos::Scene> scene,
                            std::shared_ptr<Phos::Project> project,
-                           std::shared_ptr<Phos::ISceneRenderer> renderer)
-      : m_scene(std::move(scene)), m_project(std::move(project)), m_renderer(std::move(renderer)) {
+                           std::shared_ptr<Phos::ISceneRenderer> renderer,
+                           std::shared_ptr<Phos::ScriptingSystem> scripting)
+      : m_scene(std::move(scene)), m_project(std::move(project)), m_renderer(std::move(renderer)),
+        m_scripting(std::move(scripting)) {
     m_asset_manager = std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
     PS_ASSERT(m_asset_manager != nullptr, "[AssetWatcher] Asset Manager must be of type EditorAssetManager")
 
@@ -33,6 +38,13 @@ AssetWatcher::AssetWatcher(std::shared_ptr<Phos::Scene> scene,
     // Also watch dll project path to listen for script updates
     m_dll_path = m_project->path() / "bin" / "Debug" / (m_project->name() + ".dll");
     start_watching_asset(m_dll_path, Phos::AssetType::Script, Phos::UUID(0));
+
+    // Listen to EditorStateManager
+    EditorStateManager::subscribe([&](EditorState prev, EditorState new_) {
+        if (prev == EditorState::Playing && new_ == EditorState::Editing && m_script_update_pending) {
+            update_script();
+        }
+    });
 }
 
 void AssetWatcher::check_asset_modified() {
@@ -205,7 +217,17 @@ void AssetWatcher::update_mesh(const std::shared_ptr<Phos::Mesh>& mesh) const {
     }
 }
 
-void AssetWatcher::update_script() const {
+void AssetWatcher::update_script() {
+    if (EditorStateManager::get_state() == EditorState::Playing) {
+        PS_INFO("[AssetWatcher::update_script] Scripting engine reloading while playing, changes to scene will apply "
+                "after execution has finished");
+        m_script_update_pending = true;
+        return;
+    }
+
+    m_script_update_pending = false;
+
+    m_scripting->shutdown();
     Phos::ScriptingEngine::set_dll_path(m_dll_path);
 
     for (const auto& entity : m_scene->get_entities_with<Phos::ScriptComponent>()) {

@@ -266,17 +266,16 @@ class EditorLayer : public Phos::Layer {
         m_scene_manager = std::make_shared<EditorSceneManager>(m_project->scene());
 
         // Editor State Manager
-        m_state_manager = std::make_shared<EditorStateManager>();
-        m_state_manager->subscribe([&](EditorState state) { state_changed(state); });
+        EditorStateManager::subscribe([&](EditorState prev, EditorState new_) { state_changed(prev, new_); });
 
         const auto editor_asset_manager =
             std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
         PS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager")
 
-        m_asset_watcher = std::make_shared<AssetWatcher>(m_project->scene(), m_project, m_renderer);
+        m_asset_watcher = std::make_shared<AssetWatcher>(m_project->scene(), m_project, m_renderer, m_scripting_system);
 
         // Panels
-        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene_manager, m_state_manager);
+        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene_manager);
         m_content_browser_panel =
             std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager, m_asset_watcher);
         m_entity_panel =
@@ -292,14 +291,14 @@ class EditorLayer : public Phos::Layer {
         });
     }
 
-    void state_changed(EditorState state) {
+    void state_changed(EditorState prev, EditorState new_) {
         m_entity_panel->clear_selected_entity();
 
-        if (m_state_manager->get_state() == EditorState::Editing && state == EditorState::Playing) {
+        if (prev == EditorState::Editing && new_ == EditorState::Playing) {
             m_scene_manager->running_changed(true);
             m_scripting_system->start(m_scene_manager->active_scene());
             m_renderer->set_scene(m_scene_manager->active_scene());
-        } else if (m_state_manager->get_state() == EditorState::Playing && state == EditorState::Editing) {
+        } else if (prev == EditorState::Playing && new_ == EditorState::Editing) {
             m_scene_manager->running_changed(false);
             m_scripting_system->shutdown();
             m_renderer->set_scene(m_scene_manager->active_scene());

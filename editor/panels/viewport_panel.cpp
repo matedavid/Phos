@@ -4,6 +4,7 @@
 
 #include "imgui/imgui_impl.h"
 #include "editor_scene_manager.h"
+#include "editor_state_manager.h"
 
 #include "scene/scene_renderer.h"
 #include "scene/scene.h"
@@ -18,10 +19,8 @@
 
 ViewportPanel::ViewportPanel(std::string name,
                              std::shared_ptr<Phos::ISceneRenderer> renderer,
-                             std::shared_ptr<EditorSceneManager> scene_manager,
-                             std::shared_ptr<EditorStateManager> state_manager)
-      : m_name(std::move(name)), m_renderer(std::move(renderer)), m_scene_manager(std::move(scene_manager)),
-        m_state_manager(std::move(state_manager)) {
+                             std::shared_ptr<EditorSceneManager> scene_manager)
+      : m_name(std::move(name)), m_renderer(std::move(renderer)), m_scene_manager(std::move(scene_manager)) {
     const auto& output_texture = m_renderer->output_texture();
     m_texture_id = ImGuiImpl::add_texture(output_texture);
 
@@ -75,7 +74,7 @@ void ViewportPanel::on_imgui_render() {
 
 void ViewportPanel::on_mouse_moved(Phos::MouseMovedEvent& mouse_moved, uint32_t dockspace_id) {
     if (!ImGui::DockBuilderGetCentralNode(dockspace_id)->IsFocused ||
-        m_state_manager->get_state() != EditorState::Editing)
+        EditorStateManager::get_state() != EditorState::Editing)
         return;
 
     double x = mouse_moved.get_xpos();
@@ -105,7 +104,7 @@ void ViewportPanel::on_mouse_moved(Phos::MouseMovedEvent& mouse_moved, uint32_t 
 
 void ViewportPanel::on_key_pressed(Phos::KeyPressedEvent& key_pressed, uint32_t dockspace_id) {
     if (!ImGui::DockBuilderGetCentralNode(dockspace_id)->IsFocused ||
-        m_state_manager->get_state() != EditorState::Editing)
+        EditorStateManager::get_state() != EditorState::Editing)
         return;
 
     glm::vec3 new_pos = m_editor_camera->non_rotated_position();
@@ -124,9 +123,9 @@ void ViewportPanel::on_key_pressed(Phos::KeyPressedEvent& key_pressed, uint32_t 
 }
 
 std::shared_ptr<Phos::Camera> ViewportPanel::get_camera() const {
-    if (m_state_manager->get_state() == EditorState::Editing) {
+    if (EditorStateManager::get_state() == EditorState::Editing) {
         return m_editor_camera;
-    } else if (m_state_manager->get_state() == EditorState::Playing) {
+    } else if (EditorStateManager::get_state() == EditorState::Playing) {
         auto camera_entities = m_scene_manager->active_scene()->get_entities_with<Phos::CameraComponent>();
 
         if (camera_entities.empty())
