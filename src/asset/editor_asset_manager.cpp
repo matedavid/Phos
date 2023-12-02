@@ -2,6 +2,8 @@
 
 #include <yaml-cpp/yaml.h>
 #include <queue>
+#include <algorithm>
+#include <ranges>
 
 #include "asset/asset_pack.h"
 
@@ -70,6 +72,17 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id_force_reload(UUID id) {
     m_id_to_asset[id] = asset;
 
     return asset;
+}
+
+void EditorAssetManager::remove_asset_type_from_cache(AssetType type) {
+    auto it = m_id_to_asset.begin();
+    while (it != m_id_to_asset.end()) {
+        if (it->second->asset_type() == type) {
+            it = m_id_to_asset.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 AssetType EditorAssetManager::get_asset_type(Phos::UUID id) const {

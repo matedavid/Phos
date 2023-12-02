@@ -25,7 +25,9 @@ std::shared_ptr<ClassHandle> ClassHandle::create(const std::string& namespace_, 
     }
 
     const auto handle = std::shared_ptr<ClassHandle>(new ClassHandle(klass, full_name));
-    ScriptingEngine::m_context.klass_cache[full_name] = handle;
+    // @TODO: Maybe not the best idea??
+    if (namespace_ != "PhosEngine")
+        ScriptingEngine::m_context.klass_cache[full_name] = handle;
 
     return handle;
 }

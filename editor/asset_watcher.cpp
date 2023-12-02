@@ -227,6 +227,7 @@ void AssetWatcher::update_script() {
 
     m_script_update_pending = false;
 
+    m_asset_manager->remove_asset_type_from_cache(Phos::AssetType::Script);
     m_scripting->shutdown();
     Phos::ScriptingEngine::set_dll_path(m_dll_path);
 

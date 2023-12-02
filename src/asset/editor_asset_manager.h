@@ -32,6 +32,8 @@ class EditorAssetManager : public AssetManagerBase {
     }
     [[nodiscard]] std::shared_ptr<IAsset> load_by_id_force_reload(UUID id);
 
+    void remove_asset_type_from_cache(AssetType type);
+
     [[nodiscard]] AssetType get_asset_type(UUID id) const;
     [[nodiscard]] std::string get_asset_name(UUID id) const;
     [[nodiscard]] UUID get_asset_id(const std::filesystem::path& path) const;
