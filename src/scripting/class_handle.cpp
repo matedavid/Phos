@@ -100,7 +100,7 @@ ClassHandle::ClassHandle(MonoClass* klass, std::string name) : m_klass(klass), m
 }
 
 ClassHandle::~ClassHandle() {
-    // @TODO: Really don't like this, but doing because, when unloading the current image, then we cant free
+    // @TODO: Really don't like this, but doing because, when unloading the current mono image, then we cant free
     // objects from that image. For example, when updating a script.
 
     /*

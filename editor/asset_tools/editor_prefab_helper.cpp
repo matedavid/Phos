@@ -11,6 +11,8 @@
 
 #include "scene/scene.h"
 
+#include "scripting/class_handle.h"
+
 std::shared_ptr<EditorPrefabHelper> EditorPrefabHelper::create(const Phos::Entity& entity) {
     return std::shared_ptr<EditorPrefabHelper>(new EditorPrefabHelper(entity));
 }
@@ -43,6 +45,33 @@ EditorPrefabHelper::EditorPrefabHelper(const std::filesystem::path& path,
     }
 
     m_prefab_entity = Phos::PrefabLoader::load(*asset, m_prefab_scene, m_asset_manager);
+
+    // Check for updates in Script
+    // TODO: Copied from AssetWatcher::update_script, think moving into function
+    if (m_prefab_entity.has_component<Phos::ScriptComponent>()) {
+        auto& sc = m_prefab_entity.get_component<Phos::ScriptComponent>();
+
+        const auto handle = m_asset_manager->load_by_id_type_force_reload<Phos::ClassHandle>(sc.script);
+        sc.class_name = handle->class_name();
+
+        const auto field_values = sc.field_values;
+
+        // Remove fields that no longer exist in class
+        for (const auto& name : field_values | std::views::keys) {
+            if (!handle->get_field(name).has_value()) {
+                sc.field_values.erase(name);
+                PS_INFO("[AssetWatcher::update_script] Removing not longer existing field: {}", name);
+            }
+        }
+
+        // Add fields present in class and not present in component
+        for (const auto& [name, _, type] : handle->get_all_fields()) {
+            if (!sc.field_values.contains(name)) {
+                sc.field_values.insert({name, Phos::ClassField::get_default_value(type)});
+                PS_INFO("[AssetWatcher::update_script] Adding new field: {}", name);
+            }
+        }
+    }
 }
 
 void EditorPrefabHelper::save() const {

@@ -231,6 +231,7 @@ void AssetWatcher::update_script() {
     m_scripting->shutdown();
     Phos::ScriptingEngine::set_dll_path(m_dll_path);
 
+    // Update all entities with Script Component
     for (const auto& entity : m_scene->get_entities_with<Phos::ScriptComponent>()) {
         auto& sc = entity.get_component<Phos::ScriptComponent>();
 

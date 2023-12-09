@@ -61,6 +61,7 @@ Window::Window(std::string_view title, uint32_t width, uint32_t height) {
         }
     });
 
+    // Scroll event
     glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset) {
         auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
