@@ -53,7 +53,7 @@ class EditorLayer : public Phos::Layer {
 
     void on_update([[maybe_unused]] double ts) override {
         // Logic
-        if (m_state_manager->get_state() == EditorState::Playing)
+        if (EditorStateManager::get_state() == EditorState::Playing)
             m_scripting_system->on_update(ts);
 
         // Rendering
@@ -189,7 +189,7 @@ class EditorLayer : public Phos::Layer {
                          ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize);
 
         std::string control_button_text;
-        switch (m_state_manager->get_state()) {
+        switch (EditorStateManager::get_state()) {
         case EditorState::Editing:
             control_button_text = "Play";
             break;
@@ -201,12 +201,12 @@ class EditorLayer : public Phos::Layer {
         const auto window_width = ImGui::GetWindowSize().x;
         const auto text_width = ImGui::CalcTextSize(control_button_text.c_str()).x;
 
-        auto change_state_to = m_state_manager->get_state();
+        auto change_state_to = EditorStateManager::get_state();
         ImGui::SetCursorPosX((window_width - text_width) * 0.5f);
         if (ImGui::Button(control_button_text.c_str())) {
-            if (m_state_manager->get_state() == EditorState::Editing)
+            if (EditorStateManager::get_state() == EditorState::Editing)
                 change_state_to = EditorState::Playing;
-            else if (m_state_manager->get_state() == EditorState::Playing)
+            else if (EditorStateManager::get_state() == EditorState::Playing)
                 change_state_to = EditorState::Editing;
         }
 
@@ -230,8 +230,8 @@ class EditorLayer : public Phos::Layer {
         }
 
         // Change state if requested
-        if (change_state_to != m_state_manager->get_state())
-            m_state_manager->set_state(change_state_to);
+        if (change_state_to != EditorStateManager::get_state())
+            EditorStateManager::set_state(change_state_to);
 
         // Check if any asset has been modified
         m_asset_watcher->check_asset_modified();
@@ -253,8 +253,6 @@ class EditorLayer : public Phos::Layer {
     std::shared_ptr<AssetWatcher> m_asset_watcher;
 
     ImGuiID m_dockspace_id{0};
-
-    std::shared_ptr<EditorStateManager> m_state_manager;
 
     void open_project(const std::filesystem::path& path) {
         m_project = Phos::Project::open(path);
