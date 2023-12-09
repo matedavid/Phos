@@ -318,6 +318,7 @@ class EditorLayer : public Phos::Layer {
     }
 
     void check_script_updates() const {
+        // TODO: Also present in AssetWatcher and AssetInspectorPanel, think moving into a separate function
         for (const auto& entity : m_project->scene()->get_entities_with<Phos::ScriptComponent>()) {
             auto& sc = entity.get_component<Phos::ScriptComponent>();
             const auto& handle = m_project->asset_manager()->load_by_id_type<Phos::ClassHandle>(sc.script);
@@ -342,8 +343,8 @@ class EditorLayer : public Phos::Layer {
         m_viewport_panel->on_mouse_moved(mouse_moved, m_dockspace_id);
     }
 
-    void on_key_pressed(Phos::KeyPressedEvent& key_pressed) override {
-        m_viewport_panel->on_key_pressed(key_pressed, m_dockspace_id);
+    void on_mouse_scrolled(Phos::MouseScrolledEvent& mouse_scrolled) override {
+        m_viewport_panel->on_mouse_scrolled(mouse_scrolled, m_dockspace_id);
     }
 };
 

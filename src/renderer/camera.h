@@ -39,6 +39,9 @@ class PerspectiveCamera : public Camera {
     ~PerspectiveCamera() override = default;
 
     void set_aspect_ratio(float aspect);
+    void set_fov(float fov);
+
+    [[nodiscard]] float fov() const { return m_fov; }
 
   private:
     float m_fov, m_aspect, m_znear, m_zfar;

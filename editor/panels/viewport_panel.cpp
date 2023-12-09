@@ -80,46 +80,51 @@ void ViewportPanel::on_mouse_moved(Phos::MouseMovedEvent& mouse_moved, uint32_t 
     double x = mouse_moved.get_xpos();
     double y = mouse_moved.get_ypos();
 
-    if (Phos::Input::is_mouse_button_pressed(Phos::MouseButton::Left)) {
+    if (Phos::Input::is_mouse_button_pressed(Phos::MouseButton::Right)) {
         float x_rotation = 0.0f;
         float y_rotation = 0.0f;
 
+        constexpr float ROTATION_CHANGE = 0.03f;
+
         if (x > m_mouse_pos.x) {
-            x_rotation -= 0.03f;
+            x_rotation -= ROTATION_CHANGE;
         } else if (x < m_mouse_pos.x) {
-            x_rotation += 0.03f;
+            x_rotation += ROTATION_CHANGE;
         }
 
         if (y > m_mouse_pos.y) {
-            y_rotation += 0.03f;
+            y_rotation += ROTATION_CHANGE;
         } else if (y < m_mouse_pos.y) {
-            y_rotation -= 0.03f;
+            y_rotation -= ROTATION_CHANGE;
         }
 
         m_editor_camera->rotate({x_rotation, y_rotation});
+    } else if (Phos::Input::is_mouse_button_pressed(Phos::MouseButton::Middle)) {
+        auto new_pos = m_editor_camera->non_rotated_position();
+
+        constexpr float MOVEMENT = 0.02f;
+
+        const auto x_difference = -static_cast<float>(x - m_mouse_pos.x);
+        const auto y_difference = static_cast<float>(y - m_mouse_pos.y);
+
+        new_pos.x += MOVEMENT * x_difference;
+        new_pos.y += MOVEMENT * y_difference;
+
+        m_editor_camera->set_position(new_pos);
     }
 
     m_mouse_pos = glm::vec2(x, y);
 }
 
-void ViewportPanel::on_key_pressed(Phos::KeyPressedEvent& key_pressed, uint32_t dockspace_id) {
+void ViewportPanel::on_mouse_scrolled(Phos::MouseScrolledEvent& mouse_scrolled, uint32_t dockspace_id) {
     if (!ImGui::DockBuilderGetCentralNode(dockspace_id)->IsFocused ||
         EditorStateManager::get_state() != EditorState::Editing)
         return;
 
-    glm::vec3 new_pos = m_editor_camera->non_rotated_position();
+    constexpr float DEGREE_CHANGE = 2.0f;
 
-    if (key_pressed.get_key() == Phos::Key::W) {
-        new_pos.z -= 1;
-    } else if (key_pressed.get_key() == Phos::Key::S) {
-        new_pos.z += 1;
-    } else if (key_pressed.get_key() == Phos::Key::A) {
-        new_pos.x -= 1;
-    } else if (key_pressed.get_key() == Phos::Key::D) {
-        new_pos.x += 1;
-    }
-
-    m_editor_camera->set_position(new_pos);
+    m_editor_camera->set_fov(m_editor_camera->fov() -
+                             static_cast<float>(mouse_scrolled.get_yoffset()) * glm::radians(DEGREE_CHANGE));
 }
 
 std::shared_ptr<Phos::Camera> ViewportPanel::get_camera() const {

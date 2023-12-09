@@ -52,7 +52,7 @@ enum class Key {
 enum class MouseButton {
     Left = 0,
     Right = 1,
-    Middle = 3,
+    Middle = 2,
 };
 
 // TODO:
