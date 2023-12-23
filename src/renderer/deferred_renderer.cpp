@@ -314,11 +314,18 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
             .width = width,
             .height = height,
             .type = Image::Type::Image2D,
-            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .format = Image::Format::R8G8B8A8_SRGB,
             .attachment = true,
         }));
 
-        m_metallic_roughness_ao_texture = Texture::create(width, height);
+        // m_metallic_roughness_ao_texture = Texture::create(width, height);
+        m_metallic_roughness_ao_texture = Texture::create(Image::create({
+            .width = width,
+            .height = height,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::R16G16B16A16_SFLOAT,
+            .attachment = true,
+        }));
 
         m_emission_texture = Texture::create(Image::create({
             .width = width,
@@ -466,7 +473,7 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
             .width = width,
             .height = height,
             .type = Image::Type::Image2D,
-            .format = Image::Format::B8G8R8A8_SRGB,
+            .format = Image::Format::R8G8B8A8_UNORM,
             .attachment = true,
         }));
 

@@ -114,7 +114,7 @@ vec3 PBRCalculation(PBRInformation info, vec3 V, vec3 L, vec3 F0) {
 void main() {
     vec4 position = texture(uPositionMap, vTextureCoords);
     vec3 N = texture(uNormalMap, vTextureCoords).rgb;
-    vec3 albedo = pow(texture(uAlbedoMap, vTextureCoords).rgb, vec3(2.2));
+    vec3 albedo = texture(uAlbedoMap, vTextureCoords).rgb;
 
     float metallic = texture(uMetallicRoughnessAOMap, vTextureCoords).r;
     float roughness = texture(uMetallicRoughnessAOMap, vTextureCoords).g;
@@ -143,9 +143,9 @@ void main() {
     for (int i = 0; i < uLightsInfo.numberPointLights; ++i) {
         PointLight light = uLightsInfo.pointLights[i];
 
-        vec3 L = normalize(light.position - position.xyz);
+        vec3 L = normalize(light.position.xyz - position.xyz);
 
-        float dist = length(light.position - position.xyz);
+        float dist = length(light.position.xyz - position.xyz);
         float attenuation = 1.0 / (dist * dist);
         vec3 radiance = (light.color * attenuation).rgb;
 
@@ -158,7 +158,7 @@ void main() {
     for (int i = 0; i < uLightsInfo.numberDirectionalLights; ++i) {
         DirectionalLight light = uLightsInfo.directionalLights[i];
 
-        vec3 L = normalize(-light.direction);
+        vec3 L = normalize(-light.direction.xyz);
         Lo += PBRCalculation(info, V, L, F0);
     }
 

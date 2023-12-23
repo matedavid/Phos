@@ -77,10 +77,10 @@ void main() {
     for (int i = 0; i < uLightsInfo.numberPointLights; ++i) {
         PointLight light = uLightsInfo.pointLights[i];
 
-        vec3 L = normalize(light.position - position.rgb);
+        vec3 L = normalize(light.position.xyz - position.xyz);
         vec3 H = normalize(V + L);
 
-        float dist = length(light.position - position.rgb);
+        float dist = length(light.position.xyz - position.xyz);
         float attenuation = 1.0 / (dist * dist);
         vec3 radiance = (light.color * attenuation).rgb;
 

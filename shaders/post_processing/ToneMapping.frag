@@ -29,6 +29,11 @@ void main() {
         color += texture(uBloomTexture, vTextureCoords).rgb;
     }
 
+    // Convert to sRGB even though writing to UNORM because editor (ImGui) uses UNORM as swapchain format, but
+    // runtime expects sRGB. We want to use sRGB. Therefore, will use sRGB result directly in editor, and will do
+    // the inverse of Gamma Correction in runtime to convert back to linear to later be converted automatically to sRGB
+    // because of Vulkan auto conversion.
+
     // Tone Mapping
     color = ReinhardToneMapping(color);
 
