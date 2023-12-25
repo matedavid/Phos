@@ -170,6 +170,13 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ve
 # nativefiledialog
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog)
 
+# Tracy
+option(TRACY_ENABLE "" ON)
+option(TRACY_ON_DEMAND "" ON)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/tracy)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE Tracy::TracyClient)
+
 #
 # Editor
 #
