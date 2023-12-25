@@ -86,6 +86,8 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
         glm::mat4 model;
     };
 
+    const auto renderable_entities = get_renderable_entities();
+
     command_buffer->record([&]() {
         // ShadowMapping pass
         // ==================
@@ -112,24 +114,14 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                 m_light_space_matrix = light_projection * light_view;
 
                 // Render models
-                for (const auto& entity : get_renderable_entities()) {
-                    const auto& mr_component = entity.get_component<MeshRendererComponent>();
-                    const auto& transform = entity.get_component<TransformComponent>();
-
-                    glm::mat4 model{1.0f};
-                    model = glm::translate(model, transform.position);
-                    model = glm::rotate(model, glm::radians(transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-                    model = glm::rotate(model, glm::radians(transform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-                    model = glm::rotate(model, glm::radians(transform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-                    model = glm::scale(model, transform.scale);
-
+                for (const auto& entity : renderable_entities) {
                     auto constants = ShadowMappingPushConstants{
                         .light_space_matrix = m_light_space_matrix,
-                        .model = model,
+                        .model = entity.model,
                     };
 
                     m_shadow_map_pipeline->bind_push_constants(command_buffer, "ShadowMapPushConstants", constants);
-                    Renderer::submit_static_mesh(command_buffer, mr_component.mesh, m_shadow_map_material);
+                    Renderer::submit_static_mesh(command_buffer, entity.mesh, m_shadow_map_material);
                 }
             }
 
@@ -144,24 +136,14 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             // Draw model
             Renderer::bind_graphics_pipeline(command_buffer, m_geometry_pipeline);
 
-            for (const auto& entity : get_renderable_entities()) {
-                const auto& mr_component = entity.get_component<MeshRendererComponent>();
-                const auto& transform = entity.get_component<TransformComponent>();
-
-                glm::mat4 model{1.0f};
-                model = glm::translate(model, transform.position);
-                model = glm::rotate(model, glm::radians(transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-                model = glm::rotate(model, glm::radians(transform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-                model = glm::rotate(model, glm::radians(transform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-                model = glm::scale(model, transform.scale);
-
+            for (const auto& entity : renderable_entities) {
                 auto constants = ModelInfoPushConstant{
-                    .model = model,
+                    .model = entity.model,
                     .color = glm::vec4(1.0f),
                 };
 
                 m_geometry_pipeline->bind_push_constants(command_buffer, "ModelInfoPushConstants", constants);
-                Renderer::submit_static_mesh(command_buffer, mr_component.mesh, mr_component.material);
+                Renderer::submit_static_mesh(command_buffer, entity.mesh, entity.material);
             }
 
             Renderer::end_render_pass(command_buffer, m_geometry_pass);
@@ -631,13 +613,23 @@ std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
     return lights;
 }
 
-std::vector<Entity> DeferredRenderer::get_renderable_entities() const {
-    std::vector<Entity> entities;
+std::vector<DeferredRenderer::RenderableEntity> DeferredRenderer::get_renderable_entities() const {
+    std::vector<RenderableEntity> entities;
     for (const auto& entity : m_scene->get_entities_with<MeshRendererComponent>()) {
-        const auto& mesh_renderer = entity.get_component<MeshRendererComponent>();
+        const auto& [mesh, material] = entity.get_component<MeshRendererComponent>();
+        if (mesh == nullptr || material == nullptr)
+            continue;
 
-        if (mesh_renderer.mesh != nullptr && mesh_renderer.material != nullptr)
-            entities.push_back(entity);
+        const auto& transform = entity.get_component<TransformComponent>();
+
+        glm::mat4 model{1.0f};
+        model = glm::translate(model, transform.position);
+        model = glm::rotate(model, glm::radians(transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::rotate(model, glm::radians(transform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(transform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, transform.scale);
+
+        entities.emplace_back(model, mesh, material);
     }
 
     return entities;

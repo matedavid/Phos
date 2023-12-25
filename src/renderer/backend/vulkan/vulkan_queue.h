@@ -22,11 +22,11 @@ class VulkanQueue {
     explicit VulkanQueue(VkQueue queue, uint32_t queue_family);
     ~VulkanQueue() = default;
 
-    void submit(VkSubmitInfo info, VkFence fence);
+    void submit(VkSubmitInfo info, VkFence fence) const;
 
     VkResult submitKHR(const std::shared_ptr<VulkanSwapchain>& swapchain,
                        uint32_t image_index,
-                       const std::vector<VkSemaphore>& wait_semaphores);
+                       const std::vector<VkSemaphore>& wait_semaphores) const;
 
     [[nodiscard]] VkQueue handle() const { return m_queue; }
     [[nodiscard]] uint32_t family() const { return m_queue_family; }
