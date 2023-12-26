@@ -1,7 +1,7 @@
 #include "deferred_renderer.h"
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+// #define GLM_FORCE_RADIANS
+// #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -10,6 +10,7 @@
 #include "core/window.h"
 
 #include "utility/logging.h"
+#include "utility/profiling.h"
 
 #include "managers/shader_manager.h"
 #include "managers/texture_manager.h"
@@ -78,7 +79,7 @@ void DeferredRenderer::set_scene(std::shared_ptr<Scene> scene) {
 }
 
 void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
-    // PHOS_PROFILE_ZONE_SCOPED_NAMED("DeferredRenderer::render");
+    PHOS_PROFILE_ZONE_SCOPED_NAMED("DeferredRenderer::render");
 
     const FrameInformation frame_info = {
         .camera = camera,

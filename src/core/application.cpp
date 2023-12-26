@@ -3,6 +3,7 @@
 #include <ranges>
 
 #include "utility/logging.h"
+#include "utility/profiling.h"
 #include "core/window.h"
 #include "renderer/backend/renderer.h"
 #include "scripting/scripting_engine.h"
@@ -50,7 +51,7 @@ void Application::run() {
         }
 
         m_window->update();
-        // PHOS_PROFILE_FRAMEMARK;
+        PHOS_PROFILE_FRAMEMARK;
     }
 }
 

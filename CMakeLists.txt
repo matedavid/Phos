@@ -114,6 +114,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/glfw)
 target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
 
 # glm
+target_compile_definitions(${PROJECT_NAME} PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE) # Only for Vulkan
+target_compile_definitions(${PROJECT_NAME} PUBLIC GLM_FORCE_RADIANS)
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/glm)
 target_link_libraries(${PROJECT_NAME} PUBLIC glm::glm)
 

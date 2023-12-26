@@ -2,6 +2,8 @@
 
 #include "vk_core.h"
 
+#include "utility/profiling.h"
+
 #include "renderer/mesh.h"
 #include "renderer/camera.h"
 #include "renderer/light.h"
@@ -105,7 +107,7 @@ void VulkanRenderer::wait_idle() {
 
 void VulkanRenderer::begin_frame(const FrameInformation& info) {
     {
-        // PHOS_PROFILE_ZONE_SCOPED_NAMED("VulkanRenderer::begin_frame waitForFences");
+        PHOS_PROFILE_ZONE_SCOPED_NAMED("VulkanRenderer::begin_frame waitForFences");
         vkWaitForFences(VulkanContext::device->handle(), 1, &m_in_flight_fences[m_current_frame], VK_TRUE, UINT64_MAX);
     }
     vkResetFences(VulkanContext::device->handle(), 1, &m_in_flight_fences[m_current_frame]);
