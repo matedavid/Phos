@@ -33,7 +33,7 @@ class SandboxLayer : public Phos::Layer {
         m_presenter = Phos::Presenter::create(m_scene_renderer, Phos::Application::instance()->get_window());
 
         // Camera
-        const auto aspect_ratio = WIDTH / HEIGHT;
+        constexpr auto aspect_ratio = WIDTH / HEIGHT;
         m_camera = std::make_shared<Phos::PerspectiveCamera>(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
         m_camera->set_position({0.0f, 3.0f, 7.0f});
         m_camera->rotate(glm::vec2(0.0f, glm::radians(30.0f)));

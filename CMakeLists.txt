@@ -175,7 +175,7 @@ option(TRACY_ENABLE "" ON)
 option(TRACY_ON_DEMAND "" ON)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/tracy)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Tracy::TracyClient)
+target_link_libraries(${PROJECT_NAME} PUBLIC Tracy::TracyClient)
 
 #
 # Editor

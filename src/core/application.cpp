@@ -47,6 +47,7 @@ void Application::run() {
         }
 
         m_window->update();
+        PHOS_PROFILE_FRAMEMARK;
     }
 }
 

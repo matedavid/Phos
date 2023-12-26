@@ -72,6 +72,8 @@ void DeferredRenderer::set_scene(std::shared_ptr<Scene> scene) {
 }
 
 void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
+    PHOS_PROFILE_ZONE_SCOPED_NAMED("DeferredRenderer::render");
+
     const FrameInformation frame_info = {
         .camera = camera,
         .lights = get_light_info(),
