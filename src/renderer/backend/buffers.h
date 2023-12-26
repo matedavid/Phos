@@ -1,6 +1,9 @@
 #ifndef RENDERER_BUFFERS_H
 #define RENDERER_BUFFERS_H
 
+#include <memory>
+#include <vector>
+
 #include "utility/logging.h"
 
 namespace Phos {

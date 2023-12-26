@@ -1,5 +1,7 @@
 #include "vulkan_compute_pipeline.h"
 
+#include <cstring>
+
 #include "vk_core.h"
 
 #include "utility/logging.h"
@@ -35,7 +37,7 @@ void VulkanComputePipelineStepBuilder::set_push_constants(std::string_view name,
         info->size == size, "Push constant with name: {} has incorrect size ({} != {})", name, size, info->size);
 
     std::vector<unsigned char> vec_data(size);
-    std::memcpy(vec_data.data(), data, size);
+    memcpy(vec_data.data(), data, size);
 
     m_push_constants_info.push_back(vec_data);
 }

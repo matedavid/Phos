@@ -13,7 +13,7 @@ namespace Phos {
 VulkanDevice::VulkanDevice(const std::unique_ptr<VulkanInstance>& instance,
                            const VulkanPhysicalDevice::Requirements& requirements)
       : m_physical_device(select_physical_device(instance, requirements)) {
-    fmt::print("Selected physical device: {}\n", m_physical_device.get_properties().deviceName);
+    PHOS_LOG_INFO("Selected physical device: {}", m_physical_device.get_properties().deviceName);
 
     // Create queues
     const VulkanPhysicalDevice::QueueFamilies queue_families = m_physical_device.get_queue_families(requirements);

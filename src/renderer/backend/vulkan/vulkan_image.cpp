@@ -2,6 +2,8 @@
 
 #include "vk_core.h"
 
+#include <cmath>
+
 #include "renderer/backend/vulkan/vulkan_device.h"
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_context.h"

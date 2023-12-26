@@ -1,5 +1,7 @@
 #include "vulkan_buffers.h"
 
+#include <cstring>
+
 namespace Phos {
 
 //

@@ -67,15 +67,15 @@ void ScriptGlue::set_entity_destroyed_callback(const std::function<void(const En
 //
 
 void ScriptGlue::Logging_Info(MonoString* content) {
-    spdlog::info("[Script]: {}", mono_string_to_utf8(content));
+    PHOS_LOG_INFO("[Script]: {}", mono_string_to_utf8(content));
 }
 
 void ScriptGlue::Logging_Warning(MonoString* content) {
-    spdlog::warn("[Script]: {}", mono_string_to_utf8(content));
+    PHOS_LOG_WARNING("[Script]: {}", mono_string_to_utf8(content));
 }
 
 void ScriptGlue::Logging_Error(MonoString* content) {
-    spdlog::error("[Script]: {}", mono_string_to_utf8(content));
+    PHOS_LOG_ERROR("[Script]: {}", mono_string_to_utf8(content));
 }
 
 void ScriptGlue::Entity_Instantiate(uint64_t prefab_asset_id, uint64_t* id) {

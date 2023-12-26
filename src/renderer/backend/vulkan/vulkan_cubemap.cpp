@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <stb_image.h>
+#include <cstring>
 
 #include "vk_core.h"
 

@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 #include <memory>
+#include <vector>
 
 #include "utility/logging.h"
 #include "renderer/backend/image.h"

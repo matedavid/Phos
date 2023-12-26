@@ -1,5 +1,7 @@
 #include "vulkan_buffer.h"
 
+#include <cstring>
+
 #include "utility/logging.h"
 
 #include "vk_core.h"

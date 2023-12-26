@@ -183,7 +183,7 @@ std::optional<VulkanUniformBufferMember> VulkanMaterial::find_uniform_buffer_mem
             continue;
 
         auto member = std::ranges::find_if(info.members, [&](const VulkanUniformBufferMember& mem) {
-            const std::string complete_name = fmt::format("{}.{}", info.name, mem.name);
+            const std::string complete_name = info.name + "." + mem.name;
             return complete_name == name;
         });
 
