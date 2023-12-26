@@ -1,5 +1,9 @@
 #include "vulkan_buffer.h"
 
+#include "utility/logging.h"
+
+#include "vk_core.h"
+
 #include "renderer/backend/vulkan/vulkan_device.h"
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_image.h"
@@ -16,7 +20,7 @@ VulkanBuffer::VulkanBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemory
     create_info.usage = usage;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VK_CHECK(vkCreateBuffer(VulkanContext::device->handle(), &create_info, nullptr, &m_buffer))
+    VK_CHECK(vkCreateBuffer(VulkanContext::device->handle(), &create_info, nullptr, &m_buffer));
 
     // Allocate memory
     VkMemoryRequirements memory_requirements;
@@ -24,17 +28,17 @@ VulkanBuffer::VulkanBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemory
 
     const auto memory_type_index =
         VulkanContext::device->physical_device().find_memory_type(memory_requirements.memoryTypeBits, properties);
-    PS_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate buffer")
+    PHOS_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate buffer");
 
     VkMemoryAllocateInfo allocate_info{};
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocate_info.allocationSize = memory_requirements.size;
     allocate_info.memoryTypeIndex = memory_type_index.value();
 
-    VK_CHECK(vkAllocateMemory(VulkanContext::device->handle(), &allocate_info, nullptr, &m_memory))
+    VK_CHECK(vkAllocateMemory(VulkanContext::device->handle(), &allocate_info, nullptr, &m_memory));
 
     // Bind memory to buffer
-    VK_CHECK(vkBindBufferMemory(VulkanContext::device->handle(), m_buffer, m_memory, 0))
+    VK_CHECK(vkBindBufferMemory(VulkanContext::device->handle(), m_buffer, m_memory, 0));
 }
 
 VulkanBuffer::~VulkanBuffer() {
@@ -58,7 +62,7 @@ void VulkanBuffer::copy_data(const void* data) const {
 }
 
 void VulkanBuffer::copy_to_buffer(const VulkanBuffer& buffer) const {
-    PS_ASSERT(m_size == buffer.m_size, "Size of buffers do not match")
+    PHOS_ASSERT(m_size == buffer.m_size, "Size of buffers do not match");
 
     // TODO: Maybe should use transfer queue instead of graphics
     VulkanCommandBuffer::submit_single_time(

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "core.h"
-
 #include "imgui_panel.h"
 #include "content_browser_panel.h"
 

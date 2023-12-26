@@ -1,9 +1,8 @@
 #pragma once
 
-#include "core.h"
-
 #include <filesystem>
 #include <optional>
+#include <vector>
 
 class FileDialog {
   public:

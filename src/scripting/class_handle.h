@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core.h"
-
 #include <optional>
+#include <memory>
+#include <vector>
 #include <unordered_map>
 
 #include <mono/jit/jit.h>
@@ -14,7 +14,7 @@ namespace Phos {
 
 class ClassHandle : public IAsset {
   public:
-    virtual ~ClassHandle();
+    ~ClassHandle() override;
 
     static std::shared_ptr<ClassHandle> create(const std::string& namespace_, const std::string& class_name);
 

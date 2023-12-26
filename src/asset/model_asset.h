@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core.h"
-
 #include <optional>
+#include <memory>
+#include <vector>
 
 #include "asset/asset.h"
 
@@ -23,7 +23,7 @@ class ModelAsset : public IAsset {
     };
 
     explicit ModelAsset(Node* parent);
-    virtual ~ModelAsset();
+    ~ModelAsset() override;
 
     void import_into_scene(std::shared_ptr<Scene>& scene) const;
 
@@ -33,7 +33,7 @@ class ModelAsset : public IAsset {
     Node* m_parent;
 
     UUID import_into_scene_r(std::shared_ptr<Scene>& scene, Node* node, UUID* parent_uuid) const;
-    void destroy_r(Node* node);
+    void destroy_r(const Node* node);
 };
 
 } // namespace Phos

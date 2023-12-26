@@ -47,7 +47,7 @@ void VulkanUniformBuffer::set_data(const void* data) {
 }
 
 void VulkanUniformBuffer::set_data(const void* data, uint32_t size, uint32_t offset_bytes) {
-    char* d = static_cast<char*>(m_map_data);
+    auto* d = static_cast<char*>(m_map_data);
     memcpy(d + offset_bytes, data, size);
 }
 

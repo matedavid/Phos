@@ -1,6 +1,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include "utility/logging.h"
+
 #include "core/window.h"
 #include "renderer/backend/renderer.h"
 
@@ -25,7 +27,7 @@ void ImGuiImpl::initialize(const std::shared_ptr<Phos::Window>& window) {
         m_native_impl = std::make_shared<ImGuiVulkanImpl>(window);
         break;
     default:
-        PS_FAIL("Vulkan is the only supported api")
+        PHOS_FAIL("Vulkan is the only supported api");
     }
 }
 

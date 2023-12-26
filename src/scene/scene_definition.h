@@ -1,7 +1,5 @@
 #pragma once
 
-#include "core.h"
-
 #include "asset/asset.h"
 
 #include "scene/registry.h"
@@ -18,7 +16,7 @@ class Scene : public IAsset {
   public:
     explicit Scene(std::string name);
     Scene(Scene& other);
-    virtual ~Scene();
+    ~Scene() override;
 
     [[nodiscard]] AssetType asset_type() override { return AssetType::Scene; }
 

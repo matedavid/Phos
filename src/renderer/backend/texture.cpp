@@ -1,6 +1,9 @@
 #include "texture.h"
 
+#include "utility/logging.h"
+
 #include "renderer/backend/renderer.h"
+
 #include "renderer/backend/vulkan/vulkan_texture.h"
 
 namespace Phos {
@@ -10,7 +13,7 @@ std::shared_ptr<Texture> Texture::create(const std::string& path) {
     case GraphicsAPI::Vulkan:
         return std::dynamic_pointer_cast<Texture>(std::make_shared<VulkanTexture>(path));
     default:
-        PS_FAIL("Vulkan is the only supported api")
+        PHOS_FAIL("Vulkan is the only supported api");
     }
 }
 
@@ -19,7 +22,7 @@ std::shared_ptr<Texture> Texture::create(uint32_t width, uint32_t height) {
     case GraphicsAPI::Vulkan:
         return std::dynamic_pointer_cast<Texture>(std::make_shared<VulkanTexture>(width, height));
     default:
-        PS_FAIL("Vulkan is the only supported api")
+        PHOS_FAIL("Vulkan is the only supported api");
     }
 }
 
@@ -28,7 +31,7 @@ std::shared_ptr<Texture> Texture::create(const std::vector<char>& data, uint32_t
     case GraphicsAPI::Vulkan:
         return std::dynamic_pointer_cast<Texture>(std::make_shared<VulkanTexture>(data, width, height));
     default:
-        PS_FAIL("Vulkan is the only supported api")
+        PHOS_FAIL("Vulkan is the only supported api");
     }
 }
 
@@ -37,7 +40,7 @@ std::shared_ptr<Texture> Texture::create(const std::shared_ptr<Image>& image) {
     case GraphicsAPI::Vulkan:
         return std::dynamic_pointer_cast<Texture>(std::make_shared<VulkanTexture>(image));
     default:
-        PS_FAIL("Vulkan is the only supported api")
+        PHOS_FAIL("Vulkan is the only supported api");
     }
 }
 

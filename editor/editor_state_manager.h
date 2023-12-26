@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 enum class EditorState {
     Editing,
     Playing,

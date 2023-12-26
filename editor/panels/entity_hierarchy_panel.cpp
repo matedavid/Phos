@@ -1,5 +1,7 @@
 #include "entity_hierarchy_panel.h"
 
+#include <algorithm>
+
 #include "panels/content_browser_panel.h"
 
 #include "editor_scene_manager.h"

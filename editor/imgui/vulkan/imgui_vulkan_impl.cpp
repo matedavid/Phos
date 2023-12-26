@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include "renderer/backend/vulkan/vk_core.h"
+
 #include "core/window.h"
 #include "core/application.h"
 
@@ -57,7 +59,7 @@ ImGuiVulkanImpl::ImGuiVulkanImpl(std::shared_ptr<Phos::Window> window) : m_windo
     pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
     pool_info.pPoolSizes = pool_sizes;
 
-    VK_CHECK(vkCreateDescriptorPool(Phos::VulkanContext::device->handle(), &pool_info, nullptr, &m_descriptor_pool))
+    VK_CHECK(vkCreateDescriptorPool(Phos::VulkanContext::device->handle(), &pool_info, nullptr, &m_descriptor_pool));
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForVulkan(Phos::Application::instance()->get_window()->handle(), true);
@@ -74,7 +76,7 @@ ImGuiVulkanImpl::ImGuiVulkanImpl(std::shared_ptr<Phos::Window> window) : m_windo
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator = nullptr;
     init_info.CheckVkResultFn = [](VkResult result) {
-        VK_CHECK(result)
+        VK_CHECK(result);
     };
     ImGui_ImplVulkan_Init(&init_info, m_wd->RenderPass);
 
@@ -134,17 +136,17 @@ void ImGuiVulkanImpl::render_frame(ImDrawData* draw_data) {
     ImGui_ImplVulkanH_Frame* fd = &m_wd->Frames[m_wd->FrameIndex];
     {
         VK_CHECK(vkWaitForFences(
-            device, 1, &fd->Fence, VK_TRUE, UINT64_MAX)) // wait indefinitely instead of periodically checking
-        VK_CHECK(vkResetFences(device, 1, &fd->Fence))
+            device, 1, &fd->Fence, VK_TRUE, UINT64_MAX)); // wait indefinitely instead of periodically checking
+        VK_CHECK(vkResetFences(device, 1, &fd->Fence));
     }
 
     {
-        VK_CHECK(vkResetCommandPool(device, fd->CommandPool, 0))
+        VK_CHECK(vkResetCommandPool(device, fd->CommandPool, 0));
         VkCommandBufferBeginInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-        VK_CHECK(vkBeginCommandBuffer(fd->CommandBuffer, &info))
+        VK_CHECK(vkBeginCommandBuffer(fd->CommandBuffer, &info));
     }
 
     {

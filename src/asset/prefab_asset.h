@@ -7,7 +7,7 @@ namespace Phos {
 class PrefabAsset : public IAsset {
   public:
     explicit PrefabAsset(std::string str) { components_string_representation = std::move(str); }
-    virtual ~PrefabAsset() = default;
+    ~PrefabAsset() override = default;
 
     [[nodiscard]] AssetType asset_type() override { return AssetType::Prefab; }
 

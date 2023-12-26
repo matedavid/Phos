@@ -6,6 +6,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include "utility/logging.h"
+
 #include "asset_tools/asset_builder.h"
 #include "asset_tools/asset_importer.h"
 
@@ -21,13 +23,13 @@ constexpr uint32_t import_flags = aiProcess_Triangulate | aiProcess_CalcTangentS
 
 std::filesystem::path AssimpImporter::import_model(const std::filesystem::path& path,
                                                    const std::filesystem::path& containing_folder) {
-    PS_ASSERT(std::filesystem::exists(path), "Model path: '{}' does not exist", path.string())
+    PHOS_ASSERT(std::filesystem::exists(path), "Model path: '{}' does not exist", path.string());
 
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path.c_str(), import_flags);
 
     if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
-        PS_ERROR("[AssimpImporter::import_model] Failed to load model: '{}'", path.string());
+        PHOS_LOG_ERROR("[AssimpImporter::import_model] Failed to load model: '{}'", path.string());
         return {};
     }
 
@@ -35,17 +37,17 @@ std::filesystem::path AssimpImporter::import_model(const std::filesystem::path& 
     if (!std::filesystem::exists(output_folder_path))
         std::filesystem::create_directory(output_folder_path);
 
-    PS_INFO("[AssimpImporter::import_model] Loading model: '{}'", path.filename().string());
-    PS_INFO("[AssimpImporter::import_model]     Num meshes: {}", scene->mNumMeshes);
-    PS_INFO("[AssimpImporter::import_model]     Num materials: {}", scene->mNumMaterials);
+    PHOS_LOG_INFO("Loading model: '{}'", path.filename().string());
+    PHOS_LOG_INFO("     Num meshes: {}", scene->mNumMeshes);
+    PHOS_LOG_INFO("     Num materials: {}", scene->mNumMaterials);
 
     // Copy original asset to output_folder_path
     if (const auto output_model_path = output_folder_path / path.filename();
         !std::filesystem::exists(output_model_path)) {
         std::filesystem::copy(path, output_model_path);
     } else {
-        PS_WARNING("[AssimpImporter::import_model] Model file in project ({}) already exists",
-                   output_model_path.string());
+        PHOS_LOG_WARNING("[AssimpImporter::import_model] Model file in project ({}) already exists",
+                         output_model_path.string());
     }
 
     if (path.extension() == ".gltf") {
@@ -54,8 +56,8 @@ std::filesystem::path AssimpImporter::import_model(const std::filesystem::path& 
         if (!std::filesystem::exists(bin_output_path)) {
             std::filesystem::copy(bin_path, bin_output_path);
         } else {
-            PS_WARNING("[AssimpImporter::import_model] GLTF bin file in project ({}) already exists",
-                       bin_path.string());
+            PHOS_LOG_WARNING("[AssimpImporter::import_model] GLTF bin file in project ({}) already exists",
+                             bin_path.string());
         }
     }
 

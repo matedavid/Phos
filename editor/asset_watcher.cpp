@@ -2,6 +2,8 @@
 
 #include "editor_state_manager.h"
 
+#include "utility/logging.h"
+
 #include "core/uuid.h"
 #include "core/project.h"
 
@@ -26,7 +28,7 @@ AssetWatcher::AssetWatcher(std::shared_ptr<Phos::Scene> scene,
       : m_scene(std::move(scene)), m_project(std::move(project)), m_renderer(std::move(renderer)),
         m_scripting(std::move(scripting)) {
     m_asset_manager = std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
-    PS_ASSERT(m_asset_manager != nullptr, "[AssetWatcher] Asset Manager must be of type EditorAssetManager")
+    PHOS_ASSERT(m_asset_manager != nullptr, "[AssetWatcher] Asset Manager must be of type EditorAssetManager");
 
     for (const auto& entry : std::filesystem::recursive_directory_iterator(m_asset_manager->path())) {
         if (entry.path().extension() != ".psa" || entry.is_directory())
@@ -53,7 +55,7 @@ void AssetWatcher::check_asset_modified() {
 
         const auto last_time = std::filesystem::last_write_time(path).time_since_epoch().count();
         if (last_time != saved_last_time) {
-            PS_INFO("[AssetWatcher] Asset updated: '{}'", path.string());
+            PHOS_LOG_INFO("Asset updated: '{}'", path.string());
             saved_last_time = last_time; // saved_last_time is reference, so it's modifying the value in m_watching
 
             switch (type) {
@@ -88,7 +90,7 @@ void AssetWatcher::asset_created(const std::filesystem::path& path) {
 }
 
 void AssetWatcher::asset_renamed(const std::filesystem::path& old_path, const std::filesystem::path& new_path) {
-    PS_INFO("[AssetWatcher::asset_renamed] Renamed asset '{}' to '{}'", old_path.string(), new_path.string());
+    PHOS_LOG_INFO("Renamed asset '{}' to '{}'", old_path.string(), new_path.string());
 
     if (!m_path_to_info.contains(old_path))
         return;
@@ -104,7 +106,7 @@ void AssetWatcher::asset_renamed(const std::filesystem::path& old_path, const st
     } else if (type == Phos::AssetType::Mesh) {
         update_mesh(m_asset_manager->load_by_id_type_force_reload<Phos::Mesh>(id));
     } else if (type == Phos::AssetType::Script) {
-        PS_ERROR("[AssetWatcher::asset_renamed Script] Unimplemented");
+        PHOS_LOG_ERROR("Unimplemented");
     }
 
     m_watching.erase(old_path);
@@ -123,7 +125,7 @@ void AssetWatcher::asset_removed(const std::filesystem::path& path) {
     if (!is_watchable_asset_type(type))
         return;
 
-    PS_INFO("[AssetWatcher::asset_removed] Removed asset: '{}'", path.string());
+    PHOS_LOG_INFO("[AssetWatcher::asset_removed] Removed asset: '{}'", path.string());
 
     Phos::Renderer::wait_idle();
 
@@ -148,7 +150,7 @@ void AssetWatcher::asset_removed(const std::filesystem::path& path) {
             }
         }
     } else if (type == Phos::AssetType::Script) {
-        PS_ERROR("[AssetWatcher::asset_removed Script] Unimplemented");
+        PHOS_LOG_ERROR("Unimplemented");
     }
 
     m_watching.erase(path);
@@ -158,14 +160,14 @@ void AssetWatcher::asset_removed(const std::filesystem::path& path) {
 void AssetWatcher::add_file(const std::filesystem::path& path) {
     const auto id = m_asset_manager->get_asset_id(path);
     if (id == Phos::UUID(0)) {
-        PS_ERROR("[AssetWatcher::add_file] Could not add file: '{}' because it return invalid id", path.string());
+        PHOS_LOG_ERROR("Could not add file: '{}' because it return invalid id", path.string());
         return;
     }
 
     const auto type = m_asset_manager->get_asset_type(id);
 
     if (is_watchable_asset_type(type)) {
-        PS_INFO("[AssetWatcher::asset_created] Added asset: '{}'", path.string());
+        PHOS_LOG_INFO("Added asset: '{}'", path.string());
         start_watching_asset(path, type, id);
     }
 }
@@ -219,8 +221,8 @@ void AssetWatcher::update_mesh(const std::shared_ptr<Phos::Mesh>& mesh) const {
 
 void AssetWatcher::update_script() {
     if (EditorStateManager::get_state() == EditorState::Playing) {
-        PS_INFO("[AssetWatcher::update_script] Scripting engine reloading while playing, changes to scene will apply "
-                "after execution has finished");
+        PHOS_LOG_INFO("Scripting engine reloading while playing, changes to scene will apply "
+                      "after execution has finished");
         m_script_update_pending = true;
         return;
     }
@@ -244,7 +246,7 @@ void AssetWatcher::update_script() {
         for (const auto& name : field_values | std::views::keys) {
             if (!handle->get_field(name).has_value()) {
                 sc.field_values.erase(name);
-                PS_INFO("[AssetWatcher::update_script] Removing not longer existing field: {}", name);
+                PHOS_LOG_INFO("Removing not longer existing field: {}", name);
             }
         }
 
@@ -252,7 +254,7 @@ void AssetWatcher::update_script() {
         for (const auto& [name, _, type] : handle->get_all_fields()) {
             if (!sc.field_values.contains(name)) {
                 sc.field_values.insert({name, Phos::ClassField::get_default_value(type)});
-                PS_INFO("[AssetWatcher::update_script] Adding new field: {}", name);
+                PHOS_LOG_INFO("Adding new field: {}", name);
             }
         }
     }

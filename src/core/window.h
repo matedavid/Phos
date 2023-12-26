@@ -1,10 +1,9 @@
 #pragma once
 
-#include "core.h"
-
 #include <vector>
 #include <vulkan/vulkan.h>
 #include <functional>
+#include <string_view>
 
 #include "input/events.h"
 

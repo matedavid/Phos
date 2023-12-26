@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core.h"
+#include <memory>
 
 // Forward declarations
 struct aiNode;

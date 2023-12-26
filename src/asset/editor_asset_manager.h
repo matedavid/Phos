@@ -2,7 +2,8 @@
 
 #include <filesystem>
 
-#include "asset_manager.h"
+#include "utility/logging.h"
+#include "asset/asset_manager.h"
 
 namespace Phos {
 
@@ -24,9 +25,7 @@ class EditorAssetManager : public AssetManagerBase {
             return nullptr;
 
         const auto type_asset = std::dynamic_pointer_cast<T>(asset);
-        PS_ASSERT(type_asset != nullptr,
-                  "[EditorAssetManager::load_by_id_type_force_reload] Could not convert asset to type {}",
-                  typeid(T).name())
+        PHOS_ASSERT(type_asset != nullptr, "Could not convert asset to type {}", typeid(T).name());
 
         return type_asset;
     }

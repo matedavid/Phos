@@ -1,10 +1,15 @@
 #include "deferred_renderer.h"
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <utility>
 
 #include "core/window.h"
+
+#include "utility/logging.h"
 
 #include "managers/shader_manager.h"
 #include "managers/texture_manager.h"
@@ -39,11 +44,12 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererCo
 
     m_shadow_map_material =
         Material::create(Renderer::shader_manager()->get_builtin_shader("ShadowMap"), "ShadowMap Material");
-    PS_ASSERT(m_shadow_map_material->bake(), "Failed to bake Shadow Map material")
+    PHOS_ASSERT(m_shadow_map_material->bake(), "Failed to bake Shadow Map material");
 
     m_cube_mesh = ModelLoader::load_single_mesh("../assets/cube.fbx");
     m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
-    m_cube_material->bake();
+    [[maybe_unused]] const auto cube_material_baked = m_cube_material->bake();
+    PHOS_ASSERT(cube_material_baked, "Failed to bake cube material");
 
     init(Renderer::config().window->get_width(), Renderer::config().window->get_height());
 }
@@ -72,7 +78,7 @@ void DeferredRenderer::set_scene(std::shared_ptr<Scene> scene) {
 }
 
 void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
-    PHOS_PROFILE_ZONE_SCOPED_NAMED("DeferredRenderer::render");
+    // PHOS_PROFILE_ZONE_SCOPED_NAMED("DeferredRenderer::render");
 
     const FrameInformation frame_info = {
         .camera = camera,
@@ -415,7 +421,7 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
         m_lighting_pipeline->add_input("uMetallicRoughnessAOMap", m_metallic_roughness_ao_texture);
         m_lighting_pipeline->add_input("uEmissionMap", m_emission_texture);
         m_lighting_pipeline->add_input("uShadowMap", m_shadow_map_texture);
-        PS_ASSERT(m_geometry_pipeline->bake(), "Failed to bake Lighting Pipeline")
+        PHOS_ASSERT(m_geometry_pipeline->bake(), "Failed to bake Lighting Pipeline");
 
         m_lighting_pass = RenderPass::create(RenderPass::Description{
             .debug_name = "Deferred-Lighting",
@@ -479,7 +485,7 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
 
         m_tone_mapping_pipeline->add_input("uResultTexture", m_lighting_texture);
         m_tone_mapping_pipeline->add_input("uBloomTexture", m_bloom_upsample_texture);
-        PS_ASSERT(m_tone_mapping_pipeline->bake(), "Could not bake ToneMapping pipeline")
+        PHOS_ASSERT(m_tone_mapping_pipeline->bake(), "Could not bake ToneMapping pipeline");
 
         m_tone_mapping_pass = RenderPass::create({
             .debug_name = "ToneMappingPass",
@@ -496,7 +502,7 @@ void DeferredRenderer::init_bloom_pipeline(const BloomConfig& config) {
     const auto get_mip_size = [](const std::shared_ptr<Texture>& tex, uint32_t level) -> glm::uvec2 {
         const auto& img = tex->get_image();
 
-        PS_ASSERT(level < img->num_mips(), "Mip level not valid")
+        PHOS_ASSERT(level < img->num_mips(), "Mip level not valid");
 
         const auto img_width = img->width();
         const auto img_height = img->height();
@@ -584,7 +590,7 @@ void DeferredRenderer::init_skybox_pipeline(const EnvironmentConfig& config) {
     });
 
     m_skybox_pipeline->add_input("uSkybox", config.skybox);
-    PS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline")
+    PHOS_ASSERT(m_skybox_pipeline->bake(), "Failed to bake Cubemap Pipeline");
 }
 
 std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {

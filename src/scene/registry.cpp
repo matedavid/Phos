@@ -11,10 +11,11 @@ Registry::Registry() {
 
 std::size_t Registry::create() {
     if (m_available_ids.empty()) {
-        PS_FAIL("Maximum number of entities reached");
+        PHOS_LOG_ERROR("Maximum number of entities reached");
+        return 0;
     }
 
-    auto id = m_available_ids.front();
+    const auto id = m_available_ids.front();
     m_available_ids.pop();
 
     return id;

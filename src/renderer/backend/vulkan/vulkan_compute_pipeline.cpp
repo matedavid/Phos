@@ -1,5 +1,9 @@
 #include "vulkan_compute_pipeline.h"
 
+#include "vk_core.h"
+
+#include "utility/logging.h"
+
 #include "renderer/backend/renderer.h"
 
 #include "renderer/backend/vulkan/vulkan_context.h"
@@ -26,8 +30,9 @@ VulkanComputePipelineStepBuilder::VulkanComputePipelineStepBuilder(std::shared_p
 
 void VulkanComputePipelineStepBuilder::set_push_constants(std::string_view name, uint32_t size, const void* data) {
     const auto info = m_shader->push_constant_info(name);
-    PS_ASSERT(info.has_value(), "Compute Pipeline does not contain push constant with name: {}", name)
-    PS_ASSERT(info->size == size, "Push constant with name: {} has incorrect size ({} != {})", name, size, info->size)
+    PHOS_ASSERT(info.has_value(), "Compute Pipeline does not contain push constant with name: {}", name);
+    PHOS_ASSERT(
+        info->size == size, "Push constant with name: {} has incorrect size ({} != {})", name, size, info->size);
 
     std::vector<unsigned char> vec_data(size);
     std::memcpy(vec_data.data(), data, size);
@@ -40,9 +45,9 @@ void VulkanComputePipelineStepBuilder::set(std::string_view name, const std::sha
     const auto native_image = std::dynamic_pointer_cast<VulkanImage>(texture->get_image());
 
     const auto info = m_shader->descriptor_info(name);
-    PS_ASSERT(info.has_value() && is_valid_texture_type(info->type),
-              "Compute Pipeline does not contain texture with name: {}",
-              name)
+    PHOS_ASSERT(info.has_value() && is_valid_texture_type(info->type),
+                "Compute Pipeline does not contain texture with name: {}",
+                name);
 
     VkDescriptorImageInfo descriptor{};
     descriptor.imageView = native_image->view();
@@ -63,9 +68,9 @@ void VulkanComputePipelineStepBuilder::set(std::string_view name,
     const auto native_image = std::dynamic_pointer_cast<VulkanImage>(texture->get_image());
 
     const auto info = m_shader->descriptor_info(name);
-    PS_ASSERT(info.has_value() && is_valid_texture_type(info->type),
-              "Compute Pipeline does not contain texture with name: {}",
-              name)
+    PHOS_ASSERT(info.has_value() && is_valid_texture_type(info->type),
+                "Compute Pipeline does not contain texture with name: {}",
+                name);
 
     VkDescriptorImageInfo descriptor{};
     descriptor.imageView = native_image->mip_view(mip_level);
@@ -87,7 +92,8 @@ VkDescriptorSet VulkanComputePipelineStepBuilder::build() const {
     }
 
     VkDescriptorSet set;
-    PS_ASSERT(builder.build(set), "Could not build ComputePipelineStepBuilder descriptor set")
+    [[maybe_unused]] const auto built = builder.build(set);
+    PHOS_ASSERT(built, "Could not build ComputePipelineStepBuilder descriptor set");
 
     return set;
 }
@@ -111,7 +117,7 @@ VulkanComputePipeline::VulkanComputePipeline(const Description& description) {
     create_info.stage = m_shader->get_shader_stage_create_infos()[0];
     create_info.layout = m_shader->get_pipeline_layout();
 
-    VK_CHECK(vkCreateComputePipelines(VulkanContext::device->handle(), nullptr, 1, &create_info, nullptr, &m_pipeline))
+    VK_CHECK(vkCreateComputePipelines(VulkanContext::device->handle(), nullptr, 1, &create_info, nullptr, &m_pipeline));
 
     // Allocator for descriptor builder
     m_allocator = std::make_shared<VulkanDescriptorAllocator>();
@@ -122,7 +128,7 @@ VulkanComputePipeline::~VulkanComputePipeline() {
 }
 
 void VulkanComputePipeline::add_step(const std::function<void(StepBuilder&)>& func, glm::uvec3 work_groups) {
-    auto builder = new VulkanComputePipelineStepBuilder(m_shader, m_allocator);
+    const auto builder = new VulkanComputePipelineStepBuilder(m_shader, m_allocator);
 
     func(*builder);
 

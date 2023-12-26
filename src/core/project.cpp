@@ -1,8 +1,8 @@
 #include "project.h"
 
 #include <yaml-cpp/yaml.h>
-#include <filesystem>
 
+#include "utility/logging.h"
 #include "asset/editor_asset_manager.h"
 #include "scene/scene.h"
 
@@ -17,7 +17,7 @@ Project::Project(std::string name,
 
 std::shared_ptr<Project> Project::create(const std::filesystem::path& path) {
     (void)path;
-    PS_ERROR("[Project::create] Unimplemented");
+    PHOS_LOG_ERROR("Unimplemented");
     return nullptr;
 }
 
@@ -44,7 +44,7 @@ std::shared_ptr<Project> Project::open(const std::filesystem::path& path) {
 
 std::shared_ptr<Project> Project::load(const std::filesystem::path& path) {
     (void)path;
-    PS_ERROR("[Project::load] Unimplemented");
+    PHOS_LOG_ERROR("Unimplemented");
     return nullptr;
 }
 

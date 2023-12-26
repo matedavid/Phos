@@ -1,5 +1,8 @@
 #include "vulkan_instance.h"
 
+#include "vk_core.h"
+
+#include "utility/logging.h"
 #include "core/window.h"
 #include "renderer/backend/vulkan/vulkan_physical_device.h"
 
@@ -17,7 +20,7 @@ VulkanInstance::VulkanInstance(const std::shared_ptr<Window>& window) {
     application_info.apiVersion = VK_API_VERSION_1_3;
 
     const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
-    PS_ASSERT(validation_layers_available(validation_layers), "Validation layers are not available")
+    PHOS_ASSERT(validation_layers_available(validation_layers), "Validation layers are not available");
 
     VkInstanceCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -27,10 +30,10 @@ VulkanInstance::VulkanInstance(const std::shared_ptr<Window>& window) {
     create_info.enabledLayerCount = (uint32_t)validation_layers.size();
     create_info.ppEnabledLayerNames = validation_layers.data();
 
-    VK_CHECK(vkCreateInstance(&create_info, nullptr, &m_instance))
+    VK_CHECK(vkCreateInstance(&create_info, nullptr, &m_instance));
 
     // Create Surface
-    VK_CHECK(window->create_surface(m_instance, m_surface))
+    VK_CHECK(window->create_surface(m_instance, m_surface));
 }
 
 VulkanInstance::~VulkanInstance() {
@@ -40,10 +43,10 @@ VulkanInstance::~VulkanInstance() {
 
 std::vector<VulkanPhysicalDevice> VulkanInstance::get_physical_devices() const {
     uint32_t physical_device_count;
-    VK_CHECK(vkEnumeratePhysicalDevices(m_instance, &physical_device_count, nullptr))
+    VK_CHECK(vkEnumeratePhysicalDevices(m_instance, &physical_device_count, nullptr));
 
     std::vector<VkPhysicalDevice> raw_physical_devices(physical_device_count);
-    VK_CHECK(vkEnumeratePhysicalDevices(m_instance, &physical_device_count, raw_physical_devices.data()))
+    VK_CHECK(vkEnumeratePhysicalDevices(m_instance, &physical_device_count, raw_physical_devices.data()));
 
     std::vector<VulkanPhysicalDevice> physical_devices;
     for (const auto& physical_device : raw_physical_devices) {

@@ -8,10 +8,11 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include "utility/logging.h"
+
 #include "managers/shader_manager.h"
 #include "managers/texture_manager.h"
 
-#include "scene/scene.h"
 #include "scene/entity_deserializer.h"
 
 #include "asset/asset_manager.h"
@@ -50,7 +51,7 @@ static AssetType string_to_asset_type(const std::string& str) {
     else if (str == "script")
         return AssetType::Script;
 
-    PS_FAIL("Asset type: {} is not valid", str)
+    PHOS_FAIL("Asset type '{}' not recognized", str);
 }
 
 #define REGISTER_PARSER(Parser) m_parsers.push_back(std::make_unique<Parser>(m_manager))
@@ -72,7 +73,7 @@ UUID AssetLoader::get_id(const std::string& path) const {
         const YAML::Node node = YAML::LoadFile(path);
         return UUID(node["id"].as<uint64_t>());
     } catch (const std::exception&) {
-        PS_ERROR("[AssetLoader::get_id] Exception while getting id of asset with path: '{}'", path);
+        PHOS_LOG_ERROR("Exception while getting id of asset with path: '{}'", path);
         return UUID(0);
     }
 }
@@ -92,7 +93,7 @@ std::shared_ptr<IAsset> AssetLoader::load(const std::string& path) const {
         const auto id = UUID(node["id"].as<uint64_t>());
 
         const auto it = std::ranges::find_if(m_parsers, [&type](const auto& parser) { return parser->type() == type; });
-        PS_ASSERT(it != m_parsers.end(), "Parser not found for asset type: {}\n", type_str)
+        PHOS_ASSERT(it != m_parsers.end(), "Parser not found for asset type: {}\n", type_str);
 
         auto asset = (*it)->parse(node, path);
         asset->id = id;
@@ -100,7 +101,7 @@ std::shared_ptr<IAsset> AssetLoader::load(const std::string& path) const {
 
         return asset;
     } catch (const std::exception&) {
-        PS_ERROR("[AssetLoader::load] Exception while loading asset with path: '{}'", path);
+        PHOS_LOG_ERROR("Exception while loading asset with path: '{}'", path);
         return nullptr;
     }
 }
@@ -143,23 +144,24 @@ std::shared_ptr<IAsset> CubemapParser::parse(const YAML::Node& node, [[maybe_unu
             .back = load_face(back),
         };
         return Cubemap::create(faces);
+    }
 
-    } else if (cubemap_type == "equirectangular") {
+    if (cubemap_type == "equirectangular") {
         const auto texture_id = UUID(node["texture"].as<uint64_t>());
 
         const auto texture_asset_path = m_manager->get_asset_path(texture_id);
         auto node_texture = YAML::LoadFile(texture_asset_path);
 
-        PS_ASSERT(node_texture["assetType"].as<std::string>() == "texture",
-                  "Cubemap texture asset type is not texture ({})",
-                  node_texture["assetType"].as<std::string>())
+        PHOS_ASSERT(node_texture["assetType"].as<std::string>() == "texture",
+                    "Cubemap texture asset type is not texture ({})",
+                    node_texture["assetType"].as<std::string>());
 
         const auto texture_complete_path = texture_asset_path.parent_path() / node_texture["path"].as<std::string>();
         return Cubemap::create(texture_complete_path);
-
-    } else {
-        PS_FAIL("Cubemap type '{}' not recognized", cubemap_type)
     }
+
+    PHOS_FAIL("Cubemap type '{}' not recognized", cubemap_type);
+    return nullptr;
 }
 
 std::filesystem::path CubemapParser::load_face(const Phos::UUID& id) {
@@ -169,7 +171,10 @@ std::filesystem::path CubemapParser::load_face(const Phos::UUID& id) {
     const auto node = YAML::LoadFile(path);
 
     const auto asset_type = node["assetType"].as<std::string>();
-    PS_ASSERT(asset_type == "texture", "Cubemap face with id {} is not of type texture ({})", (uint64_t)id, asset_type)
+    PHOS_ASSERT(asset_type == "texture",
+                "Cubemap face with id {} is not of type texture ({})",
+                static_cast<uint64_t>(id),
+                asset_type);
 
     const auto face_local_path = node["path"].as<std::string>();
     return containing_folder / face_local_path;
@@ -189,7 +194,8 @@ std::shared_ptr<IAsset> MaterialParser::parse(const YAML::Node& node, [[maybe_un
         const auto shader_name = shader_node["name"].as<std::string>();
         material = Material::create(Renderer::shader_manager()->get_builtin_shader(shader_name), material_name);
     } else {
-        PS_FAIL("At the moment, only builtin shaders supported")
+        PHOS_FAIL("At the moment, only builtin shaders are supported");
+        return nullptr;
     }
 
     const auto properties_node = node["properties"];
@@ -212,11 +218,12 @@ std::shared_ptr<IAsset> MaterialParser::parse(const YAML::Node& node, [[maybe_un
             const auto data = AssetParsingUtils::parse_numeric<float>(data_node);
             material->set(property_name, data);
         } else {
-            PS_WARNING("Property type '{}' is not valid", property_type);
+            PHOS_LOG_WARNING("Property type '{}' is not valid", property_type);
         }
     }
 
-    PS_ASSERT(material->bake(), "Could not bake material")
+    [[maybe_unused]] const auto baked = material->bake();
+    PHOS_ASSERT(baked, "Could not bake material");
 
     return material;
 }
@@ -224,7 +231,7 @@ std::shared_ptr<IAsset> MaterialParser::parse(const YAML::Node& node, [[maybe_un
 std::shared_ptr<Texture> MaterialParser::parse_texture(const YAML::Node& node) const {
     const auto id = UUID(node.as<uint64_t>());
     if (id == UUID(0))
-        return Phos::Renderer::texture_manager()->get_white_texture();
+        return Renderer::texture_manager()->get_white_texture();
 
     return m_manager->load_by_id_type<Texture>(id);
 }
@@ -246,7 +253,8 @@ std::shared_ptr<IAsset> MeshParser::parse(const YAML::Node& node, [[maybe_unused
     const aiScene* scene = importer.ReadFile(real_model_path.c_str(), import_flags);
 
     if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
-        PS_FAIL("Failed to open file: {}\n", real_model_path.string())
+        PHOS_LOG_ERROR("Failed to open file: {}\n", real_model_path.string());
+        return nullptr;
     }
 
     const auto mesh = scene->mMeshes[index];

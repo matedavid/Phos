@@ -1,8 +1,7 @@
 #pragma once
 
-#include "core.h"
-
 #include <filesystem>
+#include <memory>
 
 namespace Phos {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core.h"
+#include <memory>
 
 #include "asset/asset.h"
 
@@ -20,7 +20,7 @@ class Cubemap : public IAsset {
         std::string back;
     };
 
-    virtual ~Cubemap() = default;
+    ~Cubemap() override = default;
 
     [[nodiscard]] AssetType asset_type() override { return AssetType::Cubemap; }
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "core.h"
+#include <memory>
+#include <functional>
 
 #include <glm/glm.hpp>
 #include "scene/components.h"

@@ -1,7 +1,7 @@
 #ifndef RENDERER_BUFFERS_H
 #define RENDERER_BUFFERS_H
 
-#include "core.h"
+#include "utility/logging.h"
 
 namespace Phos {
 
@@ -46,7 +46,7 @@ class UniformBuffer {
 
     template <typename T>
     void update(const T& data) {
-        PS_ASSERT(sizeof(data) == size(), "Size of data must be equal to size of creation data")
+        PHOS_ASSERT(sizeof(data) == size(), "Size of data must be equal to size of creation data");
         set_data(&data);
     }
 

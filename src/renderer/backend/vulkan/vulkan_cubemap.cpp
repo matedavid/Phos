@@ -3,6 +3,10 @@
 #include <filesystem>
 #include <stb_image.h>
 
+#include "vk_core.h"
+
+#include "utility/logging.h"
+
 #include "managers/shader_manager.h"
 
 #include "renderer/backend/renderer.h"
@@ -91,7 +95,7 @@ VulkanCubemap::VulkanCubemap(const std::string& equirectangular_path) {
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler))
+    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler));
 }
 
 VulkanCubemap::~VulkanCubemap() {
@@ -159,7 +163,7 @@ void VulkanCubemap::init(const Faces& faces) {
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler))
+    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler));
 }
 
 void VulkanCubemap::load_face(const std::string& path,
@@ -177,13 +181,13 @@ void VulkanCubemap::load_face(const std::string& path,
         width = width_l;
         height = height_l;
     } else {
-        PS_ASSERT(width_l == width && height_l == height,
-                  "Size of cubemap image with idx {} does not match expected size ({} != {}, {} != {})",
-                  idx,
-                  width_l,
-                  width,
-                  height_l,
-                  height)
+        PHOS_ASSERT(width_l == width && height_l == height,
+                    "Size of cubemap image with idx {} does not match expected size ({} != {}, {} != {})",
+                    idx,
+                    width_l,
+                    width,
+                    height_l,
+                    height);
     }
 
     const auto image_size = static_cast<uint32_t>(width * height * 4);

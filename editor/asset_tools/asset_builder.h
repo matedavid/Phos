@@ -1,11 +1,11 @@
 #pragma once
 
-#include <iostream>
 #include <stack>
 #include <filesystem>
-
 #include <yaml-cpp/yaml.h>
 #include <glm/glm.hpp>
+
+#include "utility/logging.h"
 #include "core/uuid.h"
 
 class AssetBuilder {
@@ -74,7 +74,7 @@ class AssetBuilder {
 
     [[nodiscard]] const YAML::Node& get_top() const {
         if (m_nodes.size() != 1) {
-            PS_WARNING("[AssetBuilder::top] Top node is not root node");
+            PHOS_LOG_WARNING("Top node is not root node");
         }
 
         return m_nodes.top();

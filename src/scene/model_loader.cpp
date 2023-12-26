@@ -4,8 +4,9 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include "utility/logging.h"
+
 #include "scene/scene.h"
-#include "scene/entity.h"
 
 #include "managers/texture_manager.h"
 #include "managers/shader_manager.h"
@@ -28,11 +29,11 @@ Entity ModelLoader::load_into_scene(const std::string& path, const std::shared_p
     const aiScene* loaded_scene = importer.ReadFile(path, flags);
 
     if (!loaded_scene || loaded_scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
-        PS_ERROR("Error loading model {} with error: {}", path, importer.GetErrorString());
+        PHOS_LOG_ERROR("Error loading model {} with error: {}", path, importer.GetErrorString());
         return {};
     }
 
-    auto parent_entity = scene->create_entity();
+    const auto parent_entity = scene->create_entity();
 
     const auto directory = path.substr(0, path.find_last_of('/')) + "/";
     process_node_r(loaded_scene->mRootNode, loaded_scene, scene, directory, parent_entity);
@@ -168,7 +169,8 @@ std::shared_ptr<Material> ModelLoader::load_material(const aiMesh* mesh,
         material->set("uNormalMap", texture);
     }
 
-    PS_ASSERT(material->bake(), "Failed to build Material for sub_mesh")
+    [[maybe_unused]] const auto baked = material->bake();
+    PHOS_ASSERT(baked, "Failed to build Material for sub_mesh");
 
     return material;
 }
@@ -176,13 +178,13 @@ std::shared_ptr<Material> ModelLoader::load_material(const aiMesh* mesh,
 std::shared_ptr<Mesh> ModelLoader::load_single_mesh(const std::string& path) {
     Assimp::Importer importer;
 
-    uint32_t flags =
+    constexpr uint32_t flags =
         aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
 
     const aiScene* scene = importer.ReadFile(path, flags);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
-        PS_ERROR("Error loading model {} with error: {}", path, importer.GetErrorString());
+        PHOS_LOG_ERROR("Error loading model {} with error: {}", path, importer.GetErrorString());
         return {};
     }
 

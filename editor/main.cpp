@@ -268,7 +268,7 @@ class EditorLayer : public Phos::Layer {
 
         const auto editor_asset_manager =
             std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
-        PS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager")
+        PHOS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager");
 
         m_asset_watcher = std::make_shared<AssetWatcher>(m_project->scene(), m_project, m_renderer, m_scripting_system);
 

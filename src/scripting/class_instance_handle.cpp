@@ -19,7 +19,7 @@ ClassInstanceHandle::ClassInstanceHandle(std::shared_ptr<ClassHandle> class_hand
       : m_class_handle(std::move(class_handle)) {
     m_instance = mono_object_new(ScriptingEngine::m_context.app_domain, m_class_handle->handle());
     if (m_instance == nullptr) {
-        PS_ERROR("Failed to create class instance for class: {}", m_class_handle->class_name());
+        PHOS_LOG_ERROR("Failed to create class instance for class: {}", m_class_handle->class_name());
     }
 
     m_constructor = *ScriptingEngine::m_context.entity_class_handle->get_method(".ctor", 1);
@@ -28,12 +28,12 @@ ClassInstanceHandle::ClassInstanceHandle(std::shared_ptr<ClassHandle> class_hand
 }
 
 void ClassInstanceHandle::invoke_constructor(const UUID& entity_id) {
-    PS_ASSERT(!m_constructed,
-              "Class's instance for class '{}' constructor has already been called",
-              m_class_handle->class_name())
+    PHOS_ASSERT(!m_constructed,
+                "Class's instance for class '{}' constructor has already been called",
+                m_class_handle->class_name());
 
     void* args[1];
-    auto id = (uint64_t)entity_id;
+    auto id = static_cast<uint64_t>(entity_id);
     args[0] = &id;
 
     mono_runtime_invoke(m_constructor, m_instance, args, nullptr);
@@ -64,10 +64,10 @@ void ClassInstanceHandle::invoke_on_update(double delta_time) {
     void ClassInstanceHandle::set_field_value_internal<T>(const ClassField& info, T* value)
 
 void check_type(const ClassField& info, ClassField::Type expected, std::string_view actual_name) {
-    PS_ASSERT(info.field_type == expected,
-              "Trying to set field '{}' value with invalid type, expected type is: '{}'",
-              info.name,
-              actual_name);
+    PHOS_ASSERT(info.field_type == expected,
+                "Trying to set field '{}' value with invalid type, expected type is: '{}'",
+                info.name,
+                actual_name);
 }
 
 SET_FIELD_VALUE_INTERNAL_FUNC(int32_t) {

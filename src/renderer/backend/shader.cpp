@@ -1,6 +1,9 @@
 #include "shader.h"
 
+#include "utility/logging.h"
+
 #include "renderer/backend/renderer.h"
+
 #include "renderer/backend/vulkan/vulkan_shader.h"
 
 namespace Phos {
@@ -10,7 +13,7 @@ std::shared_ptr<Shader> Shader::create(const std::string& vertex_path, const std
     case GraphicsAPI::Vulkan:
         return std::dynamic_pointer_cast<Shader>(std::make_shared<VulkanShader>(vertex_path, fragment_path));
     default:
-        PS_FAIL("Vulkan is the only supported api")
+        PHOS_FAIL("Vulkan is the only supported api");
     }
 }
 
@@ -19,7 +22,7 @@ std::shared_ptr<Shader> Shader::create(const std::string& path) {
     case GraphicsAPI::Vulkan:
         return std::dynamic_pointer_cast<Shader>(std::make_shared<VulkanShader>(path));
     default:
-        PS_FAIL("Vulkan is the only supported api")
+        PHOS_FAIL("Vulkan is the only supported api");
     }
 }
 

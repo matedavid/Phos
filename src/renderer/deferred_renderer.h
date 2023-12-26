@@ -1,8 +1,7 @@
 #pragma once
 
-#include "core.h"
-
 #include <memory>
+#include <vector>
 #include <glm/glm.hpp>
 
 #include "scene/scene_renderer.h"

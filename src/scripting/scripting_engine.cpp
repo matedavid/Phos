@@ -4,6 +4,7 @@
 
 #include "scripting/class_handle.h"
 #include "scripting/script_glue.h"
+#include "utility/logging.h"
 
 namespace Phos {
 
@@ -13,14 +14,14 @@ ScriptingEngine::ScriptingEngineContext ScriptingEngine::m_context;
 void ScriptingEngine::initialize() {
     // Initialize mono runtime and root domain
     m_root_domain = mono_jit_init("PhosScriptingEngine");
-    PS_ASSERT(m_root_domain, "Failed to Initialize Mono Runtime")
+    PHOS_ASSERT(m_root_domain, "Failed to Initialize Mono Runtime");
 
     // Load Core domain
     const std::filesystem::path CORE_DLL_PATH = "../ScriptGlue/bin/Debug/PhosEngine.dll"; // @TODO: Careful with path!
 
-    const bool loaded = load_mono_assembly(
+    [[maybe_unused]] const auto loaded = load_mono_assembly(
         CORE_DLL_PATH, "PhosCoreDomain", m_context.core_domain, m_context.core_assembly, m_context.core_image);
-    PS_ASSERT(loaded, "Failed to load Core Assembly")
+    PHOS_ASSERT(loaded, "Failed to load Core Assembly");
 
     m_context.entity_class_handle = ClassHandle::create("PhosEngine", "ScriptableEntity");
 
@@ -35,13 +36,13 @@ void ScriptingEngine::shutdown() {
 
 void ScriptingEngine::set_dll_path(const std::filesystem::path& dll_path) {
     if (!std::filesystem::exists(dll_path)) {
-        PS_ERROR("dll file path does not exist: '{}'", dll_path.string());
+        PHOS_LOG_ERROR("dll file path does not exist: '{}'", dll_path.string());
         return;
     }
 
     if (m_context.app_domain != nullptr) {
         const auto name = mono_domain_get_friendly_name(m_context.app_domain);
-        PS_INFO("Unloading App Domain: '{}'", name);
+        PHOS_LOG_INFO("Unloading App Domain: '{}'", name);
 
         m_context.klass_cache.clear();
         mono_domain_unload(m_context.app_domain);

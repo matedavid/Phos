@@ -1,7 +1,5 @@
 #pragma once
 
-#include "core.h"
-
 namespace Phos {
 
 enum class Key {
@@ -56,7 +54,7 @@ enum class MouseButton {
 };
 
 // TODO:
-// enum class HG_API ModifierKey {
+// enum class ModifierKey {
 //    Shift = 0x01,
 //    Control = 0x02,
 //    Alt = 0x04,

@@ -10,7 +10,7 @@ std::shared_ptr<IndexBuffer> IndexBuffer::create(const std::vector<uint32_t>& da
     case GraphicsAPI::Vulkan:
         return std::make_shared<VulkanIndexBuffer>(data);
     default:
-        PS_FAIL("Vulkan is the only supported api")
+        PHOS_FAIL("Vulkan is the only supported api");
     }
 }
 

@@ -2,6 +2,8 @@
 
 #include <nfd.h>
 
+#include "utility/logging.h"
+
 std::optional<std::filesystem::path> FileDialog::open_file_dialog(const std::string& file_filter) {
     nfdchar_t* out_path = nullptr;
     const auto result = NFD_OpenDialog(file_filter.c_str(), nullptr, &out_path);
@@ -18,7 +20,7 @@ std::optional<std::filesystem::path> FileDialog::open_file_dialog(const std::str
         return {};
     case NFD_ERROR:
         free(out_path);
-        PS_ERROR("[FileDialog] Error opening file dialog {}", NFD_GetError());
+        PHOS_LOG_ERROR("[FileDialog] Error opening file dialog {}", NFD_GetError());
         return {};
     }
 }
@@ -43,7 +45,7 @@ std::vector<std::filesystem::path> FileDialog::open_file_dialog_multiple(const s
         return {};
     case NFD_ERROR:
         NFD_PathSet_Free(&out_paths);
-        PS_ERROR("[FileDialog] Error opening file dialog {}", NFD_GetError());
+        PHOS_LOG_ERROR("[FileDialog] Error opening file dialog {}", NFD_GetError());
         return {};
     }
 }

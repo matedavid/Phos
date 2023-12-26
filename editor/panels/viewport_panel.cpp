@@ -1,6 +1,7 @@
 #include "viewport_panel.h"
 
 #include <utility>
+#include <algorithm>
 
 #include "imgui/imgui_impl.h"
 #include "editor_scene_manager.h"
@@ -8,7 +9,6 @@
 
 #include "scene/scene_renderer.h"
 #include "scene/scene.h"
-#include "scene/entity.h"
 
 #include "input/input.h"
 #include "input/events.h"
@@ -149,7 +149,7 @@ std::shared_ptr<Phos::Camera> ViewportPanel::get_camera() const {
             scene_camera = std::make_shared<Phos::PerspectiveCamera>(
                 camera_component.fov, (float)m_width / (float)m_height, camera_component.znear, camera_component.zfar);
         } else {
-            PS_FAIL("OrthographicCamera not implemented")
+            PHOS_LOG_ERROR("OrthographicCamera not implemented");
         }
 
         scene_camera->set_position(camera_transform.position);

@@ -1,6 +1,7 @@
 #include "asset_pack.h"
 
 #include <yaml-cpp/yaml.h>
+#include "utility/logging.h"
 
 namespace Phos {
 
@@ -19,9 +20,8 @@ AssetPack::AssetPack(std::string path) : m_path(std::move(path)) {
 }
 
 std::string AssetPack::path_from_id(UUID id) const {
-    PS_ASSERT(m_id_to_asset_file.find(id) != m_id_to_asset_file.end(),
-              "Asset pack does not contain asset with id {}",
-              (uint64_t)id)
+    PHOS_ASSERT(
+        m_id_to_asset_file.contains(id), "Asset pack does not contain asset with id {}", static_cast<uint64_t>(id));
 
     return m_containing_folder / m_id_to_asset_file.find(id)->second;
 }

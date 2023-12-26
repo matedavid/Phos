@@ -1,13 +1,10 @@
 #pragma once
 
-#include "vk_core.h"
-
 #include <vulkan/vulkan.h>
 
-#include <vector>
 #include <memory>
-#include <string_view>
-#include <functional>
+
+#include "utility/logging.h"
 
 #include "renderer/backend/vulkan/vulkan_physical_device.h"
 #include "renderer/backend/vulkan/vulkan_queue.h"
@@ -29,15 +26,15 @@ class VulkanDevice {
     void free_command_buffer(VkCommandBuffer command_buffer, VulkanQueue::Type type) const;
 
     [[nodiscard]] std::shared_ptr<VulkanQueue> get_graphics_queue() const {
-        PS_ASSERT(m_graphics_queue != nullptr, "Graphics queue was not requested")
+        PHOS_ASSERT(m_graphics_queue != nullptr, "Graphics queue was not requested");
         return m_graphics_queue;
     }
     [[nodiscard]] std::shared_ptr<VulkanQueue> get_presentation_queue() const {
-        PS_ASSERT(m_presentation_queue != nullptr, "Presentation queue was not requested")
+        PHOS_ASSERT(m_presentation_queue != nullptr, "Presentation queue was not requested");
         return m_presentation_queue;
     }
     [[nodiscard]] std::shared_ptr<VulkanQueue> get_compute_queue() const {
-        PS_ASSERT(m_presentation_queue != nullptr, "Compute queue was not requested")
+        PHOS_ASSERT(m_presentation_queue != nullptr, "Compute queue was not requested");
         return m_compute_queue;
     }
 

@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <ranges>
 
+#include "vk_core.h"
+
 #include "renderer/backend/vulkan/vulkan_device.h"
 #include "renderer/backend/vulkan/vulkan_context.h"
 
@@ -147,7 +149,7 @@ VkDescriptorSetLayout VulkanDescriptorLayoutCache::create_descriptor_layout(
     }
 
     VkDescriptorSetLayout layout;
-    VK_CHECK(vkCreateDescriptorSetLayout(VulkanContext::device->handle(), &info, nullptr, &layout))
+    VK_CHECK(vkCreateDescriptorSetLayout(VulkanContext::device->handle(), &info, nullptr, &layout));
 
     m_layout_cache[layout_info] = layout;
     return layout;
@@ -181,7 +183,7 @@ size_t VulkanDescriptorLayoutCache::DescriptorLayoutInfo::hash() const {
 
     for (const VkDescriptorSetLayoutBinding& b : bindings) {
         // pack the binding data into a single int64. Not fully correct but its ok
-        size_t binding_hash =
+        const size_t binding_hash =
             b.binding | static_cast<uint32_t>(b.descriptorType << 8) | b.descriptorCount << 16 | b.stageFlags << 24;
 
         // shuffle the packed binding data and xor it with the main hash

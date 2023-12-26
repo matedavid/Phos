@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include "utility/logging.h"
+
 #include "asset_tools/asset_builder.h"
 #include "asset_tools/entity_serializer.h"
 
@@ -34,13 +36,13 @@ EditorPrefabHelper::EditorPrefabHelper(const std::filesystem::path& path,
 
     m_prefab_id = m_asset_manager->get_asset_id(path);
     if (m_prefab_id == Phos::UUID(0)) {
-        PS_ERROR("[EditorPrefabHelper::ctor] Cannot open prefab, no prefab in path: {}", m_path.string());
+        PHOS_LOG_ERROR("Cannot open prefab, no prefab in path: {}", m_path.string());
         return;
     }
 
     const auto asset = m_asset_manager->load_by_id_type_force_reload<Phos::PrefabAsset>(m_prefab_id);
     if (asset == nullptr) {
-        PS_ERROR("[EditorPrefabHelper::ctor] Cannot open prefab, no prefab in path: {}", m_path.string());
+        PHOS_LOG_ERROR("Cannot open prefab, no prefab in path: {}", m_path.string());
         return;
     }
 
@@ -60,7 +62,7 @@ EditorPrefabHelper::EditorPrefabHelper(const std::filesystem::path& path,
         for (const auto& name : field_values | std::views::keys) {
             if (!handle->get_field(name).has_value()) {
                 sc.field_values.erase(name);
-                PS_INFO("[AssetWatcher::update_script] Removing not longer existing field: {}", name);
+                PHOS_LOG_INFO("Removing not longer existing field: {}", name);
             }
         }
 
@@ -68,7 +70,7 @@ EditorPrefabHelper::EditorPrefabHelper(const std::filesystem::path& path,
         for (const auto& [name, _, type] : handle->get_all_fields()) {
             if (!sc.field_values.contains(name)) {
                 sc.field_values.insert({name, Phos::ClassField::get_default_value(type)});
-                PS_INFO("[AssetWatcher::update_script] Adding new field: {}", name);
+                PHOS_LOG_INFO("Adding new field: {}", name);
             }
         }
     }
@@ -76,7 +78,7 @@ EditorPrefabHelper::EditorPrefabHelper(const std::filesystem::path& path,
 
 void EditorPrefabHelper::save() const {
     if (!std::filesystem::exists(m_path)) {
-        PS_ERROR("[EditorPrefabHelper::save] Could not save prefab because path is not set");
+        PHOS_LOG_ERROR("Could not save prefab because path is not set");
         return;
     }
 

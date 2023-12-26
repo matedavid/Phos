@@ -1,8 +1,7 @@
 #pragma once
 
-#include "core.h"
-
 #include <filesystem>
+#include <unordered_map>
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>

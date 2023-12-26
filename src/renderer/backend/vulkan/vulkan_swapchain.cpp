@@ -1,5 +1,7 @@
 #include "vulkan_swapchain.h"
 
+#include "vk_core.h"
+
 #include "core/window.h"
 #include "renderer/backend/vulkan/vulkan_instance.h"
 #include "renderer/backend/vulkan/vulkan_device.h"
@@ -36,9 +38,9 @@ void VulkanSwapchain::acquire_next_image(VkSemaphore semaphore, VkFence fence) {
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         recreate();
         VK_CHECK(vkAcquireNextImageKHR(
-            VulkanContext::device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_current_image_idx))
+            VulkanContext::device->handle(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_current_image_idx));
     } else if (result != VK_SUBOPTIMAL_KHR) {
-        VK_CHECK(result)
+        VK_CHECK(result);
     }
 }
 
@@ -92,7 +94,7 @@ void VulkanSwapchain::create() {
     create_info.clipped = VK_TRUE;
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    VK_CHECK(vkCreateSwapchainKHR(VulkanContext::device->handle(), &create_info, nullptr, &m_swapchain))
+    VK_CHECK(vkCreateSwapchainKHR(VulkanContext::device->handle(), &create_info, nullptr, &m_swapchain));
 }
 
 void VulkanSwapchain::cleanup() {
@@ -114,7 +116,7 @@ VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information
 
     // Capabilities
     VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        VulkanContext::device->physical_device().handle(), m_surface, &info.capabilities))
+        VulkanContext::device->physical_device().handle(), m_surface, &info.capabilities));
 
     // Extent
     if (info.capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
@@ -137,13 +139,13 @@ VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information
     // Surface formats
     uint32_t surface_format_count;
     VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
-        VulkanContext::device->physical_device().handle(), m_surface, &surface_format_count, nullptr))
+        VulkanContext::device->physical_device().handle(), m_surface, &surface_format_count, nullptr));
 
-    PS_ASSERT(surface_format_count > 0, "No surface formats supported")
+    PHOS_ASSERT(surface_format_count > 0, "No surface formats supported");
 
     std::vector<VkSurfaceFormatKHR> surface_formats(surface_format_count);
     VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
-        VulkanContext::device->physical_device().handle(), m_surface, &surface_format_count, surface_formats.data()))
+        VulkanContext::device->physical_device().handle(), m_surface, &surface_format_count, surface_formats.data()));
 
     // TODO: Make surface format selection configurable?
     info.surface_format = surface_formats[0];
@@ -158,13 +160,13 @@ VulkanSwapchain::SwapchainInformation VulkanSwapchain::get_swapchain_information
     // Present mode
     uint32_t present_mode_count;
     VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
-        VulkanContext::device->physical_device().handle(), m_surface, &present_mode_count, nullptr))
+        VulkanContext::device->physical_device().handle(), m_surface, &present_mode_count, nullptr));
 
-    PS_ASSERT(present_mode_count > 0, "No present modes supported")
+    PHOS_ASSERT(present_mode_count > 0, "No present modes supported");
 
     std::vector<VkPresentModeKHR> present_modes(present_mode_count);
     VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
-        VulkanContext::device->physical_device().handle(), m_surface, &present_mode_count, present_modes.data()))
+        VulkanContext::device->physical_device().handle(), m_surface, &present_mode_count, present_modes.data()));
 
     // TODO: Make present mode selection configurable?
     info.present_mode = present_modes[0];
@@ -211,7 +213,7 @@ void VulkanSwapchain::retrieve_swapchain_images() {
 }
 
 void VulkanSwapchain::create_framebuffers() {
-    PS_ASSERT(m_framebuffers.empty(), "Cannot create new framebuffers if array is not empty")
+    PHOS_ASSERT(m_framebuffers.empty(), "Cannot create new framebuffers if array is not empty");
 
     for (const auto& image : m_images) {
         const auto color_attachment = VulkanFramebuffer::Attachment{
@@ -293,7 +295,7 @@ void VulkanSwapchain::create_render_pass() {
     render_pass_create_info.dependencyCount = 1;
     render_pass_create_info.pDependencies = &subpass_dependency;
 
-    VK_CHECK(vkCreateRenderPass(VulkanContext::device->handle(), &render_pass_create_info, nullptr, &m_render_pass))
+    VK_CHECK(vkCreateRenderPass(VulkanContext::device->handle(), &render_pass_create_info, nullptr, &m_render_pass));
 }
 
 } // namespace Phos

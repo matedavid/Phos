@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core.h"
 #include <filesystem>
 
 #include "core/uuid.h"

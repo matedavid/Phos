@@ -1,12 +1,22 @@
 #pragma once
 
-#include "core.h"
+#include "utility/logging.h"
 
 namespace Phos {
 
-#define VK_CHECK(expression)          \
-    if (expression != VK_SUCCESS) {   \
-        PS_FAIL("Vulkan call failed") \
-    }
+#ifndef NDEBUG
+
+#define VK_CHECK(expression)                 \
+    do {                                     \
+        if ((expression) != VK_SUCCESS) {    \
+            PHOS_FAIL("Vulkan call failed"); \
+        }                                    \
+    } while (false)
+
+#else
+
+#define VK_CHECK(expression) expression
+
+#endif
 
 } // namespace Phos

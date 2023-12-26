@@ -10,6 +10,8 @@
 
 #include "input/input.h"
 
+#include "utility/logging.h"
+
 namespace Phos {
 
 #define ADD_INTERNAL_CALL(call) mono_add_internal_call("PhosEngine.InternalCalls::" #call, (void*)call)
@@ -79,14 +81,13 @@ void ScriptGlue::Logging_Error(MonoString* content) {
 void ScriptGlue::Entity_Instantiate(uint64_t prefab_asset_id, uint64_t* id) {
     const auto prefab_asset = s_asset_manager->load_by_id_type<PrefabAsset>(UUID(prefab_asset_id));
     if (prefab_asset == nullptr) {
-        PS_ERROR("[ScriptGlue::Entity_Instantiate] Could not create Prefab with id: {}",
-                 static_cast<uint64_t>(prefab_asset_id));
+        PHOS_LOG_ERROR("Could not create Prefab with id: {}", prefab_asset_id);
         return;
     }
 
     const auto entity = PrefabLoader::load(*prefab_asset, s_scene, s_asset_manager);
     s_entity_instantiated_callback_func(entity);
-    *id = (uint64_t)entity.uuid();
+    *id = static_cast<uint64_t>(entity.uuid());
 }
 
 void ScriptGlue::Entity_Destroy(uint64_t id) {

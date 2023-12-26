@@ -1,8 +1,7 @@
 #pragma once
 
-#include "core.h"
-
 #include "core/uuid.h"
+#include "utility/logging.h"
 
 #include "asset/asset.h"
 #include "asset/asset_loader.h"
@@ -38,9 +37,7 @@ class AssetManagerBase {
             return nullptr;
 
         const auto type_asset = std::dynamic_pointer_cast<T>(asset);
-        PS_ASSERT(type_asset != nullptr,
-                  "[AssetManagerBase::load_by_id_type] Could not convert asset to type {}",
-                  typeid(T).name())
+        PHOS_ASSERT(type_asset != nullptr, "Could not convert asset to type {}", typeid(T).name());
 
         return type_asset;
     }

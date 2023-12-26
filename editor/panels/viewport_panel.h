@@ -2,6 +2,7 @@
 
 #include "imgui_panel.h"
 
+#include <memory>
 #include <glm/glm.hpp>
 
 namespace Phos {

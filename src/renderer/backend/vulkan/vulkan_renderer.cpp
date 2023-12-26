@@ -1,5 +1,7 @@
 #include "vulkan_renderer.h"
 
+#include "vk_core.h"
+
 #include "renderer/mesh.h"
 #include "renderer/camera.h"
 #include "renderer/light.h"
@@ -29,8 +31,9 @@ VulkanRenderer::VulkanRenderer(const RendererConfig& config) {
     fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     m_in_flight_fences.resize(Renderer::config().num_frames);
-    for (uint32_t i = 0; i < Renderer::config().num_frames; ++i)
-        VK_CHECK(vkCreateFence(VulkanContext::device->handle(), &fence_create_info, nullptr, &m_in_flight_fences[i]))
+    for (uint32_t i = 0; i < Renderer::config().num_frames; ++i) {
+        VK_CHECK(vkCreateFence(VulkanContext::device->handle(), &fence_create_info, nullptr, &m_in_flight_fences[i]));
+    }
 
     // Frame descriptors
     m_allocator = std::make_shared<VulkanDescriptorAllocator>();
@@ -53,12 +56,13 @@ VulkanRenderer::VulkanRenderer(const RendererConfig& config) {
         lights_info.range = m_lights_ubos[i]->size();
         lights_info.offset = 0;
 
-        bool built = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
-                         .bind_buffer(0, camera_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                         .bind_buffer(1, lights_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-                         .build(m_frame_descriptor_sets[i]);
+        [[maybe_unused]] const bool built =
+            VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
+                .bind_buffer(0, camera_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                .bind_buffer(1, lights_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .build(m_frame_descriptor_sets[i]);
 
-        PS_ASSERT(built, "Error creating frame descriptor set")
+        PHOS_ASSERT(built, "Error creating frame descriptor set");
     }
 
     // Create screen quad buffers
@@ -101,7 +105,7 @@ void VulkanRenderer::wait_idle() {
 
 void VulkanRenderer::begin_frame(const FrameInformation& info) {
     {
-        PHOS_PROFILE_ZONE_SCOPED_NAMED("VulkanRenderer::begin_frame waitForFences");
+        // PHOS_PROFILE_ZONE_SCOPED_NAMED("VulkanRenderer::begin_frame waitForFences");
         vkWaitForFences(VulkanContext::device->handle(), 1, &m_in_flight_fences[m_current_frame], VK_TRUE, UINT64_MAX);
     }
     vkResetFences(VulkanContext::device->handle(), 1, &m_in_flight_fences[m_current_frame]);

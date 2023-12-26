@@ -3,18 +3,22 @@
 #include <memory>
 #include <GLFW/glfw3.h>
 
+#include "utility/logging.h"
+
 namespace Phos {
 
 Window::Window(std::string_view title, uint32_t width, uint32_t height) {
-    PS_ASSERT(glfwInit(), "Failed to initialize GLFW")
+    [[maybe_unused]] const auto result = glfwInit();
+    PHOS_ASSERT(result, "Failed to initialize GLFW");
     if (!glfwVulkanSupported()) {
         glfwTerminate();
-        PS_FAIL("GLFW does not support vulkan");
+        PHOS_FAIL("GLFW does not support vulkan");
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    m_window = glfwCreateWindow((int32_t)width, (int32_t)height, title.data(), nullptr, nullptr);
+    m_window =
+        glfwCreateWindow(static_cast<int32_t>(width), static_cast<int32_t>(height), title.data(), nullptr, nullptr);
 
     m_data.width = width;
     m_data.height = height;
@@ -40,7 +44,7 @@ Window::Window(std::string_view title, uint32_t width, uint32_t height) {
 
     // Mouse events
     glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos) {
-        auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+        const auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
         auto event = MouseMovedEvent(xpos, ypos);
         data->event_callback(event);
@@ -48,7 +52,7 @@ Window::Window(std::string_view title, uint32_t width, uint32_t height) {
 
     // Mouse button events
     glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int32_t button, int32_t action, int32_t mods) {
-        auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+        const auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
         const auto mouse_button = static_cast<MouseButton>(button);
 
@@ -63,7 +67,7 @@ Window::Window(std::string_view title, uint32_t width, uint32_t height) {
 
     // Scroll event
     glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset) {
-        auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+        const auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
         auto event = MouseScrolledEvent(xoffset, yoffset);
         data->event_callback(event);
@@ -71,9 +75,9 @@ Window::Window(std::string_view title, uint32_t width, uint32_t height) {
 
     // Keyboard events
     glfwSetKeyCallback(m_window, [](GLFWwindow* window, int32_t _key, int32_t scancode, int32_t action, int32_t mods) {
-        auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+        const auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
-        Key key = static_cast<Key>(_key);
+        const auto key = static_cast<Key>(_key);
         if (action == GLFW_PRESS) {
             auto event = KeyPressedEvent(key, scancode, mods);
             data->event_callback(event);

@@ -27,7 +27,7 @@ std::shared_ptr<Texture> TextureManager::get_white_texture() const {
 }
 
 std::size_t TextureManager::hash_from_string(const std::string& str) {
-    auto hasher = std::hash<std::string>();
+    constexpr auto hasher = std::hash<std::string>();
     return hasher(str);
 }
 

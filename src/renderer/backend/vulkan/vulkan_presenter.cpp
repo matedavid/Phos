@@ -1,5 +1,7 @@
 #include "vulkan_presenter.h"
 
+#include "vk_core.h"
+
 #include "core/window.h"
 #include "scene/scene_renderer.h"
 #include "managers/shader_manager.h"
@@ -43,11 +45,11 @@ VulkanPresenter::VulkanPresenter(std::shared_ptr<ISceneRenderer> renderer, std::
 
     for (uint32_t i = 0; i < num_frames; ++i) {
         VK_CHECK(vkCreateSemaphore(
-            VulkanContext::device->handle(), &semaphore_create_info, nullptr, &m_image_available_semaphores[i]))
+            VulkanContext::device->handle(), &semaphore_create_info, nullptr, &m_image_available_semaphores[i]));
         VK_CHECK(vkCreateSemaphore(
-            VulkanContext::device->handle(), &semaphore_create_info, nullptr, &m_rendering_finished_semaphores[i]))
+            VulkanContext::device->handle(), &semaphore_create_info, nullptr, &m_rendering_finished_semaphores[i]));
 
-        VK_CHECK(vkCreateFence(VulkanContext::device->handle(), &fence_create_info, nullptr, &m_wait_fences[i]))
+        VK_CHECK(vkCreateFence(VulkanContext::device->handle(), &fence_create_info, nullptr, &m_wait_fences[i]));
     }
 }
 
@@ -62,8 +64,8 @@ VulkanPresenter::~VulkanPresenter() {
 }
 
 void VulkanPresenter::present() {
-    VK_CHECK(vkWaitForFences(VulkanContext::device->handle(), 1, &m_wait_fences[m_current_frame], VK_TRUE, UINT64_MAX))
-    VK_CHECK(vkResetFences(VulkanContext::device->handle(), 1, &m_wait_fences[m_current_frame]))
+    VK_CHECK(vkWaitForFences(VulkanContext::device->handle(), 1, &m_wait_fences[m_current_frame], VK_TRUE, UINT64_MAX));
+    VK_CHECK(vkResetFences(VulkanContext::device->handle(), 1, &m_wait_fences[m_current_frame]));
 
     m_swapchain->acquire_next_image(m_image_available_semaphores[m_current_frame], VK_NULL_HANDLE);
 
@@ -105,7 +107,7 @@ void VulkanPresenter::present() {
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         m_swapchain->recreate();
     } else if (result != VK_SUCCESS) {
-        PS_FAIL("Failed to present image")
+        PHOS_FAIL("Failed to present image");
     }
 
     m_current_frame = (m_current_frame + 1) % Renderer::config().num_frames;

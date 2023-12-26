@@ -1,6 +1,7 @@
 #pragma once
 
-#include "core.h"
+#include <memory>
+#include <vector>
 
 namespace Phos {
 

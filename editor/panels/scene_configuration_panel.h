@@ -2,6 +2,8 @@
 
 #include "imgui_panel.h"
 
+#include <functional>
+
 #include "scene/scene_renderer.h"
 
 namespace Phos {

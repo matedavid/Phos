@@ -6,6 +6,8 @@
 #include "imgui/imgui_utils.h"
 #include "asset_tools/editor_asset.h"
 
+#include "utility/logging.h"
+
 #include "scene/scene.h"
 #include "asset/editor_asset_manager.h"
 
@@ -27,7 +29,7 @@ void render_label_input(const std::string& label, const std::string& group, T* v
         const std::string format_string = "%." + std::to_string(precision) + "f";
         ImGui::InputFloat(input_label.c_str(), value, 0.0f, 0.0f, format_string.c_str());
     } else {
-        PS_FAIL("Unsupported input type")
+        PHOS_FAIL("Unsupported input type");
     }
 }
 

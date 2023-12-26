@@ -1,9 +1,6 @@
 #pragma once
 
-#include "vk_core.h"
-
 #include <vulkan/vulkan.h>
-#include <memory>
 #include <vector>
 #include <optional>
 #include <unordered_map>

@@ -2,6 +2,8 @@
 
 #include <array>
 
+#include "vk_core.h"
+
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_swapchain.h"
 

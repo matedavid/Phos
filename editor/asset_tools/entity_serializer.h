@@ -1,7 +1,5 @@
 #pragma once
 
-#include "core.h"
-
 #include "asset_tools/asset_builder.h"
 
 // Forward declarations
