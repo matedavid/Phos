@@ -81,13 +81,7 @@ ImGuiVulkanImpl::ImGuiVulkanImpl(std::shared_ptr<Phos::Window> window) : m_windo
     ImGui_ImplVulkan_Init(&init_info, m_wd->RenderPass);
 
     // Upload fonts
-    Phos::VulkanCommandBuffer::submit_single_time(Phos::VulkanQueue::Type::Graphics,
-                                                  [](const std::shared_ptr<Phos::VulkanCommandBuffer>& cb) {
-                                                      ImGui_ImplVulkan_CreateFontsTexture(cb->handle());
-                                                  });
-
-    Phos::Renderer::wait_idle();
-    ImGui_ImplVulkan_DestroyFontUploadObjects();
+    ImGui_ImplVulkan_CreateFontsTexture();
 }
 
 ImGuiVulkanImpl::~ImGuiVulkanImpl() {
