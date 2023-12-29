@@ -461,7 +461,8 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
 
 void ContentBrowserPanel::import_asset() {
     // @TODO: Should move to another place, maybe near AssetImporter
-    constexpr auto asset_filter = "jpg,jpeg,png;fbx,obj,gltf;cs";
+    const std::vector<std::pair<std::string, std::string>> asset_filter = {
+        {"Image", "jpg,jpeg,png"}, {"Model", "fbx,obj,gltf"}, {"Script", "cs"}};
 
     const auto paths = FileDialog::open_file_dialog_multiple(asset_filter);
     if (paths.empty())

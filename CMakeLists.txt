@@ -170,8 +170,8 @@ endif ()
 target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/lib/libmono-2.0.so)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/include/mono-2.0/)
 
-# nativefiledialog
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog)
+# nativefiledialog-extended
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog-extended/)
 
 # Tracy
 option(TRACY_ENABLE "" ON)
@@ -216,8 +216,8 @@ target_link_libraries(PhosEditor PUBLIC ${PROJECT_NAME})
 target_link_libraries(PhosEditor PRIVATE imgui)
 target_link_libraries(PhosEditor PRIVATE imgui_impl_glfw)
 target_link_libraries(PhosEditor PRIVATE imgui_impl_vulkan)
-target_link_libraries(PhosEditor PRIVATE nativefiledialog)
 target_link_libraries(PhosEditor PRIVATE assimp)
+target_link_libraries(PhosEditor PRIVATE nfd)
 
 #
 # Application
