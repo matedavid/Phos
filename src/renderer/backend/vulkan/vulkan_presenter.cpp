@@ -6,6 +6,8 @@
 #include "scene/scene_renderer.h"
 #include "managers/shader_manager.h"
 
+#include "utility/profiling.h"
+
 #include "renderer/backend/renderer.h"
 #include "renderer/backend/vulkan/vulkan_context.h"
 #include "renderer/backend/vulkan/vulkan_device.h"
@@ -64,7 +66,13 @@ VulkanPresenter::~VulkanPresenter() {
 }
 
 void VulkanPresenter::present() {
-    VK_CHECK(vkWaitForFences(VulkanContext::device->handle(), 1, &m_wait_fences[m_current_frame], VK_TRUE, UINT64_MAX));
+    PHOS_PROFILE_ZONE_SCOPED_NAMED("VulkanPresenter::present");
+
+    {
+        PHOS_PROFILE_ZONE_SCOPED_NAMED("VulkanPresenter::present::wait_for_fences");
+        VK_CHECK(
+            vkWaitForFences(VulkanContext::device->handle(), 1, &m_wait_fences[m_current_frame], VK_TRUE, UINT64_MAX));
+    }
     VK_CHECK(vkResetFences(VulkanContext::device->handle(), 1, &m_wait_fences[m_current_frame]));
 
     m_swapchain->acquire_next_image(m_image_available_semaphores[m_current_frame], VK_NULL_HANDLE);

@@ -15,7 +15,6 @@
 #include "renderer/backend/vulkan/vulkan_render_pass.h"
 #include "renderer/backend/vulkan/vulkan_graphics_pipeline.h"
 #include "renderer/backend/vulkan/vulkan_descriptors.h"
-#include "renderer/backend/vulkan/vulkan_swapchain.h"
 #include "renderer/backend/vulkan/vulkan_framebuffer.h"
 #include "renderer/backend/vulkan/vulkan_queue.h"
 #include "renderer/backend/vulkan/vulkan_material.h"
@@ -33,7 +32,7 @@ VulkanRenderer::VulkanRenderer(const RendererConfig& config) {
     fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     m_in_flight_fences.resize(Renderer::config().num_frames);
-    for (uint32_t i = 0; i < Renderer::config().num_frames; ++i) {
+    for (std::size_t i = 0; i < Renderer::config().num_frames; ++i) {
         VK_CHECK(vkCreateFence(VulkanContext::device->handle(), &fence_create_info, nullptr, &m_in_flight_fences[i]));
     }
 
@@ -107,7 +106,7 @@ void VulkanRenderer::wait_idle() {
 
 void VulkanRenderer::begin_frame(const FrameInformation& info) {
     {
-        PHOS_PROFILE_ZONE_SCOPED_NAMED("VulkanRenderer::begin_frame waitForFences");
+        PHOS_PROFILE_ZONE_SCOPED_NAMED("VulkanRenderer::begin_frame::waitForFences");
         vkWaitForFences(VulkanContext::device->handle(), 1, &m_in_flight_fences[m_current_frame], VK_TRUE, UINT64_MAX);
     }
     vkResetFences(VulkanContext::device->handle(), 1, &m_in_flight_fences[m_current_frame]);
