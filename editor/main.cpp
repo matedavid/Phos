@@ -45,8 +45,8 @@ class EditorLayer : public Phos::Layer {
         ImGuiImpl::initialize(Phos::Application::instance()->get_window());
 
         // Open example project
-        // open_project("../projects/project1/project1.psproj");
-        open_project("../../SpaceInvaders/SpaceInvaders.psproj");
+        open_project("../projects/project1/project1.psproj");
+        // open_project("../../SpaceInvaders/SpaceInvaders.psproj");
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
@@ -304,7 +304,7 @@ class EditorLayer : public Phos::Layer {
     }
 
     void open_project_dialog() {
-        const auto path = FileDialog::open_file_dialog("psproj");
+        const auto path = FileDialog::open_file_dialog({{"Phos Project", "psproj"}});
         if (path.has_value() && std::filesystem::exists(*path)) {
             open_project(*path);
         }
