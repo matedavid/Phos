@@ -73,6 +73,17 @@ set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "disable yaml contrib")
 add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/yaml-cpp)
 
 # Mono
+find_program(PYTHON_EXECUTABLE python3 REQUIRED)
+
+if (NOT EXISTS ${CMAKE_SOURCE_DIR}/vendor/mono/build/)
+    set(MONO_BUILD_PATH ${CMAKE_SOURCE_DIR}/vendor/mono/)
+    message("Building mono to: " ${MONO_BUILD_PATH})
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/configure_mono.py ${MONO_BUILD_PATH} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/vendor/mono/ RESULT_VARIABLE ret)
+    if (ret EQUAL 1)
+        message(FATAL_ERROR "Mono configure failed")
+    endif ()
+endif ()
+
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/mono/lib/)
     message("Copying mono libraries to: " ${CMAKE_BINARY_DIR}/mono/lib/)
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/lib/ DESTINATION ${CMAKE_BINARY_DIR}/mono/lib/)
