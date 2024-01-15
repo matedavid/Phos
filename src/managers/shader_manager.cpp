@@ -5,7 +5,7 @@
 
 namespace Phos {
 
-#define SHADER_PATH(name) std::string("../shaders/build/") + name
+#define SHADER_PATH(name) std::string("../../../shaders/build/") + name
 
 ShaderManager::ShaderManager() {
     // PBR Deferred Shaders

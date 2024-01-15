@@ -27,8 +27,8 @@ ContentBrowserPanel::ContentBrowserPanel(std::string name,
                                          std::shared_ptr<Phos::EditorAssetManager> asset_manager,
                                          std::shared_ptr<AssetWatcher> asset_watcher)
       : m_name(std::move(name)), m_asset_manager(std::move(asset_manager)), m_asset_watcher(std::move(asset_watcher)) {
-    m_file_texture = Phos::Texture::create("../editor/icons/file_icon.png");
-    m_directory_texture = Phos::Texture::create("../editor/icons/directory_icon.png");
+    m_file_texture = Phos::Texture::create("../../../apps/editor/icons/file_icon.png");
+    m_directory_texture = Phos::Texture::create("../../../apps/editor/icons/directory_icon.png");
 
     m_file_icon = ImGuiImpl::add_texture(m_file_texture);
     m_directory_icon = ImGuiImpl::add_texture(m_directory_texture);

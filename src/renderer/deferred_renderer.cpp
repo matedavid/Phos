@@ -48,7 +48,7 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererCo
     [[maybe_unused]] const auto shadow_map_material_baked = m_shadow_map_material->bake();
     PHOS_ASSERT(shadow_map_material_baked, "Failed to bake Shadow Map material");
 
-    m_cube_mesh = ModelLoader::load_single_mesh("../assets/cube.fbx");
+    m_cube_mesh = ModelLoader::load_single_mesh("../../../assets/cube.fbx");
     m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
     [[maybe_unused]] const auto cube_material_baked = m_cube_material->bake();
     PHOS_ASSERT(cube_material_baked, "Failed to bake cube material");
