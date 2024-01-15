@@ -3,6 +3,8 @@
 #include <ranges>
 #include <utility>
 
+#include "utility/logging.h"
+
 #include "managers/texture_manager.h"
 
 #include "renderer/backend/renderer.h"
@@ -51,12 +53,13 @@ void VulkanMaterial::set(const std::string& name, float data) {
 
     const auto member = find_uniform_buffer_member(name);
     if (!member.has_value()) {
-        PS_ERROR("Could not find descriptor with name: {}", name);
+        PHOS_LOG_ERROR("Could not find descriptor with name: {}", name);
         return;
     }
 
     if (member->size != data_size) {
-        PS_ERROR("Size of data with name {} does not match with input data ({}, {})", name, member->size, data_size);
+        PHOS_LOG_ERROR(
+            "Size of data with name {} does not match with input data ({}, {})", name, member->size, data_size);
         return;
     }
 
@@ -71,12 +74,13 @@ void VulkanMaterial::set(const std::string& name, glm::vec3 data) {
 
     const auto member = find_uniform_buffer_member(name);
     if (!member.has_value()) {
-        PS_ERROR("Could not find descriptor with name: {}", name);
+        PHOS_LOG_ERROR("Could not find descriptor with name: {}", name);
         return;
     }
 
     if (member->size != data_size) {
-        PS_ERROR("Size of data with name {} does not match with input data ({}, {})", name, member->size, data_size);
+        PHOS_LOG_ERROR(
+            "Size of data with name {} does not match with input data ({}, {})", name, member->size, data_size);
         return;
     }
 
@@ -91,12 +95,13 @@ void VulkanMaterial::set(const std::string& name, glm::vec4 data) {
 
     const auto member = find_uniform_buffer_member(name);
     if (!member.has_value()) {
-        PS_ERROR("Could not find descriptor with name: {}", name);
+        PHOS_LOG_ERROR("Could not find descriptor with name: {}", name);
         return;
     }
 
     if (member->size != data_size) {
-        PS_ERROR("Size of data with name {} does not match with input data ({}, {})", name, member->size, data_size);
+        PHOS_LOG_ERROR(
+            "Size of data with name {} does not match with input data ({}, {})", name, member->size, data_size);
         return;
     }
 
@@ -108,7 +113,7 @@ void VulkanMaterial::set(const std::string& name, glm::vec4 data) {
 
 void VulkanMaterial::set(const std::string& name, std::shared_ptr<Texture> texture) {
     if (!m_textures.contains(name)) {
-        PS_ERROR("Material {} does not contain texture with name: {}", m_name, name);
+        PHOS_LOG_ERROR("Material {} does not contain texture with name: {}", m_name, name);
         return;
     }
 
@@ -178,7 +183,7 @@ std::optional<VulkanUniformBufferMember> VulkanMaterial::find_uniform_buffer_mem
             continue;
 
         auto member = std::ranges::find_if(info.members, [&](const VulkanUniformBufferMember& mem) {
-            const std::string complete_name = fmt::format("{}.{}", info.name, mem.name);
+            const std::string complete_name = info.name + "." + mem.name;
             return complete_name == name;
         });
 

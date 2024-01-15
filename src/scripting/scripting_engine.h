@@ -1,8 +1,7 @@
 #pragma once
 
-#include "core.h"
-
 #include <filesystem>
+#include <unordered_map>
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
@@ -23,22 +22,24 @@ class ScriptingEngine {
     static void set_dll_path(const std::filesystem::path& dll_path);
 
   private:
-    static void load_mono_assembly(const std::filesystem::path& path,
+    static bool load_mono_assembly(const std::filesystem::path& path,
                                    const std::string& name,
                                    MonoDomain*& domain,
+                                   MonoAssembly*& assembly,
                                    MonoImage*& image);
 
     static MonoDomain* m_root_domain;
 
     struct ScriptingEngineContext {
         MonoDomain* core_domain = nullptr;
+        MonoAssembly* core_assembly = nullptr;
         MonoImage* core_image = nullptr;
 
         MonoDomain* app_domain = nullptr;
+        MonoAssembly* app_assembly = nullptr;
         MonoImage* app_image = nullptr;
 
         std::shared_ptr<ClassHandle> entity_class_handle;
-
         std::unordered_map<std::string, std::shared_ptr<ClassHandle>> klass_cache;
     };
 

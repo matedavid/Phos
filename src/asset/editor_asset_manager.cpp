@@ -2,6 +2,8 @@
 
 #include <yaml-cpp/yaml.h>
 #include <queue>
+#include <algorithm>
+#include <ranges>
 
 #include "asset/asset_pack.h"
 
@@ -26,13 +28,13 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id(UUID id) {
 
     const auto path = get_path_from_id_r(id, m_path);
     if (!std::filesystem::exists(path)) {
-        PS_ERROR("[EditorAssetManager::load_by_id] No asset with id {} found in path: {}", (uint64_t)id, m_path);
+        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path);
         return nullptr;
     }
 
     auto asset = m_loader->load(path);
     if (asset == nullptr) {
-        PS_ERROR("[EditorAssetManager::load_by_id] No asset with id {} found in path: {}", (uint64_t)id, m_path);
+        PHOS_LOG_ERROR(" No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path);
         return nullptr;
     }
 
@@ -43,7 +45,7 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id(UUID id) {
 std::filesystem::path EditorAssetManager::get_asset_path(UUID id) {
     auto path = get_path_from_id_r(id, m_path);
     if (!std::filesystem::exists(path)) {
-        PS_ERROR("[EditorAssetManager::get_asset_path] No asset with id {} found in path: {}", (uint64_t)id, m_path);
+        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path);
         return {};
     }
 
@@ -53,23 +55,30 @@ std::filesystem::path EditorAssetManager::get_asset_path(UUID id) {
 std::shared_ptr<IAsset> EditorAssetManager::load_by_id_force_reload(UUID id) {
     const auto path = get_path_from_id_r(id, m_path);
     if (!std::filesystem::exists(path)) {
-        PS_ERROR("[EditorAssetManager::load_by_id_force_reload] No asset with id {} found in path: {}",
-                 (uint64_t)id,
-                 m_path);
+        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path);
         return nullptr;
     }
 
     auto asset = m_loader->load(path);
     if (asset == nullptr) {
-        PS_ERROR("[EditorAssetManager::load_by_id_force_reload] No asset with id {} found in path: {}",
-                 (uint64_t)id,
-                 m_path);
+        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path);
         return nullptr;
     }
 
     m_id_to_asset[id] = asset;
 
     return asset;
+}
+
+void EditorAssetManager::remove_asset_type_from_cache(AssetType type) {
+    auto it = m_id_to_asset.begin();
+    while (it != m_id_to_asset.end()) {
+        if (it->second->asset_type() == type) {
+            it = m_id_to_asset.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 AssetType EditorAssetManager::get_asset_type(Phos::UUID id) const {

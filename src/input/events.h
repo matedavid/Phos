@@ -1,7 +1,5 @@
 #pragma once
 
-#include "core.h"
-
 #include "input/keycodes.h"
 
 namespace Phos {
@@ -23,6 +21,8 @@ enum class EventType {
 
 class Event {
   public:
+    virtual ~Event() = default;
+
     bool handled = false;
     [[nodiscard]] virtual EventType get_type() const = 0;
 };

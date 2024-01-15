@@ -1,7 +1,8 @@
 #pragma once
 
-#include "core.h"
 #include <imgui.h>
+
+#include <memory>
 
 namespace Phos {
 

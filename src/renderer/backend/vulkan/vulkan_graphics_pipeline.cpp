@@ -2,6 +2,8 @@
 
 #include <ranges>
 
+#include "vk_core.h"
+
 #include "renderer/backend/vulkan/vulkan_shader.h"
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_context.h"
@@ -130,7 +132,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
     create_info.renderPass = target_framebuffer->get_render_pass();
     create_info.subpass = 0;
 
-    VK_CHECK(vkCreateGraphicsPipelines(VulkanContext::device->handle(), nullptr, 1, &create_info, nullptr, &m_pipeline))
+    VK_CHECK(
+        vkCreateGraphicsPipelines(VulkanContext::device->handle(), nullptr, 1, &create_info, nullptr, &m_pipeline));
 
     // Start descriptor builder
     m_allocator = std::make_shared<VulkanDescriptorAllocator>();
@@ -144,7 +147,8 @@ VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
 void VulkanGraphicsPipeline::bind(const std::shared_ptr<CommandBuffer>& command_buffer) {
     bool has_descriptor_set = !m_buffer_descriptor_info.empty() || !m_image_descriptor_info.empty();
     if (has_descriptor_set && m_set == VK_NULL_HANDLE) {
-        PS_ASSERT(bake(), "Error when baking graphics pipeline")
+        [[maybe_unused]] const auto baked = bake();
+        PHOS_ASSERT(baked, "Error when baking graphics pipeline");
     }
 
     const auto native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
@@ -195,8 +199,9 @@ void VulkanGraphicsPipeline::bind_push_constants(const std::shared_ptr<CommandBu
     const auto& native_cb = std::dynamic_pointer_cast<VulkanCommandBuffer>(command_buffer);
 
     const auto info = m_shader->push_constant_info(name);
-    PS_ASSERT(info.has_value(), "GraphicsPipeline does not contain push constant with name: {}", name)
-    PS_ASSERT(info->size == size, "Push constant with name: {} has incorrect size ({} != {})", name, size, info->size)
+    PHOS_ASSERT(info.has_value(), "GraphicsPipeline does not contain push constant with name: {}", name);
+    PHOS_ASSERT(
+        info->size == size, "Push constant with name: {} has incorrect size ({} != {})", name, size, info->size);
 
     vkCmdPushConstants(native_cb->handle(), m_shader->get_pipeline_layout(), info->stage, 0, size, data);
 }
@@ -205,9 +210,9 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
     const auto native_ubo = std::dynamic_pointer_cast<VulkanUniformBuffer>(ubo);
 
     const auto info = m_shader->descriptor_info(name);
-    PS_ASSERT(info.has_value() && info->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-              "Graphics Pipeline does not contain Uniform Buffer with name: {}",
-              name)
+    PHOS_ASSERT(info.has_value() && info->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                "Graphics Pipeline does not contain Uniform Buffer with name: {}",
+                name);
 
     VkDescriptorBufferInfo descriptor{};
     descriptor.buffer = native_ubo->handle();
@@ -222,9 +227,9 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
     const auto native_image = std::dynamic_pointer_cast<VulkanImage>(texture->get_image());
 
     const auto info = m_shader->descriptor_info(name);
-    PS_ASSERT(info.has_value() && info->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-              "Graphics Pipeline does not contain Sampler with name: {}",
-              name)
+    PHOS_ASSERT(info.has_value() && info->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                "Graphics Pipeline does not contain Sampler with name: {}",
+                name);
 
     VkDescriptorImageInfo descriptor{};
     descriptor.imageView = native_image->view();
@@ -243,9 +248,9 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
     const auto native_image = std::dynamic_pointer_cast<VulkanImage>(cubemap->get_image());
 
     const auto info = m_shader->descriptor_info(name);
-    PS_ASSERT(info.has_value() && info->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-              "Graphics Pipeline does not contain Sampler with name: {}",
-              name)
+    PHOS_ASSERT(info.has_value() && info->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                "Graphics Pipeline does not contain Sampler with name: {}",
+                name);
 
     VkDescriptorImageInfo descriptor{};
     descriptor.imageView = native_cubemap->view();

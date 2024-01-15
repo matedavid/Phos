@@ -1,6 +1,7 @@
 #pragma once
 
-#include "core.h"
+#include <memory>
+#include <unordered_map>
 
 namespace Phos {
 

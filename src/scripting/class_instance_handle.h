@@ -1,8 +1,7 @@
 #pragma once
 
-#include "core.h"
-
 #include <mono/jit/jit.h>
+#include "utility/logging.h"
 #include "scripting/class_handle.h"
 
 namespace Phos {
@@ -20,7 +19,7 @@ class ClassInstanceHandle {
     void set_field_value(const std::string& name, const T& value) {
         auto info = m_class_handle->get_field(name);
         if (!info.has_value()) {
-            PS_ERROR("Class {} does not have field: {} ", m_class_handle->class_name(), name);
+            PHOS_LOG_ERROR("Class {} does not have field: {} ", m_class_handle->class_name(), name);
             return;
         }
 

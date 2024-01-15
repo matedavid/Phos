@@ -1,7 +1,5 @@
 #pragma once
 
-#include "core.h"
-
 #include "imgui_panel.h"
 #include "content_browser_panel.h"
 
@@ -23,7 +21,7 @@ class EditorPrefabHelper;
 
 class AssetInspectorPanel : public IImGuiPanel {
   public:
-    AssetInspectorPanel(std::string name, std::shared_ptr<Phos::EditorAssetManager> asset_manager);
+    AssetInspectorPanel(std::string name, std::shared_ptr<Phos::Scene> scene, std::shared_ptr<Phos::EditorAssetManager> asset_manager);
     ~AssetInspectorPanel() override = default;
 
     void on_imgui_render() override;
@@ -34,6 +32,7 @@ class AssetInspectorPanel : public IImGuiPanel {
     std::string m_name;
     std::optional<EditorAsset> m_selected_asset;
 
+    std::shared_ptr<Phos::Scene> m_scene;
     std::shared_ptr<Phos::EditorAssetManager> m_asset_manager;
 
     bool m_locked = false;

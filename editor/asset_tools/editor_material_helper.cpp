@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include "utility/logging.h"
+
 #include "asset_tools/asset_builder.h"
 
 #include "core/uuid.h"
@@ -36,7 +38,7 @@ EditorMaterialHelper::EditorMaterialHelper(const std::filesystem::path& path) : 
     m_material_id = Phos::UUID(node["id"].as<uint64_t>());
 
     const auto shader_type = node["shader"]["type"].as<std::string>();
-    PS_ASSERT(shader_type == "builtin", "Only builtin shaders supported at the moment")
+    PHOS_ASSERT(shader_type == "builtin", "Only builtin shaders supported at the moment");
 
     const auto shader_name = node["shader"]["name"].as<std::string>();
     const auto shader = Phos::Renderer::shader_manager()->get_builtin_shader(shader_name);
@@ -73,7 +75,7 @@ EditorMaterialHelper::EditorMaterialHelper(const std::filesystem::path& path) : 
 
 void EditorMaterialHelper::save() const {
     if (!std::filesystem::exists(m_path)) {
-        PS_ERROR("Could not save material {} because path is not set", m_material_name);
+        PHOS_LOG_ERROR("Could not save material {} because path is not set", m_material_name);
         return;
     }
 

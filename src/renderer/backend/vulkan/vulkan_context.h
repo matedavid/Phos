@@ -1,8 +1,5 @@
 #pragma once
 
-#include "vk_core.h"
-
-#include <glm/glm.hpp>
 #include <memory>
 
 namespace Phos {

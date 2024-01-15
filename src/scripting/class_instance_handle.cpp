@@ -4,6 +4,8 @@
 
 #include "core/uuid.h"
 
+#include "scene/entity.h"
+
 #include "scripting/class_handle.h"
 #include "scripting/scripting_engine.h"
 
@@ -17,7 +19,7 @@ ClassInstanceHandle::ClassInstanceHandle(std::shared_ptr<ClassHandle> class_hand
       : m_class_handle(std::move(class_handle)) {
     m_instance = mono_object_new(ScriptingEngine::m_context.app_domain, m_class_handle->handle());
     if (m_instance == nullptr) {
-        PS_ERROR("Failed to create class instance for class: {}", m_class_handle->class_name());
+        PHOS_LOG_ERROR("Failed to create class instance for class: {}", m_class_handle->class_name());
     }
 
     m_constructor = *ScriptingEngine::m_context.entity_class_handle->get_method(".ctor", 1);
@@ -26,12 +28,12 @@ ClassInstanceHandle::ClassInstanceHandle(std::shared_ptr<ClassHandle> class_hand
 }
 
 void ClassInstanceHandle::invoke_constructor(const UUID& entity_id) {
-    PS_ASSERT(!m_constructed,
-              "Class's instance for class '{}' constructor has already been called",
-              m_class_handle->class_name())
+    PHOS_ASSERT(!m_constructed,
+                "Class's instance for class '{}' constructor has already been called",
+                m_class_handle->class_name());
 
     void* args[1];
-    auto id = (uint64_t)entity_id;
+    auto id = static_cast<uint64_t>(entity_id);
     args[0] = &id;
 
     mono_runtime_invoke(m_constructor, m_instance, args, nullptr);
@@ -62,10 +64,10 @@ void ClassInstanceHandle::invoke_on_update(double delta_time) {
     void ClassInstanceHandle::set_field_value_internal<T>(const ClassField& info, T* value)
 
 void check_type(const ClassField& info, ClassField::Type expected, std::string_view actual_name) {
-    PS_ASSERT(info.field_type == expected,
-              "Trying to set field '{}' value with invalid type, expected type is: '{}'",
-              info.name,
-              actual_name);
+    PHOS_ASSERT(info.field_type == expected,
+                "Trying to set field '{}' value with invalid type, expected type is: '{}'",
+                info.name,
+                actual_name);
 }
 
 SET_FIELD_VALUE_INTERNAL_FUNC(int32_t) {
@@ -95,14 +97,18 @@ SET_FIELD_VALUE_INTERNAL_FUNC(std::string) {
     mono_free(mono_string);
 }
 
-SET_FIELD_VALUE_INTERNAL_FUNC(UUID) {
-    PS_ASSERT(info.field_type == ClassField::Type::Prefab || info.field_type == ClassField::Type::Entity,
-              "Trying to set field '{}' value with invalid type, expected type is: '{}'",
-              info.name,
-              "entity or prefab");
+SET_FIELD_VALUE_INTERNAL_FUNC(PrefabRef) {
+    check_type(info, ClassField::Type::Prefab, "prefab");
 
-    auto asset_id = static_cast<uint64_t>(*value);
-    mono_field_set_value(m_instance, info.field, &asset_id);
+    auto prefab_id = static_cast<uint64_t>(value->id);
+    mono_field_set_value(m_instance, info.field, &prefab_id);
+}
+
+SET_FIELD_VALUE_INTERNAL_FUNC(EntityRef) {
+    check_type(info, ClassField::Type::Entity, "entity");
+
+    auto entity_id = static_cast<uint64_t>(value->id);
+    mono_field_set_value(m_instance, info.field, &entity_id);
 }
 
 } // namespace Phos

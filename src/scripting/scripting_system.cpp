@@ -18,6 +18,18 @@ ScriptingSystem::ScriptingSystem(std::shared_ptr<Project> project) : m_project(s
 
     ScriptingEngine::set_dll_path(m_dll_path);
     ScriptGlue::set_asset_manager(m_project->asset_manager());
+
+    ScriptGlue::set_entity_instantiated_callback([&](const Entity& entity) {
+        if (entity.has_component<ScriptComponent>() && !m_entity_script_instance.contains(entity.uuid())) {
+            m_entity_script_instance[entity.uuid()] = create_entity_instance(entity);
+        }
+    });
+
+    ScriptGlue::set_entity_destroyed_callback([&](const Entity& entity) {
+        if (entity.has_component<ScriptComponent>()) {
+            m_entity_script_instance.erase(entity.uuid());
+        }
+    });
 }
 
 void ScriptingSystem::on_update(double ts) {
@@ -68,10 +80,10 @@ std::shared_ptr<ClassInstanceHandle> ScriptingSystem::create_entity_instance(con
             instance->set_field_value(name, v);
         } else if (std::holds_alternative<PrefabRef>(value)) {
             auto v = std::get<PrefabRef>(value);
-            instance->set_field_value(name, v.id);
+            instance->set_field_value(name, v);
         } else if (std::holds_alternative<EntityRef>(value)) {
             auto v = std::get<EntityRef>(value);
-            instance->set_field_value(name, v.id);
+            instance->set_field_value(name, v);
         }
     }
 

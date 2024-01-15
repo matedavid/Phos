@@ -1,11 +1,9 @@
 #pragma once
 
-#include "vk_core.h"
-
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
+#include <array>
 
-#include "renderer/light.h"
 #include "renderer/backend/renderer.h"
 
 namespace Phos {

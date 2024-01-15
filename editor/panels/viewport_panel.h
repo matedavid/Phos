@@ -1,8 +1,8 @@
 #pragma once
 
 #include "imgui_panel.h"
-#include "editor_state_manager.h"
 
+#include <memory>
 #include <glm/glm.hpp>
 
 namespace Phos {
@@ -15,6 +15,7 @@ class Camera;
 
 class MouseMovedEvent;
 class KeyPressedEvent;
+class MouseScrolledEvent;
 
 } // namespace Phos
 
@@ -25,20 +26,18 @@ class ViewportPanel : public IImGuiPanel {
   public:
     ViewportPanel(std::string name,
                   std::shared_ptr<Phos::ISceneRenderer> renderer,
-                  std::shared_ptr<EditorSceneManager> scene_manager,
-                  std::shared_ptr<EditorStateManager> state_manager);
+                  std::shared_ptr<EditorSceneManager> scene_manager);
     ~ViewportPanel() override = default;
 
     void on_imgui_render() override;
 
     void on_mouse_moved(Phos::MouseMovedEvent& mouse_moved, uint32_t dockspace_id);
-    void on_key_pressed(Phos::KeyPressedEvent& key_pressed, uint32_t dockspace_id);
+    void on_mouse_scrolled(Phos::MouseScrolledEvent& mouse_scrolled, uint32_t dockspace_id);
 
   private:
     std::string m_name;
     std::shared_ptr<Phos::ISceneRenderer> m_renderer;
     std::shared_ptr<EditorSceneManager> m_scene_manager;
-    std::shared_ptr<EditorStateManager> m_state_manager;
 
     std::shared_ptr<Phos::PerspectiveCamera> m_editor_camera;
     glm::vec2 m_mouse_pos{};

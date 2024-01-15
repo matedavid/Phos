@@ -60,10 +60,6 @@ struct CameraComponent {
     int32_t depth = 0;
 };
 
-// @TODO: Move to different place
-
-// ===================================
-
 struct ScriptComponent {
     std::string class_name;
     UUID script{0};

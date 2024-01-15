@@ -1,6 +1,7 @@
 #pragma once
 
-#include "core.h"
+#include <memory>
+#include <vector>
 
 #include "asset/asset.h"
 
@@ -11,7 +12,7 @@ class Image;
 
 class Texture : public IAsset {
   public:
-    virtual ~Texture() = default;
+    ~Texture() override = default;
 
     [[nodiscard]] AssetType asset_type() override { return AssetType::Texture; }
 

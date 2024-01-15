@@ -1,9 +1,10 @@
 #pragma once
 
-#include "vk_core.h"
+#include <memory>
+#include <vector>
+#include <unordered_map>
 
 #include <vulkan/vulkan.h>
-#include <memory>
 
 namespace Phos {
 

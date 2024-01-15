@@ -1,5 +1,9 @@
 #include "vulkan_image.h"
 
+#include "vk_core.h"
+
+#include <cmath>
+
 #include "renderer/backend/vulkan/vulkan_device.h"
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 #include "renderer/backend/vulkan/vulkan_context.h"
@@ -44,7 +48,7 @@ VulkanImage::VulkanImage(const Description& description) : m_description(descrip
     if (description.type == Image::Type::Cubemap)
         image_create_info.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
-    VK_CHECK(vkCreateImage(VulkanContext::device->handle(), &image_create_info, nullptr, &m_image))
+    VK_CHECK(vkCreateImage(VulkanContext::device->handle(), &image_create_info, nullptr, &m_image));
 
     // Allocate image
     VkMemoryRequirements memory_requirements;
@@ -52,17 +56,17 @@ VulkanImage::VulkanImage(const Description& description) : m_description(descrip
 
     const auto memory_type_index = VulkanContext::device->physical_device().find_memory_type(
         memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    PS_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate image")
+    PHOS_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate image");
 
     VkMemoryAllocateInfo allocate_info{};
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocate_info.allocationSize = memory_requirements.size;
     allocate_info.memoryTypeIndex = memory_type_index.value();
 
-    VK_CHECK(vkAllocateMemory(VulkanContext::device->handle(), &allocate_info, nullptr, &m_memory))
+    VK_CHECK(vkAllocateMemory(VulkanContext::device->handle(), &allocate_info, nullptr, &m_memory));
 
     // Bind memory to image
-    VK_CHECK(vkBindImageMemory(VulkanContext::device->handle(), m_image, m_memory, 0))
+    VK_CHECK(vkBindImageMemory(VulkanContext::device->handle(), m_image, m_memory, 0));
 
     // Create image view
     create_image_view(description);
@@ -147,7 +151,7 @@ void VulkanImage::transition_layout(VkImageLayout old_layout, VkImageLayout new_
                 source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
                 destination_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
             } else {
-                PS_FAIL("Unsupported layout transition")
+                PHOS_LOG_ERROR("Unsupported layout transition");
             }
 
             vkCmdPipelineBarrier(
@@ -162,6 +166,8 @@ VkFormat VulkanImage::get_image_format(Format format) {
         return VK_FORMAT_B8G8R8A8_SRGB;
     case Format::R8G8B8A8_SRGB:
         return VK_FORMAT_R8G8B8A8_SRGB;
+    case Format::R8G8B8A8_UNORM:
+        return VK_FORMAT_R8G8B8A8_UNORM;
     case Format::R16G16B16A16_SFLOAT:
         return VK_FORMAT_R16G16B16A16_SFLOAT;
     case Format::R32G32B32A32_SFLOAT:
@@ -217,7 +223,7 @@ void VulkanImage::create_image_view(const Description& description) {
     view_create_info.subresourceRange.baseArrayLayer = 0;
     view_create_info.subresourceRange.layerCount = m_description.num_layers;
 
-    VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &view_create_info, nullptr, &m_image_view))
+    VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &view_create_info, nullptr, &m_image_view));
 
     // Create mip image views
     if (m_description.generate_mips) {
@@ -227,7 +233,7 @@ void VulkanImage::create_image_view(const Description& description) {
             view_create_info.subresourceRange.baseMipLevel = i;
 
             VkImageView image_view;
-            VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &view_create_info, nullptr, &image_view))
+            VK_CHECK(vkCreateImageView(VulkanContext::device->handle(), &view_create_info, nullptr, &image_view));
 
             m_mip_image_views.push_back(image_view);
         }

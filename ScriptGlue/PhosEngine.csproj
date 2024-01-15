@@ -39,11 +39,13 @@
         <Reference Include="System.Xml"/>
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="Asset\Prefab.cs" />
+        <Compile Include="Field\Entity.cs" />
+        <Compile Include="Field\Prefab.cs" />
         <Compile Include="Components\Component.cs" />
         <Compile Include="Components\TransformComponent.cs" />
-        <Compile Include="Core\Entity.cs" />
+        <Compile Include="Core\ScriptableEntity.cs" />
         <Compile Include="Core\InternalCalls.cs" />
+        <Compile Include="Core\Logging.cs" />
         <Compile Include="Core\Vector3.cs" />
         <Compile Include="Input\Input.cs" />
         <Compile Include="Input\Keycodes.cs" />

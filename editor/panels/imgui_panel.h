@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core.h"
-
 #include <imgui.h>
 #include <imgui_internal.h>
+
+#include <string>
 
 class IImGuiPanel {
   public:

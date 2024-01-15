@@ -1,11 +1,10 @@
 #pragma once
 
-#include "core.h"
-
-#include <array>
 #include <queue>
 #include <memory>
 
+#include "scene/scene_constants.h"
+#include "utility/logging.h"
 #include "scene/component_manager.h"
 
 namespace Phos {
@@ -48,13 +47,16 @@ class Registry {
 
     template <typename T>
     void register_component() {
-        if (!m_component_manager->contains_component<T>())
+        if (!m_component_manager->contains_component<T>()) {
             m_component_manager->register_component<T>();
-        else
-            PS_WARNING("Component {} is already registered", typeid(T).name());
+        } else {
+            PHOS_LOG_WARNING("Component {} is already registered", typeid(T).name());
+        }
     }
 
-    [[nodiscard]] uint32_t number_entities() const { return MAX_NUM_ENTITIES - (uint32_t)m_available_ids.size(); }
+    [[nodiscard]] uint32_t number_entities() const {
+        return MAX_NUM_ENTITIES - static_cast<uint32_t>(m_available_ids.size());
+    }
 
   private:
     std::queue<std::size_t> m_available_ids;

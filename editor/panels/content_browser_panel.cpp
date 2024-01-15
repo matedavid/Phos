@@ -163,7 +163,7 @@ void ContentBrowserPanel::on_imgui_render() {
                 if (remove_asset(asset))
                     update();
                 else
-                    PS_ERROR("[ContentBrowserPanel] Error removing path {}", asset.path.string());
+                    PHOS_LOG_ERROR("[ContentBrowserPanel] Error removing path {}", asset.path.string());
             }
 
             ImGui::EndPopup();
@@ -225,7 +225,7 @@ void ContentBrowserPanel::on_imgui_render() {
             }
 
             if (ImGui::MenuItem("Prefab")) {
-                PS_ERROR("[ContentBrowserPanel] Prefab creation unimplemented");
+                PHOS_LOG_ERROR("Prefab creation unimplemented");
             }
 
             ImGui::EndMenu();
@@ -329,8 +329,8 @@ void ContentBrowserPanel::update() {
             // Check if non .psa files have a corresponding phos asset file
             const auto psa_path = path.path().string() + ".psa";
             if (!std::filesystem::exists(psa_path)) {
-                PS_WARNING("Non .psa file does not have corresponding psa file: {}, importing automatically",
-                           path.path().string());
+                PHOS_LOG_WARNING("Non .psa file does not have corresponding psa file: {}, importing automatically",
+                                 path.path().string());
                 const auto new_path = AssetImporter::import_asset(path, m_current_path);
                 m_asset_watcher->asset_created(new_path);
 
@@ -354,7 +354,7 @@ void ContentBrowserPanel::update() {
                 .uuid = id,
             }));
         } catch (std::exception&) {
-            PS_ERROR("File '{}' does not have corresponding .psa file\n", path.path().string());
+            PHOS_LOG_ERROR("File '{}' does not have corresponding .psa file\n", path.path().string());
         }
     }
 
@@ -409,7 +409,7 @@ bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
     }
 
     case Phos::AssetType::Model: {
-        PS_ERROR("[ContentBrowserPanel::remove_asset] Unimplemented");
+        PHOS_LOG_ERROR("[ContentBrowserPanel::remove_asset] Unimplemented");
         return false;
     }
 
@@ -446,12 +446,12 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
         const auto texture_path = asset.path.parent_path() / node["path"].as<std::string>();
 
         const auto new_texture_path = texture_path.parent_path() / m_renaming_asset_tmp_name;
-        PS_INFO("{} -> {}", texture_path.string(), new_texture_path.string());
+        PHOS_LOG_INFO("{} -> {}", texture_path.string(), new_texture_path.string());
 
         std::filesystem::rename(texture_path, new_texture_path);
     }
 
-    PS_INFO("[ContentBrowserPanel] Renaming asset from {} to {}", asset.path.string(), new_path.string());
+    PHOS_LOG_INFO("[ContentBrowserPanel] Renaming asset from {} to {}", asset.path.string(), new_path.string());
     std::filesystem::rename(asset.path, new_path);
 
     m_asset_watcher->asset_renamed(asset.path, new_path);
@@ -461,7 +461,8 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
 
 void ContentBrowserPanel::import_asset() {
     // @TODO: Should move to another place, maybe near AssetImporter
-    constexpr auto asset_filter = "jpg,jpeg,png;fbx,obj,gltf;cs";
+    const std::vector<std::pair<std::string, std::string>> asset_filter = {
+        {"Image", "jpg,jpeg,png"}, {"Model", "fbx,obj,gltf"}, {"Script", "cs"}};
 
     const auto paths = FileDialog::open_file_dialog_multiple(asset_filter);
     if (paths.empty())
@@ -469,7 +470,7 @@ void ContentBrowserPanel::import_asset() {
 
     for (const auto& path : paths) {
         if (!std::filesystem::exists(path)) {
-            PS_ERROR("[ContentBrowserPanel] Importing file '{}' does not exist", path.string());
+            PHOS_LOG_ERROR("[ContentBrowserPanel] Importing file '{}' does not exist", path.string());
             continue;
         }
 
@@ -481,17 +482,17 @@ void ContentBrowserPanel::import_asset() {
 }
 
 void ContentBrowserPanel::move_into_folder(const EditorAsset& asset, const EditorAsset& move_into) {
-    PS_ASSERT(move_into.is_directory, "move_into must be directory")
+    PHOS_ASSERT(move_into.is_directory, "move_into must be directory");
 
     auto new_asset_path = move_into.path / asset.path.filename();
-    PS_INFO("{} -> {}", asset.path.string(), new_asset_path.string());
+    PHOS_LOG_INFO("{} -> {}", asset.path.string(), new_asset_path.string());
 
     if (asset.type == Phos::AssetType::Texture) {
         const auto node = YAML::LoadFile(asset.path);
         const auto texture_path = asset.path.parent_path() / node["path"].as<std::string>();
 
         const auto new_texture_path = move_into.path / texture_path.filename();
-        PS_INFO("{} -> {}", texture_path.string(), new_texture_path.string());
+        PHOS_LOG_INFO("{} -> {}", texture_path.string(), new_texture_path.string());
 
         std::filesystem::rename(texture_path, new_texture_path);
     }

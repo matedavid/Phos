@@ -1,5 +1,7 @@
 #include "entity_hierarchy_panel.h"
 
+#include <algorithm>
+
 #include "panels/content_browser_panel.h"
 
 #include "editor_scene_manager.h"
@@ -59,11 +61,21 @@ bool EntityHierarchyPanel::render_entity_r(const Phos::Entity& entity) {
 
     const bool opened = ImGui::TreeNodeEx((void*)static_cast<uint64_t>(entity.uuid()), flags, "%s", name.c_str());
     bool hovered = ImGui::IsItemHovered();
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+
+    // Drag and drop
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+        ImGui::SetDragDropPayload(
+            "ENTITY_HIERARCHY_ITEM", &entity.get_component<Phos::UUIDComponent>().uuid, sizeof(Phos::UUID));
+        ImGui::EndDragDropSource();
+    }
+
+    // Left click
+    if (hovered && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
         select_entity(entity);
     }
 
     bool delete_entity = false;
+    // Right click
     if (ImGui::BeginPopupContextItem()) {
         select_entity(entity);
 

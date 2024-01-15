@@ -5,7 +5,6 @@
 #include "asset/asset_manager.h"
 #include "asset/prefab_asset.h"
 
-#include "scene/scene.h"
 #include "scene/entity_deserializer.h"
 
 namespace Phos {

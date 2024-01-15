@@ -114,6 +114,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/glfw)
 target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
 
 # glm
+target_compile_definitions(${PROJECT_NAME} PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE) # Only for Vulkan
+target_compile_definitions(${PROJECT_NAME} PUBLIC GLM_FORCE_RADIANS)
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/glm)
 target_link_libraries(${PROJECT_NAME} PUBLIC glm::glm)
 
@@ -167,8 +170,15 @@ endif ()
 target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/lib/libmono-2.0.so)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/include/mono-2.0/)
 
-# nativefiledialog
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog)
+# nativefiledialog-extended
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog-extended/)
+
+# Tracy
+option(TRACY_ENABLE "" ON)
+option(TRACY_ON_DEMAND "" ON)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/tracy)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC Tracy::TracyClient)
 
 #
 # Editor
@@ -206,8 +216,8 @@ target_link_libraries(PhosEditor PUBLIC ${PROJECT_NAME})
 target_link_libraries(PhosEditor PRIVATE imgui)
 target_link_libraries(PhosEditor PRIVATE imgui_impl_glfw)
 target_link_libraries(PhosEditor PRIVATE imgui_impl_vulkan)
-target_link_libraries(PhosEditor PRIVATE nativefiledialog)
 target_link_libraries(PhosEditor PRIVATE assimp)
+target_link_libraries(PhosEditor PRIVATE nfd)
 
 #
 # Application

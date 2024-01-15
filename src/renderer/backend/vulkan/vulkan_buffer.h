@@ -1,12 +1,6 @@
 #pragma once
 
-#include "vk_core.h"
-
 #include <vulkan/vulkan.h>
-#include <memory>
-#include <optional>
-#include <span>
-#include <vector>
 
 namespace Phos {
 

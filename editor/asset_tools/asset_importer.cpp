@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include "utility/logging.h"
+
 #include "asset/asset.h"
 #include "asset_tools/assimp_importer.h"
 #include "asset_tools/asset_builder.h"
@@ -20,7 +22,7 @@ std::filesystem::path AssetImporter::import_asset(const std::filesystem::path& a
     if (IS_SCRIPT(extension))
         return import_script(asset_path, containing_folder);
 
-    PS_ERROR("[AssetImporter] Unsupported file extension: {}", asset_path.extension().string());
+    PHOS_LOG_ERROR("Unsupported file extension: {}", asset_path.extension().string());
     return {};
 }
 

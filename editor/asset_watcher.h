@@ -1,9 +1,6 @@
 #pragma once
 
-#include "core.h"
-
 #include "asset/asset.h"
-
 #include <filesystem>
 
 namespace Phos {
@@ -14,6 +11,7 @@ class Project;
 class EditorAssetManager;
 class Entity;
 class ISceneRenderer;
+class ScriptingSystem;
 
 class Cubemap;
 class Material;
@@ -25,7 +23,8 @@ class AssetWatcher {
   public:
     AssetWatcher(std::shared_ptr<Phos::Scene> scene,
                  std::shared_ptr<Phos::Project> project,
-                 std::shared_ptr<Phos::ISceneRenderer> renderer);
+                 std::shared_ptr<Phos::ISceneRenderer> renderer,
+                 std::shared_ptr<Phos::ScriptingSystem> scripting);
     ~AssetWatcher() = default;
 
     void check_asset_modified();
@@ -37,8 +36,9 @@ class AssetWatcher {
   private:
     std::shared_ptr<Phos::Scene> m_scene;
     std::shared_ptr<Phos::Project> m_project;
-    std::shared_ptr<Phos::ISceneRenderer> m_renderer;
     std::shared_ptr<Phos::EditorAssetManager> m_asset_manager;
+    std::shared_ptr<Phos::ISceneRenderer> m_renderer;
+    std::shared_ptr<Phos::ScriptingSystem> m_scripting;
 
     std::filesystem::path m_dll_path;
     std::unordered_map<std::filesystem::path, uint64_t> m_watching;
@@ -53,5 +53,7 @@ class AssetWatcher {
     void update_cubemap(const std::shared_ptr<Phos::Cubemap>& cubemap) const;
     void update_material(const std::shared_ptr<Phos::Material>& mat) const;
     void update_mesh(const std::shared_ptr<Phos::Mesh>& mesh) const;
-    void update_script() const;
+    void update_script();
+
+    bool m_script_update_pending = false;
 };

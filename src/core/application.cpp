@@ -2,6 +2,8 @@
 
 #include <ranges>
 
+#include "utility/logging.h"
+#include "utility/profiling.h"
 #include "core/window.h"
 #include "renderer/backend/renderer.h"
 #include "scripting/scripting_engine.h"
@@ -11,6 +13,8 @@ namespace Phos {
 Application* Application::m_instance = nullptr;
 
 Application::Application(std::string_view title, uint32_t width, uint32_t height) {
+    PHOS_LOG_SETUP;
+
     m_window = std::make_shared<Window>(title, width, height);
     m_window->add_event_callback_func([&](Event& event) { on_event(event); });
 
@@ -47,6 +51,7 @@ void Application::run() {
         }
 
         m_window->update();
+        PHOS_PROFILE_FRAMEMARK;
     }
 }
 
@@ -56,6 +61,7 @@ void Application::on_event(Event& event) {
             break;
 
         switch (event.get_type()) {
+        default:
         case EventType::WindowResize: {
             auto window_resized = dynamic_cast<WindowResizeEvent&>(event);
             layer->on_window_resized(window_resized);
@@ -96,8 +102,6 @@ void Application::on_event(Event& event) {
             layer->on_key_repeat(key_repeat);
             break;
         }
-        default:
-            PS_FAIL("Invalid event")
         }
     }
 }

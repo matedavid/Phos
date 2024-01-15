@@ -1,8 +1,7 @@
 #pragma once
 
-#include "core.h"
-
 #include <memory>
+#include <vector>
 #include <glm/glm.hpp>
 
 #include "scene/scene_renderer.h"
@@ -107,7 +106,13 @@ class DeferredRenderer : public ISceneRenderer {
     void init_skybox_pipeline(const EnvironmentConfig& config);
 
     [[nodiscard]] std::vector<std::shared_ptr<Light>> get_light_info() const;
-    [[nodiscard]] std::vector<Entity> get_renderable_entities() const;
+
+    struct RenderableEntity {
+        glm::mat4 model;
+        std::shared_ptr<Mesh> mesh;
+        std::shared_ptr<Material> material;
+    };
+    [[nodiscard]] std::vector<RenderableEntity> get_renderable_entities() const;
 };
 
 } // namespace Phos

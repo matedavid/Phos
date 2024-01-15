@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include "utility/logging.h"
 #include "scene/entity.h"
 
 namespace Phos {
@@ -112,7 +113,8 @@ void Scene::destroy_entity_r(Phos::Entity entity) {
 }
 
 Entity Scene::get_entity_with_uuid(const UUID& uuid) {
-    PS_ASSERT(m_uuid_to_entity.contains(uuid), "Scene does not contain entity with uuid: {}", (uint64_t)uuid)
+    PHOS_ASSERT(
+        m_uuid_to_entity.contains(uuid), "Scene does not contain entity with uuid: {}", static_cast<uint64_t>(uuid));
 
     return *m_uuid_to_entity[uuid];
 }

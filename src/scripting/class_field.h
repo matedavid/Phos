@@ -1,7 +1,6 @@
 #pragma once
 
-#include "core.h"
-
+#include <string>
 #include <variant>
 #include <mono/jit/jit.h>
 #include <glm/glm.hpp>

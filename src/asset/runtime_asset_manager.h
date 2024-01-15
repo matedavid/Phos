@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_map>
+
 #include "asset_manager.h"
 
 namespace Phos {

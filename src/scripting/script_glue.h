@@ -1,6 +1,7 @@
 #pragma once
 
-#include "core.h"
+#include <memory>
+#include <functional>
 
 #include <glm/glm.hpp>
 #include "scene/components.h"
@@ -10,6 +11,7 @@ namespace Phos {
 // Forward declarations
 class Scene;
 class AssetManagerBase;
+class Entity;
 
 class ScriptGlue {
   public:
@@ -19,7 +21,18 @@ class ScriptGlue {
     static void set_scene(std::shared_ptr<Scene> scene);
     static void set_asset_manager(std::shared_ptr<AssetManagerBase> asset_manager);
 
+    static void set_entity_instantiated_callback(const std::function<void(const Entity&)>& func);
+    static void set_entity_destroyed_callback(const std::function<void(const Entity&)>& func);
+
   private:
+    // region Logging
+
+    static void Logging_Info(MonoString* content);
+    static void Logging_Warning(MonoString* content);
+    static void Logging_Error(MonoString* content);
+
+    // endregion
+
     // region Entity
 
     static void Entity_Instantiate(uint64_t prefab_asset_id, uint64_t* id);

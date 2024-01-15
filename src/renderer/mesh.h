@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core.h"
-
+#include <memory>
+#include <vector>
 #include <glm/glm.hpp>
 
 #include "asset/asset.h"
@@ -22,7 +22,7 @@ class Mesh : public IAsset {
     };
 
     Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
-    virtual ~Mesh() = default;
+    ~Mesh() override = default;
 
     [[nodiscard]] AssetType asset_type() override { return AssetType::Mesh; }
 

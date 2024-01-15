@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core.h"
+#include "utility/logging.h"
 
 namespace Phos {
 
@@ -18,7 +18,7 @@ class ComponentArray : public IComponentArray {
 
     void insert_data(std::size_t entity_id, T component) {
         if (m_entity_to_idx.contains(entity_id)) {
-            PS_ERROR("Component added to entity {} more than once", entity_id);
+            PHOS_LOG_ERROR("Component added to entity {} more than once", entity_id);
             return;
         }
 
@@ -32,7 +32,7 @@ class ComponentArray : public IComponentArray {
 
     void remove_data(std::size_t entity_id) {
         if (!m_entity_to_idx.contains(entity_id)) {
-            PS_ERROR("Entity {} does not have component {}", entity_id, m_name);
+            PHOS_LOG_ERROR("Entity {} does not have component {}", entity_id, m_name);
             return;
         }
 
@@ -40,7 +40,7 @@ class ComponentArray : public IComponentArray {
         const auto idx_last_element = m_size - 1;
         m_components[idx_removed] = m_components[idx_last_element];
 
-        std::size_t last_element_entity_id = m_idx_to_entity[idx_last_element];
+        const auto last_element_entity_id = m_idx_to_entity[idx_last_element];
         m_entity_to_idx[last_element_entity_id] = idx_removed;
         m_idx_to_entity[idx_removed] = last_element_entity_id;
 
@@ -51,8 +51,8 @@ class ComponentArray : public IComponentArray {
     }
 
     [[nodiscard]] T& get_data(std::size_t entity_id) {
-        auto it = m_entity_to_idx.find(entity_id);
-        PS_ASSERT(it != m_entity_to_idx.end(), "Entity {} does not have the component {}", entity_id, m_name)
+        const auto it = m_entity_to_idx.find(entity_id);
+        PHOS_ASSERT(it != m_entity_to_idx.end(), "Entity {} does not have the component {}", entity_id, m_name);
 
         return m_components[it->second];
     }

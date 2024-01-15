@@ -23,8 +23,8 @@ class Camera {
     [[nodiscard]] const glm::mat4& projection_matrix() const { return m_projection; }
 
   protected:
-    glm::mat4 m_projection;
-    glm::mat4 m_view;
+    glm::mat4 m_projection{};
+    glm::mat4 m_view{};
 
     glm::vec3 m_position{0.0f, 0.0f, 0.0f};
     glm::vec2 m_rotation{0.0f, 0.0f};
@@ -39,6 +39,9 @@ class PerspectiveCamera : public Camera {
     ~PerspectiveCamera() override = default;
 
     void set_aspect_ratio(float aspect);
+    void set_fov(float fov);
+
+    [[nodiscard]] float fov() const { return m_fov; }
 
   private:
     float m_fov, m_aspect, m_znear, m_zfar;

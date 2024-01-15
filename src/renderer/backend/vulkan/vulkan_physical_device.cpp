@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <string>
 
+#include "vk_core.h"
+#include "utility/logging.h"
+
 namespace Phos {
 
 VulkanPhysicalDevice::VulkanPhysicalDevice(VkPhysicalDevice physical_device) : m_physical_device(physical_device) {}
@@ -21,8 +24,8 @@ bool VulkanPhysicalDevice::is_suitable(const Requirements& requirements) const {
     }
 
     // Contains queue families
-    PS_ASSERT(!requirements.presentation || requirements.surface != VK_NULL_HANDLE,
-              "Surface required to test presentation queue support")
+    PHOS_ASSERT(!requirements.presentation || requirements.surface != VK_NULL_HANDLE,
+                "Surface required to test presentation queue support");
 
     bool graphics = !requirements.graphics;
     bool compute = !requirements.compute;
@@ -48,8 +51,8 @@ bool VulkanPhysicalDevice::is_suitable(const Requirements& requirements) const {
 
         // Supports presentation queue
         VkBool32 presentation_supported;
-        VK_CHECK(
-            vkGetPhysicalDeviceSurfaceSupportKHR(m_physical_device, idx, requirements.surface, &presentation_supported))
+        VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR(
+            m_physical_device, idx, requirements.surface, &presentation_supported));
 
         if (presentation_supported)
             presentation = true;
@@ -78,7 +81,7 @@ VulkanPhysicalDevice::QueueFamilies VulkanPhysicalDevice::get_queue_families(con
         if (requirements.presentation) {
             VkBool32 presentation_supported;
             VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR(
-                m_physical_device, idx, requirements.surface, &presentation_supported))
+                m_physical_device, idx, requirements.surface, &presentation_supported));
 
             if (presentation_supported)
                 queue_families.presentation = idx;
@@ -103,11 +106,11 @@ std::optional<uint32_t> VulkanPhysicalDevice::find_memory_type(uint32_t filter,
 
 std::vector<VkExtensionProperties> VulkanPhysicalDevice::get_extension_properties() const {
     uint32_t extension_properties_count;
-    VK_CHECK(vkEnumerateDeviceExtensionProperties(m_physical_device, nullptr, &extension_properties_count, nullptr))
+    VK_CHECK(vkEnumerateDeviceExtensionProperties(m_physical_device, nullptr, &extension_properties_count, nullptr));
 
     std::vector<VkExtensionProperties> extension_properties(extension_properties_count);
     VK_CHECK(vkEnumerateDeviceExtensionProperties(
-        m_physical_device, nullptr, &extension_properties_count, extension_properties.data()))
+        m_physical_device, nullptr, &extension_properties_count, extension_properties.data()));
 
     return extension_properties;
 }

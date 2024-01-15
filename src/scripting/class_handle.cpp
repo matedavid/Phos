@@ -1,5 +1,6 @@
 #include "class_handle.h"
 
+#include "utility/logging.h"
 #include "scripting/scripting_engine.h"
 
 namespace Phos {
@@ -20,12 +21,14 @@ std::shared_ptr<ClassHandle> ClassHandle::create(const std::string& namespace_, 
 
     auto* klass = mono_class_from_name(image, namespace_.data(), class_name.data());
     if (klass == nullptr) {
-        PS_ERROR("[ClassHandle::create] No class found with name: '{}'", full_name);
+        PHOS_LOG_ERROR("No class found with name: '{}'", full_name);
         return nullptr;
     }
 
     const auto handle = std::shared_ptr<ClassHandle>(new ClassHandle(klass, full_name));
-    ScriptingEngine::m_context.klass_cache[full_name] = handle;
+    // @TODO: Maybe not the best idea??
+    if (namespace_ != "PhosEngine")
+        ScriptingEngine::m_context.klass_cache[full_name] = handle;
 
     return handle;
 }
@@ -60,6 +63,7 @@ ClassHandle::ClassHandle(MonoClass* klass, std::string name) : m_klass(klass), m
 
         ClassField::Type internal_type;
         switch (mono_type_get_type(field_type)) {
+        default:
         case MONO_TYPE_I2:
         case MONO_TYPE_I4:
         case MONO_TYPE_I8:
@@ -98,7 +102,7 @@ ClassHandle::ClassHandle(MonoClass* klass, std::string name) : m_klass(klass), m
 }
 
 ClassHandle::~ClassHandle() {
-    // @TODO: Really don't like this, but doing because, when unloading the current image, then we cant free
+    // @TODO: Really don't like this, but doing because, when unloading the current mono image, then we cant free
     // objects from that image. For example, when updating a script.
 
     /*

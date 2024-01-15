@@ -1,9 +1,7 @@
 #pragma once
 
-#include "core.h"
-
-#include <glm/glm.hpp>
 #include <filesystem>
+#include <vector>
 
 #include "asset/asset.h"
 #include "asset/model_asset.h"

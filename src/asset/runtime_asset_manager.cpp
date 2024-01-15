@@ -1,5 +1,6 @@
 #include "runtime_asset_manager.h"
 
+#include "utility/logging.h"
 #include "asset/asset_pack.h"
 
 namespace Phos {
@@ -23,13 +24,13 @@ std::shared_ptr<IAsset> RuntimeAssetManager::load_by_id(UUID id) {
 
     const auto path = m_asset_pack->path_from_id(id);
     if (!std::filesystem::exists(path)) {
-        PS_ERROR("[RuntimeAssetManager::load_by_id] No asset with id {} found", (uint64_t)id);
+        PHOS_LOG_ERROR("No asset with id {} found", static_cast<uint64_t>(id));
         return nullptr;
     }
 
     auto asset = m_loader->load(path);
     if (asset == nullptr) {
-        PS_ERROR("[RuntimeAssetManager::load_by_id] No asset with id {} found", (uint64_t)id);
+        PHOS_LOG_ERROR("No asset with id {} found", static_cast<uint64_t>(id));
         return nullptr;
     }
 

@@ -1,13 +1,14 @@
 #pragma once
 
-#include "core.h"
+#include <cstdint>
+#include <functional>
 
 namespace Phos {
 
 class UUID {
   public:
     explicit UUID();
-    explicit UUID(uint64_t id);
+    explicit UUID(uint64_t uuid);
     ~UUID() = default;
 
     UUID(const UUID&) = default;
@@ -26,7 +27,7 @@ namespace std {
 
 template <>
 struct hash<Phos::UUID> {
-    std::size_t operator()(const Phos::UUID& uuid) const { return (uint64_t)uuid; }
+    std::size_t operator()(const Phos::UUID& uuid) const { return static_cast<uint64_t>(uuid); }
 };
 
 } // namespace std

@@ -1,11 +1,9 @@
 #pragma once
 
-#include "vk_core.h"
-
 #include <vulkan/vulkan.h>
+
 #include <vector>
 #include <memory>
-#include <optional>
 
 #include "renderer/backend/buffers.h"
 
@@ -38,14 +36,14 @@ class VulkanVertexBuffer : public VertexBuffer {
 
         staging_buffer.copy_to_buffer(*m_buffer);
 
-        m_size = (uint32_t)data.size();
+        m_size = static_cast<uint32_t>(data.size());
     }
 
     ~VulkanVertexBuffer() override = default;
 
     void bind(const std::shared_ptr<VulkanCommandBuffer>& command_buffer) const override {
-        std::array<VkBuffer, 1> vertex_buffers = {m_buffer->handle()};
-        VkDeviceSize offsets[] = {0};
+        const std::array<VkBuffer, 1> vertex_buffers = {m_buffer->handle()};
+        const VkDeviceSize offsets[] = {0};
 
         vkCmdBindVertexBuffers(command_buffer->handle(), 0, vertex_buffers.size(), vertex_buffers.data(), offsets);
     }

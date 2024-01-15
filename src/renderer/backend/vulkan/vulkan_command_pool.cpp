@@ -1,5 +1,7 @@
 #include "vulkan_command_pool.h"
 
+#include "vk_core.h"
+
 #include "renderer/backend/vulkan/vulkan_command_buffer.h"
 
 namespace Phos {
@@ -11,7 +13,7 @@ VulkanCommandPool::VulkanCommandPool(VkDevice raw_device, uint32_t queue_family)
     create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     create_info.queueFamilyIndex = queue_family;
 
-    VK_CHECK(vkCreateCommandPool(m_raw_device, &create_info, nullptr, &m_command_pool))
+    VK_CHECK(vkCreateCommandPool(m_raw_device, &create_info, nullptr, &m_command_pool));
 }
 
 VulkanCommandPool::~VulkanCommandPool() {
@@ -26,7 +28,7 @@ std::vector<VkCommandBuffer> VulkanCommandPool::allocate(uint32_t count) const {
     allocate_info.commandBufferCount = count;
 
     std::vector<VkCommandBuffer> command_buffers(count);
-    VK_CHECK(vkAllocateCommandBuffers(m_raw_device, &allocate_info, command_buffers.data()))
+    VK_CHECK(vkAllocateCommandBuffers(m_raw_device, &allocate_info, command_buffers.data()));
 
     return command_buffers;
 }

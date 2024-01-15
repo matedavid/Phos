@@ -1,10 +1,13 @@
 #include "vulkan_framebuffer.h"
 
+#include "vk_core.h"
+
 #include <ranges>
 #include <algorithm>
 
+#include "utility/logging.h"
+
 #include "renderer/backend/vulkan/vulkan_device.h"
-#include "renderer/backend/vulkan/vulkan_render_pass.h"
 #include "renderer/backend/vulkan/vulkan_context.h"
 #include "renderer/backend/vulkan/vulkan_image.h"
 
@@ -72,7 +75,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description) : m_descrip
     std::ranges::copy_if(
         attachment_references, std::back_inserter(depth_stencil_attachments), is_depth_stencil_attachment);
 
-    PS_ASSERT(depth_stencil_attachments.size() <= 1, "Can only have 1 depth / stencil attachment")
+    PHOS_ASSERT(depth_stencil_attachments.size() <= 1, "Can only have 1 depth / stencil attachment");
 
     // At the moment, render passes will only have one subpass
     VkSubpassDescription subpass_description{};
@@ -114,7 +117,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description) : m_descrip
     render_pass_create_info.dependencyCount = 1;
     render_pass_create_info.pDependencies = &subpass_dependency;
 
-    VK_CHECK(vkCreateRenderPass(VulkanContext::device->handle(), &render_pass_create_info, nullptr, &m_render_pass))
+    VK_CHECK(vkCreateRenderPass(VulkanContext::device->handle(), &render_pass_create_info, nullptr, &m_render_pass));
 
     // Create framebuffer
     m_width = description.attachments[0].image->width();
@@ -127,8 +130,8 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description) : m_descrip
 
         framebuffer_attachments.push_back(img->view());
 
-        PS_ASSERT(m_width == attachment.image->width() && m_height == attachment.image->height(),
-                  "All attachments to framebuffer must have the same width and height")
+        PHOS_ASSERT(m_width == attachment.image->width() && m_height == attachment.image->height(),
+                    "All attachments to framebuffer must have the same width and height");
     }
 
     VkFramebufferCreateInfo framebuffer_create_info{};
@@ -140,7 +143,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description) : m_descrip
     framebuffer_create_info.height = m_height;
     framebuffer_create_info.layers = 1;
 
-    VK_CHECK(vkCreateFramebuffer(VulkanContext::device->handle(), &framebuffer_create_info, nullptr, &m_framebuffer))
+    VK_CHECK(vkCreateFramebuffer(VulkanContext::device->handle(), &framebuffer_create_info, nullptr, &m_framebuffer));
 }
 
 VulkanFramebuffer::VulkanFramebuffer(const Description& description, VkRenderPass render_pass)
@@ -156,8 +159,8 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description, VkRenderPas
 
         framebuffer_attachments.push_back(img->view());
 
-        PS_ASSERT(m_width == attachment.image->width() && m_height == attachment.image->height(),
-                  "All attachments to framebuffer must have the same width and height")
+        PHOS_ASSERT(m_width == attachment.image->width() && m_height == attachment.image->height(),
+                    "All attachments to framebuffer must have the same width and height");
     }
 
     VkFramebufferCreateInfo create_info{};
@@ -169,7 +172,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Description& description, VkRenderPas
     create_info.height = m_height;
     create_info.layers = 1;
 
-    VK_CHECK(vkCreateFramebuffer(VulkanContext::device->handle(), &create_info, nullptr, &m_framebuffer))
+    VK_CHECK(vkCreateFramebuffer(VulkanContext::device->handle(), &create_info, nullptr, &m_framebuffer));
 
     m_created_render_pass = false;
 }

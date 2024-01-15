@@ -1,9 +1,8 @@
 #pragma once
 
-#include "core.h"
-
 #include <unordered_map>
 
+#include "utility/logging.h"
 #include "scene/component_array.h"
 
 namespace Phos {
@@ -15,7 +14,7 @@ class ComponentManager {
         const std::string type_name = typeid(T).name();
 
         if (m_component_arrays.contains(type_name)) {
-            PS_ERROR("Component {} is already registered", type_name);
+            PHOS_LOG_ERROR("Component {} is already registered", type_name);
             return;
         }
 
@@ -66,7 +65,7 @@ class ComponentManager {
     std::shared_ptr<ComponentArray<T>> get_component_array() const {
         const std::string type_name = typeid(T).name();
 
-        PS_ASSERT(m_component_arrays.contains(type_name), "Component {} is not registered", type_name)
+        PHOS_ASSERT(m_component_arrays.contains(type_name), "Component {} is not registered", type_name);
         return std::static_pointer_cast<ComponentArray<T>>(m_component_arrays.find(type_name)->second);
     }
 };

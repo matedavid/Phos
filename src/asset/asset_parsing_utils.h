@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core.h"
 #include "core/uuid.h"
 
 #include <yaml-cpp/yaml.h>

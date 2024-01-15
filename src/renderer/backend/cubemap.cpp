@@ -1,5 +1,7 @@
 #include "cubemap.h"
 
+#include "utility/logging.h"
+
 #include "renderer/backend/renderer.h"
 
 #include "renderer/backend/vulkan/vulkan_cubemap.h"
@@ -12,7 +14,7 @@ std::shared_ptr<Cubemap> Cubemap::create(const Faces& faces) {
     case GraphicsAPI::Vulkan:
         return std::dynamic_pointer_cast<Cubemap>(std::make_shared<VulkanCubemap>(faces));
     default:
-        PS_FAIL("Vulkan is the only supported api")
+        PHOS_FAIL("Vulkan is the only supported api");
     }
 }
 
@@ -21,7 +23,7 @@ std::shared_ptr<Cubemap> Cubemap::create(const Faces& faces, const std::string& 
     case GraphicsAPI::Vulkan:
         return std::dynamic_pointer_cast<Cubemap>(std::make_shared<VulkanCubemap>(faces, directory));
     default:
-        PS_FAIL("Vulkan is the only supported api")
+        PHOS_FAIL("Vulkan is the only supported api");
     }
 }
 
@@ -30,7 +32,7 @@ std::shared_ptr<Cubemap> Cubemap::create(const std::string& equirectangular_path
     case GraphicsAPI::Vulkan:
         return std::dynamic_pointer_cast<Cubemap>(std::make_shared<VulkanCubemap>(equirectangular_path));
     default:
-        PS_FAIL("Vulkan is the only supported api")
+        PHOS_FAIL("Vulkan is the only supported api");
     }
 }
 

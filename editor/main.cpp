@@ -45,15 +45,15 @@ class EditorLayer : public Phos::Layer {
         ImGuiImpl::initialize(Phos::Application::instance()->get_window());
 
         // Open example project
-        // open_project("../projects/project1/project1.psproj");
-        open_project("../../SpaceInvaders/SpaceInvaders.psproj");
+        open_project("../projects/project1/project1.psproj");
+        // open_project("../../SpaceInvaders/SpaceInvaders.psproj");
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
 
     void on_update([[maybe_unused]] double ts) override {
         // Logic
-        if (m_state_manager->get_state() == EditorState::Playing)
+        if (EditorStateManager::get_state() == EditorState::Playing)
             m_scripting_system->on_update(ts);
 
         // Rendering
@@ -148,7 +148,9 @@ class EditorLayer : public Phos::Layer {
         auto selected_entity = m_entity_panel->get_selected_entity();
         if (selected_entity.has_value()) {
             EntityComponentsRenderer::display(
-                *selected_entity, std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager()));
+                *selected_entity,
+                m_project->scene(),
+                std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager()));
         }
 
         ImGui::End();
@@ -187,7 +189,7 @@ class EditorLayer : public Phos::Layer {
                          ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize);
 
         std::string control_button_text;
-        switch (m_state_manager->get_state()) {
+        switch (EditorStateManager::get_state()) {
         case EditorState::Editing:
             control_button_text = "Play";
             break;
@@ -199,12 +201,12 @@ class EditorLayer : public Phos::Layer {
         const auto window_width = ImGui::GetWindowSize().x;
         const auto text_width = ImGui::CalcTextSize(control_button_text.c_str()).x;
 
-        auto change_state_to = m_state_manager->get_state();
+        auto change_state_to = EditorStateManager::get_state();
         ImGui::SetCursorPosX((window_width - text_width) * 0.5f);
         if (ImGui::Button(control_button_text.c_str())) {
-            if (m_state_manager->get_state() == EditorState::Editing)
+            if (EditorStateManager::get_state() == EditorState::Editing)
                 change_state_to = EditorState::Playing;
-            else if (m_state_manager->get_state() == EditorState::Playing)
+            else if (EditorStateManager::get_state() == EditorState::Playing)
                 change_state_to = EditorState::Editing;
         }
 
@@ -228,8 +230,8 @@ class EditorLayer : public Phos::Layer {
         }
 
         // Change state if requested
-        if (change_state_to != m_state_manager->get_state())
-            m_state_manager->set_state(change_state_to);
+        if (change_state_to != EditorStateManager::get_state())
+            EditorStateManager::set_state(change_state_to);
 
         // Check if any asset has been modified
         m_asset_watcher->check_asset_modified();
@@ -252,8 +254,6 @@ class EditorLayer : public Phos::Layer {
 
     ImGuiID m_dockspace_id{0};
 
-    std::shared_ptr<EditorStateManager> m_state_manager;
-
     void open_project(const std::filesystem::path& path) {
         m_project = Phos::Project::open(path);
         m_renderer = std::make_shared<Phos::DeferredRenderer>(m_project->scene(), m_project->scene()->config());
@@ -264,22 +264,22 @@ class EditorLayer : public Phos::Layer {
         m_scene_manager = std::make_shared<EditorSceneManager>(m_project->scene());
 
         // Editor State Manager
-        m_state_manager = std::make_shared<EditorStateManager>();
-        m_state_manager->subscribe([&](EditorState state) { state_changed(state); });
+        EditorStateManager::subscribe([&](EditorState prev, EditorState new_) { state_changed(prev, new_); });
 
         const auto editor_asset_manager =
             std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
-        PS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager")
+        PHOS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager");
 
-        m_asset_watcher = std::make_shared<AssetWatcher>(m_project->scene(), m_project, m_renderer);
+        m_asset_watcher = std::make_shared<AssetWatcher>(m_project->scene(), m_project, m_renderer, m_scripting_system);
 
         // Panels
-        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene_manager, m_state_manager);
+        m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene_manager);
         m_content_browser_panel =
             std::make_unique<ContentBrowserPanel>("Content", editor_asset_manager, m_asset_watcher);
         m_entity_panel =
             std::make_unique<EntityHierarchyPanel>("Entities", m_scene_manager, m_content_browser_panel.get());
-        m_asset_inspector_panel = std::make_unique<AssetInspectorPanel>("Inspector", editor_asset_manager);
+        m_asset_inspector_panel =
+            std::make_unique<AssetInspectorPanel>("Inspector", m_project->scene(), editor_asset_manager);
         m_scene_configuration_panel = std::make_unique<SceneConfigurationPanel>(
             "Scene Configuration", m_project->scene()->config(), editor_asset_manager);
 
@@ -289,14 +289,14 @@ class EditorLayer : public Phos::Layer {
         });
     }
 
-    void state_changed(EditorState state) {
+    void state_changed(EditorState prev, EditorState new_) {
         m_entity_panel->clear_selected_entity();
 
-        if (m_state_manager->get_state() == EditorState::Editing && state == EditorState::Playing) {
+        if (prev == EditorState::Editing && new_ == EditorState::Playing) {
             m_scene_manager->running_changed(true);
             m_scripting_system->start(m_scene_manager->active_scene());
             m_renderer->set_scene(m_scene_manager->active_scene());
-        } else if (m_state_manager->get_state() == EditorState::Playing && state == EditorState::Editing) {
+        } else if (prev == EditorState::Playing && new_ == EditorState::Editing) {
             m_scene_manager->running_changed(false);
             m_scripting_system->shutdown();
             m_renderer->set_scene(m_scene_manager->active_scene());
@@ -304,7 +304,7 @@ class EditorLayer : public Phos::Layer {
     }
 
     void open_project_dialog() {
-        const auto path = FileDialog::open_file_dialog("psproj");
+        const auto path = FileDialog::open_file_dialog({{"Phos Project", "psproj"}});
         if (path.has_value() && std::filesystem::exists(*path)) {
             open_project(*path);
         }
@@ -316,6 +316,7 @@ class EditorLayer : public Phos::Layer {
     }
 
     void check_script_updates() const {
+        // TODO: Also present in AssetWatcher and AssetInspectorPanel, think moving into a separate function
         for (const auto& entity : m_project->scene()->get_entities_with<Phos::ScriptComponent>()) {
             auto& sc = entity.get_component<Phos::ScriptComponent>();
             const auto& handle = m_project->asset_manager()->load_by_id_type<Phos::ClassHandle>(sc.script);
@@ -340,8 +341,8 @@ class EditorLayer : public Phos::Layer {
         m_viewport_panel->on_mouse_moved(mouse_moved, m_dockspace_id);
     }
 
-    void on_key_pressed(Phos::KeyPressedEvent& key_pressed) override {
-        m_viewport_panel->on_key_pressed(key_pressed, m_dockspace_id);
+    void on_mouse_scrolled(Phos::MouseScrolledEvent& mouse_scrolled) override {
+        m_viewport_panel->on_mouse_scrolled(mouse_scrolled, m_dockspace_id);
     }
 };
 

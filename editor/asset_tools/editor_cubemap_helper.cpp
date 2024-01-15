@@ -1,6 +1,8 @@
 #include "editor_cubemap_helper.h"
 
 #include <fstream>
+
+#include "utility/logging.h"
 #include "asset_tools/asset_builder.h"
 
 std::shared_ptr<EditorCubemapHelper> EditorCubemapHelper::create(std::string name) {
@@ -26,7 +28,7 @@ EditorCubemapHelper::EditorCubemapHelper(const std::filesystem::path& path) : m_
     const auto node = YAML::LoadFile(path);
 
     const auto asset_type = node["assetType"].as<std::string>();
-    PS_ASSERT(asset_type == "cubemap", "Asset in EditorCubemapHelper is not cubemap ({})", asset_type)
+    PHOS_ASSERT(asset_type == "cubemap", "Asset in EditorCubemapHelper is not cubemap ({})", asset_type);
 
     m_cubemap_id = Phos::UUID(node["id"].as<uint64_t>());
     m_cubemap_name = path.stem();
@@ -48,7 +50,7 @@ EditorCubemapHelper::EditorCubemapHelper(const std::filesystem::path& path) : m_
         m_type = Type::Equirectangular;
         m_equirectangular_id = Phos::UUID(node["texture"].as<uint64_t>());
     } else {
-        PS_FAIL("Cubemap type '{}' is not recognized", cubemap_type)
+        PHOS_FAIL("Cubemap type '{}' is not recognized", cubemap_type);
     }
 }
 
@@ -85,7 +87,7 @@ void EditorCubemapHelper::change_type(Type type) {
 
 void EditorCubemapHelper::save() const {
     if (!std::filesystem::exists(m_path)) {
-        PS_ERROR("Could not save cubemap {} because path is not set", m_cubemap_name);
+        PHOS_LOG_ERROR("Could not save cubemap {} because path is not set", m_cubemap_name);
         return;
     }
 

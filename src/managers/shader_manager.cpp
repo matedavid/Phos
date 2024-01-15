@@ -1,5 +1,6 @@
 #include "shader_manager.h"
 
+#include "utility/logging.h"
 #include "renderer/backend/shader.h"
 
 namespace Phos {
@@ -45,7 +46,7 @@ ShaderManager::ShaderManager() {
 
 std::shared_ptr<Shader> ShaderManager::get_builtin_shader(const std::string& name) const {
     const auto it = m_builtin_shaders.find(name);
-    PS_ASSERT(it != m_builtin_shaders.end(), "No builtin shader named '{}' exists", name)
+    PHOS_ASSERT(it != m_builtin_shaders.end(), "No builtin shader named '{}' exists", name);
     return it->second;
 }
 

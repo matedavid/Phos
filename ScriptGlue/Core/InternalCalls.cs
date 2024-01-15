@@ -4,6 +4,19 @@ namespace PhosEngine
 {
     internal static class InternalCalls
     {
+        #region Logging
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Logging_Info(string content);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Logging_Warning(string content);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Logging_Error(string content);
+
+        #endregion
+
         #region Entity
 
         [MethodImpl(MethodImplOptions.InternalCall)]

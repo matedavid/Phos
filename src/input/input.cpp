@@ -1,9 +1,9 @@
 #include "input.h"
 
+#include <GLFW/glfw3.h>
+
 #include "core/application.h"
 #include "core/window.h"
-
-#include "GLFW/glfw3.h"
 
 namespace Phos {
 

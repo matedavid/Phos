@@ -1,11 +1,9 @@
 #pragma once
 
-#include "core.h"
-
-#include <algorithm>
 #include <ranges>
 
 #include "core/uuid.h"
+#include "utility/logging.h"
 
 #include "scene/registry.h"
 #include "scene/components.h"
@@ -61,7 +59,9 @@ class Entity {
         auto& relationship = get_component<RelationshipComponent>();
 
         if (std::ranges::find(relationship.children, child.uuid()) != relationship.children.end()) {
-            PS_WARNING("Entity {} already contains child {}", (uint64_t)uuid(), (uint64_t)child.uuid());
+            PHOS_LOG_WARNING("Entity {} already contains child {}",
+                             static_cast<uint64_t>(uuid()),
+                             static_cast<uint64_t>(child.uuid()));
             return;
         }
 
@@ -73,7 +73,9 @@ class Entity {
         auto& relationship = get_component<RelationshipComponent>();
 
         if (std::ranges::find(relationship.children, child.uuid()) == relationship.children.end()) {
-            PS_ERROR("Entity {} does not contain child: {}", (uint64_t)uuid(), (uint64_t)child.uuid());
+            PHOS_LOG_ERROR("Entity {} does not contain child: {}",
+                           static_cast<uint64_t>(uuid()),
+                           static_cast<uint64_t>(child.uuid()));
             return;
         }
 

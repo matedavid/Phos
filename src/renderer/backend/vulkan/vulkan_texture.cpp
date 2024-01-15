@@ -2,6 +2,10 @@
 
 #include <stb_image.h>
 
+#include "vk_core.h"
+
+#include "utility/logging.h"
+
 #include "renderer/backend/vulkan/vulkan_device.h"
 #include "renderer/backend/vulkan/vulkan_buffer.h"
 #include "renderer/backend/vulkan/vulkan_image.h"
@@ -26,7 +30,7 @@ VulkanTexture::VulkanTexture(const std::string& path) {
     }
 
     if (!pixels) {
-        PS_ERROR("Failed to load image: {}", path);
+        PHOS_LOG_ERROR("Failed to load image: {}", path);
         return;
     }
 
@@ -80,7 +84,7 @@ VulkanTexture::VulkanTexture(const std::string& path) {
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler))
+    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler));
 }
 
 VulkanTexture::VulkanTexture(uint32_t width, uint32_t height) {
@@ -116,14 +120,14 @@ VulkanTexture::VulkanTexture(uint32_t width, uint32_t height) {
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler))
+    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler));
 }
 
 VulkanTexture::VulkanTexture(const std::vector<char>& data, uint32_t width, uint32_t height) {
     const auto image_size = width * height * 4;
 
     if (image_size != data.size())
-        PS_WARNING("Size of data is not the same as the provided image size (width * height * 4)");
+        PHOS_LOG_WARNING("Size of data is not the same as the provided image size (width * height * 4)");
 
     const auto staging_buffer = VulkanBuffer{
         image_size,
@@ -171,7 +175,7 @@ VulkanTexture::VulkanTexture(const std::vector<char>& data, uint32_t width, uint
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler))
+    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler));
 }
 
 VulkanTexture::VulkanTexture(const std::shared_ptr<Image>& image) {
@@ -200,7 +204,7 @@ VulkanTexture::VulkanTexture(const std::shared_ptr<Image>& image) {
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler))
+    VK_CHECK(vkCreateSampler(VulkanContext::device->handle(), &sampler_info, nullptr, &m_sampler));
 }
 
 VulkanTexture::~VulkanTexture() {

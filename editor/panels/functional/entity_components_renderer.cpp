@@ -6,6 +6,8 @@
 #include "imgui/imgui_utils.h"
 #include "asset_tools/editor_asset.h"
 
+#include "utility/logging.h"
+
 #include "scene/scene.h"
 #include "asset/editor_asset_manager.h"
 
@@ -15,7 +17,7 @@
 #include "scripting/class_handle.h"
 
 template <typename T>
-void render_label_input(const std::string& label, const std::string& group, T* value, int precision = 1) {
+void render_label_input(const std::string& label, const std::string& group, T* value, int precision = 3) {
     ImGui::AlignTextToFramePadding();
 
     ImGui::TextUnformatted(label.c_str());
@@ -27,15 +29,18 @@ void render_label_input(const std::string& label, const std::string& group, T* v
         const std::string format_string = "%." + std::to_string(precision) + "f";
         ImGui::InputFloat(input_label.c_str(), value, 0.0f, 0.0f, format_string.c_str());
     } else {
-        PS_FAIL("Unsupported input type")
+        PHOS_FAIL("Unsupported input type");
     }
 }
 
 template <typename T>
-void render_component(T& component, const std::shared_ptr<Phos::EditorAssetManager>& asset_manager);
+void render_component(T& component,
+                      const std::shared_ptr<Phos::Scene>& scene,
+                      const std::shared_ptr<Phos::EditorAssetManager>& asset_manager);
 
 template <typename T>
 void render_component(Phos::Entity& entity,
+                      const std::shared_ptr<Phos::Scene>& scene,
                       const std::shared_ptr<Phos::EditorAssetManager>& asset_manager,
                       bool right_click = true) {
     if (!entity.has_component<T>())
@@ -43,7 +48,7 @@ void render_component(Phos::Entity& entity,
 
     ImGui::BeginGroup();
 
-    render_component<T>(entity.get_component<T>(), asset_manager);
+    render_component<T>(entity.get_component<T>(), scene, asset_manager);
     ImGui::Separator();
 
     ImGui::EndGroup();
@@ -71,14 +76,15 @@ void render_component(Phos::Entity& entity,
     entity.add_component<T>()
 
 void EntityComponentsRenderer::display(Phos::Entity& entity,
+                                       const std::shared_ptr<Phos::Scene>& scene,
                                        const std::shared_ptr<Phos::EditorAssetManager>& asset_manager) {
     // Components
-    render_component<Phos::NameComponent>(entity, asset_manager, false);
-    render_component<Phos::TransformComponent>(entity, asset_manager, false);
-    render_component<Phos::MeshRendererComponent>(entity, asset_manager);
-    render_component<Phos::LightComponent>(entity, asset_manager);
-    render_component<Phos::CameraComponent>(entity, asset_manager);
-    render_component<Phos::ScriptComponent>(entity, asset_manager);
+    render_component<Phos::NameComponent>(entity, scene, asset_manager, false);
+    render_component<Phos::TransformComponent>(entity, scene, asset_manager, false);
+    render_component<Phos::MeshRendererComponent>(entity, scene, asset_manager);
+    render_component<Phos::LightComponent>(entity, scene, asset_manager);
+    render_component<Phos::CameraComponent>(entity, scene, asset_manager);
+    render_component<Phos::ScriptComponent>(entity, scene, asset_manager);
 
     // Add component on Right Click
     if (ImGui::Button("Add Component")) {
@@ -104,9 +110,10 @@ void EntityComponentsRenderer::display(Phos::Entity& entity,
 // Specific render_component
 //
 
-#define RENDER_COMPONENT(T)                 \
-    template <>                             \
-    void render_component<T>(T & component, \
+#define RENDER_COMPONENT(T)                                                              \
+    template <>                                                                          \
+    void render_component<T>(T & component,                                              \
+                             [[maybe_unused]] const std::shared_ptr<Phos::Scene>& scene, \
                              [[maybe_unused]] const std::shared_ptr<Phos::EditorAssetManager>& asset_manager)
 
 RENDER_COMPONENT(Phos::NameComponent) {
@@ -490,7 +497,17 @@ RENDER_COMPONENT(Phos::ScriptComponent) {
                 v.id = prefab_asset->uuid;
             }
         } else if (std::holds_alternative<Phos::EntityRef>(value)) {
-            PS_ERROR("[render_component::ScriptComponent EntityRef] Unimplemented");
+            auto& v = const_cast<Phos::EntityRef&>(std::get<Phos::EntityRef>(value));
+
+            auto entity_name = v.id == Phos::UUID(0)
+                                   ? ""
+                                   : scene->get_entity_with_uuid(v.id).get_component<Phos::NameComponent>().name;
+            ImGui::InputText(id.c_str(), &entity_name, ImGuiInputTextFlags_ReadOnly);
+
+            const auto entity_drag = ImGuiUtils::drag_drop_target<Phos::UUID>("ENTITY_HIERARCHY_ITEM");
+            if (entity_drag.has_value() && *entity_drag != Phos::UUID(0)) {
+                v.id = *entity_drag;
+            }
         }
     }
 

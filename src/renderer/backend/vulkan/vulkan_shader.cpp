@@ -4,6 +4,11 @@
 #include <algorithm>
 #include <fstream>
 #include <spirv_reflect.h>
+#include <glm/glm.hpp>
+
+#include "vk_core.h"
+
+#include "utility/logging.h"
 
 #include "renderer/backend/vulkan/vulkan_device.h"
 #include "renderer/backend/vulkan/vulkan_utils.h"
@@ -12,10 +17,12 @@
 
 namespace Phos {
 
-#define SPIRV_REFLECT_CHECK(expression)             \
-    if (expression != SPV_REFLECT_RESULT_SUCCESS) { \
-        PS_FAIL("Spirv-reflect call failed");       \
-    }
+#define SPIRV_REFLECT_CHECK(expression)                 \
+    do {                                                \
+        if (expression != SPV_REFLECT_RESULT_SUCCESS) { \
+            PHOS_FAIL("Spirv-reflect call failed");     \
+        }                                               \
+    } while (false)
 
 VulkanShader::VulkanShader(const std::string& vertex_path, const std::string& fragment_path) {
     const auto vertex_src = read_shader_file(vertex_path);
@@ -32,8 +39,8 @@ VulkanShader::VulkanShader(const std::string& vertex_path, const std::string& fr
     fragment_create_info.pCode = reinterpret_cast<const uint32_t*>(fragment_src.data());
 
     VkShaderModule vertex_shader, fragment_shader;
-    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &vertex_create_info, nullptr, &vertex_shader))
-    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &fragment_create_info, nullptr, &fragment_shader))
+    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &vertex_create_info, nullptr, &vertex_shader));
+    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &fragment_create_info, nullptr, &fragment_shader));
 
     // Create Vertex and Fragment stage create infos
     VkPipelineShaderStageCreateInfo vertex_stage{};
@@ -54,14 +61,14 @@ VulkanShader::VulkanShader(const std::string& vertex_path, const std::string& fr
     // Spirv reflection
     SpvReflectShaderModule vertex_module, fragment_module;
     SPIRV_REFLECT_CHECK(spvReflectCreateShaderModule(
-        vertex_src.size(), reinterpret_cast<const uint32_t*>(vertex_src.data()), &vertex_module))
+        vertex_src.size(), reinterpret_cast<const uint32_t*>(vertex_src.data()), &vertex_module));
     SPIRV_REFLECT_CHECK(spvReflectCreateShaderModule(
-        fragment_src.size(), reinterpret_cast<const uint32_t*>(fragment_src.data()), &fragment_module))
+        fragment_src.size(), reinterpret_cast<const uint32_t*>(fragment_src.data()), &fragment_module));
 
-    PS_ASSERT(static_cast<VkShaderStageFlagBits>(vertex_module.shader_stage) == VK_SHADER_STAGE_VERTEX_BIT,
-              "Vertex stage does not match")
-    PS_ASSERT(static_cast<VkShaderStageFlagBits>(fragment_module.shader_stage) == VK_SHADER_STAGE_FRAGMENT_BIT,
-              "Fragment stage does not match")
+    PHOS_ASSERT(static_cast<VkShaderStageFlagBits>(vertex_module.shader_stage) == VK_SHADER_STAGE_VERTEX_BIT,
+                "Vertex stage does not match");
+    PHOS_ASSERT(static_cast<VkShaderStageFlagBits>(fragment_module.shader_stage) == VK_SHADER_STAGE_FRAGMENT_BIT,
+                "Fragment stage does not match");
 
     // Retrieve SPIR-V info
     retrieve_vertex_input_info(vertex_module);
@@ -85,11 +92,11 @@ VulkanShader::VulkanShader(const std::string& path) {
     create_info.pCode = reinterpret_cast<const uint32_t*>(src.data());
 
     VkShaderModule shader;
-    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &create_info, nullptr, &shader))
+    VK_CHECK(vkCreateShaderModule(VulkanContext::device->handle(), &create_info, nullptr, &shader));
 
     SpvReflectShaderModule reflect_module;
     SPIRV_REFLECT_CHECK(
-        spvReflectCreateShaderModule(src.size(), reinterpret_cast<const uint32_t*>(src.data()), &reflect_module))
+        spvReflectCreateShaderModule(src.size(), reinterpret_cast<const uint32_t*>(src.data()), &reflect_module));
 
     VkPipelineShaderStageCreateInfo shader_stage{};
     shader_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -178,7 +185,7 @@ std::vector<ShaderProperty> VulkanShader::get_shader_properties() const {
 
 std::vector<char> VulkanShader::read_shader_file(const std::string& path) const {
     std::ifstream file(path, std::ios::ate | std::ios::binary);
-    PS_ASSERT(file.is_open(), "Failed to open shader module file: {}", path)
+    PHOS_ASSERT(file.is_open(), "Failed to open shader module file: {}", path);
 
     const auto size = (uint32_t)file.tellg();
     std::vector<char> content(size);
@@ -194,10 +201,10 @@ std::vector<char> VulkanShader::read_shader_file(const std::string& path) const 
 void VulkanShader::retrieve_vertex_input_info(const SpvReflectShaderModule& module) {
     // Input variables
     uint32_t input_variables_count;
-    SPIRV_REFLECT_CHECK(spvReflectEnumerateInputVariables(&module, &input_variables_count, nullptr))
+    SPIRV_REFLECT_CHECK(spvReflectEnumerateInputVariables(&module, &input_variables_count, nullptr));
 
     std::vector<SpvReflectInterfaceVariable*> input_variables(input_variables_count);
-    SPIRV_REFLECT_CHECK(spvReflectEnumerateInputVariables(&module, &input_variables_count, input_variables.data()))
+    SPIRV_REFLECT_CHECK(spvReflectEnumerateInputVariables(&module, &input_variables_count, input_variables.data()));
 
     const auto is_not_built_in = [](const SpvReflectInterfaceVariable* variable) {
         return static_cast<uint32_t>(variable->built_in) == std::numeric_limits<uint32_t>::max();
@@ -238,19 +245,19 @@ void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& v
                                                  const SpvReflectShaderModule& fragment_module) {
     // Vertex descriptor sets
     uint32_t vertex_set_count;
-    SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&vertex_module, &vertex_set_count, nullptr))
+    SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&vertex_module, &vertex_set_count, nullptr));
 
     std::vector<SpvReflectDescriptorSet*> vertex_descriptor_sets(vertex_set_count);
     SPIRV_REFLECT_CHECK(
-        spvReflectEnumerateDescriptorSets(&vertex_module, &vertex_set_count, vertex_descriptor_sets.data()))
+        spvReflectEnumerateDescriptorSets(&vertex_module, &vertex_set_count, vertex_descriptor_sets.data()));
 
     // Fragment descriptor sets
     uint32_t fragment_set_count;
-    SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&fragment_module, &fragment_set_count, nullptr))
+    SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&fragment_module, &fragment_set_count, nullptr));
 
     std::vector<SpvReflectDescriptorSet*> fragment_descriptor_sets(fragment_set_count);
     SPIRV_REFLECT_CHECK(
-        spvReflectEnumerateDescriptorSets(&fragment_module, &fragment_set_count, fragment_descriptor_sets.data()))
+        spvReflectEnumerateDescriptorSets(&fragment_module, &fragment_set_count, fragment_descriptor_sets.data()));
 
     // Retrieve descriptor set bindings
     std::vector<std::vector<VkDescriptorSetLayoutBinding>> set_bindings(MAX_DESCRIPTOR_SET);
@@ -269,7 +276,7 @@ void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& v
 
         const auto layout =
             VulkanContext::descriptor_layout_cache->create_descriptor_layout(descriptor_set_create_info);
-        PS_ASSERT(layout != VK_NULL_HANDLE, "Layout has null")
+        PHOS_ASSERT(layout != VK_NULL_HANDLE, "Layout has null");
 
         m_descriptor_set_layouts.push_back(layout);
     }
@@ -278,10 +285,10 @@ void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& v
 void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& reflect_module) {
     // Vertex descriptor sets
     uint32_t set_count;
-    SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&reflect_module, &set_count, nullptr))
+    SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&reflect_module, &set_count, nullptr));
 
     std::vector<SpvReflectDescriptorSet*> descriptor_sets(set_count);
-    SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&reflect_module, &set_count, descriptor_sets.data()))
+    SPIRV_REFLECT_CHECK(spvReflectEnumerateDescriptorSets(&reflect_module, &set_count, descriptor_sets.data()));
 
     // Retrieve descriptor set bindings
     std::vector<std::vector<VkDescriptorSetLayoutBinding>> set_bindings(MAX_DESCRIPTOR_SET);
@@ -299,7 +306,7 @@ void VulkanShader::retrieve_descriptor_sets_info(const SpvReflectShaderModule& r
 
         const auto layout =
             VulkanContext::descriptor_layout_cache->create_descriptor_layout(descriptor_set_create_info);
-        PS_ASSERT(layout != VK_NULL_HANDLE, "Layout has null")
+        PHOS_ASSERT(layout != VK_NULL_HANDLE, "Layout has null");
 
         m_descriptor_set_layouts.push_back(layout);
     }
@@ -324,10 +331,10 @@ void VulkanShader::retrieve_set_bindings(const std::vector<SpvReflectDescriptorS
             for (uint32_t i_dim = 0; i_dim < set_binding->array.dims_count; ++i_dim)
                 binding.descriptorCount *= set_binding->array.dims[i_dim];
 
-            PS_ASSERT(set_info->set < MAX_DESCRIPTOR_SET,
-                      "Trying to create descriptor set with value {} but maximum set is {}",
-                      set_info->set,
-                      MAX_DESCRIPTOR_SET)
+            PHOS_ASSERT(set_info->set < MAX_DESCRIPTOR_SET,
+                        "Trying to create descriptor set with value {} but maximum set is {}",
+                        set_info->set,
+                        MAX_DESCRIPTOR_SET);
 
             set_bindings[set_info->set].push_back(binding);
 
@@ -368,11 +375,11 @@ void VulkanShader::retrieve_push_constants(const SpvReflectShaderModule& reflect
 
 void VulkanShader::retrieve_push_constant_ranges(const SpvReflectShaderModule& module, VkShaderStageFlags stage) {
     uint32_t push_constant_count;
-    SPIRV_REFLECT_CHECK(spvReflectEnumeratePushConstantBlocks(&module, &push_constant_count, nullptr))
+    SPIRV_REFLECT_CHECK(spvReflectEnumeratePushConstantBlocks(&module, &push_constant_count, nullptr));
 
     std::vector<SpvReflectBlockVariable*> push_constant_blocks(push_constant_count);
     SPIRV_REFLECT_CHECK(
-        spvReflectEnumeratePushConstantBlocks(&module, &push_constant_count, push_constant_blocks.data()))
+        spvReflectEnumeratePushConstantBlocks(&module, &push_constant_count, push_constant_blocks.data()));
 
     for (const auto& push_constant_block : push_constant_blocks) {
         VkPushConstantRange range{};
@@ -400,7 +407,7 @@ void VulkanShader::create_pipeline_layout() {
     pipeline_layout_create_info.pPushConstantRanges = m_push_constant_ranges.data();
 
     VK_CHECK(vkCreatePipelineLayout(
-        VulkanContext::device->handle(), &pipeline_layout_create_info, nullptr, &m_pipeline_layout))
+        VulkanContext::device->handle(), &pipeline_layout_create_info, nullptr, &m_pipeline_layout));
 }
 
 } // namespace Phos

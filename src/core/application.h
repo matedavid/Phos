@@ -1,11 +1,12 @@
 #pragma once
 
-#include "core.h"
+#include <memory>
+#include <vector>
 
 #include "core/layer.h"
 #include "input/events.h"
 
-int main(int argc, const char* argv[]);
+// int main(int argc, const char* argv[]);
 
 namespace Phos {
 

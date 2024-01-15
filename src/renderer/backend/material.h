@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core.h"
+#include <memory>
 
 #include <glm/glm.hpp>
 
@@ -14,7 +14,7 @@ class Texture;
 
 class Material : public IAsset {
   public:
-    virtual ~Material() = default;
+    ~Material() override = default;
 
     [[nodiscard]] AssetType asset_type() override { return AssetType::Material; }
 

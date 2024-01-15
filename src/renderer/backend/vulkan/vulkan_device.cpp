@@ -3,6 +3,8 @@
 #include <optional>
 #include <ranges>
 
+#include "vk_core.h"
+
 #include "renderer/backend/vulkan/vulkan_instance.h"
 #include "renderer/backend/vulkan/vulkan_queue.h"
 
@@ -11,7 +13,7 @@ namespace Phos {
 VulkanDevice::VulkanDevice(const std::unique_ptr<VulkanInstance>& instance,
                            const VulkanPhysicalDevice::Requirements& requirements)
       : m_physical_device(select_physical_device(instance, requirements)) {
-    fmt::print("Selected physical device: {}\n", m_physical_device.get_properties().deviceName);
+    PHOS_LOG_INFO("Selected physical device: {}", m_physical_device.get_properties().deviceName);
 
     // Create queues
     const VulkanPhysicalDevice::QueueFamilies queue_families = m_physical_device.get_queue_families(requirements);
@@ -52,6 +54,7 @@ VulkanDevice::VulkanDevice(const std::unique_ptr<VulkanInstance>& instance,
     create_info.enabledExtensionCount = (uint32_t)requirements.extensions.size();
 
     std::vector<const char*> extensions;
+    extensions.reserve(requirements.extensions.size());
     for (const auto& extension : requirements.extensions) {
         extensions.push_back(extension.data());
     }
@@ -113,41 +116,41 @@ VulkanDevice::~VulkanDevice() {
 VkCommandBuffer VulkanDevice::create_command_buffer(VulkanQueue::Type type) const {
     switch (type) {
     case VulkanQueue::Type::Graphics:
-        PS_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
+        PHOS_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested");
         return m_graphics_command_pool->allocate(1)[0];
     case VulkanQueue::Type::Compute:
-        PS_ASSERT(m_compute_command_pool != nullptr, "Compute queue was not requested")
+        PHOS_ASSERT(m_compute_command_pool != nullptr, "Compute queue was not requested");
         return m_compute_command_pool->allocate(1)[0];
     default:
-        PS_FAIL("Not implemented")
+        PHOS_FAIL("Not implemented");
     }
 }
 
 void VulkanDevice::free_command_buffer(VkCommandBuffer command_buffer, VulkanQueue::Type type) const {
     switch (type) {
     case VulkanQueue::Type::Graphics:
-        PS_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
+        PHOS_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested");
         m_graphics_command_pool->free_command_buffer(command_buffer);
         break;
     case VulkanQueue::Type::Compute:
-        PS_ASSERT(m_compute_command_pool != nullptr, "Compute queue was not requested")
+        PHOS_ASSERT(m_compute_command_pool != nullptr, "Compute queue was not requested");
         m_compute_command_pool->free_command_buffer(command_buffer);
         break;
     default:
-        PS_FAIL("Not implemented")
+        PHOS_FAIL("Not implemented");
     }
 }
 
 const std::shared_ptr<VulkanQueue>& VulkanDevice::get_queue_from_type(VulkanQueue::Type type) const {
     switch (type) {
     case VulkanQueue::Type::Graphics:
-        PS_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested")
+        PHOS_ASSERT(m_graphics_command_pool != nullptr, "Graphics queue was not requested");
         return m_graphics_queue;
     case VulkanQueue::Type::Compute:
-        PS_ASSERT(m_compute_command_pool != nullptr, "Compute queue was not requested")
+        PHOS_ASSERT(m_compute_command_pool != nullptr, "Compute queue was not requested");
         return m_compute_queue;
     default:
-        PS_FAIL("Not implemented")
+        PHOS_FAIL("Not implemented");
     }
 }
 
@@ -187,7 +190,7 @@ VulkanPhysicalDevice VulkanDevice::select_physical_device(const std::unique_ptr<
         }
     }
 
-    PS_ASSERT(max_device.has_value(), "There are no suitable devices")
+    PHOS_ASSERT(max_device.has_value(), "There are no suitable devices");
 
     return max_device.value();
 }

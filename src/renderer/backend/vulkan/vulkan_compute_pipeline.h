@@ -1,6 +1,5 @@
 #pragma once
 
-#include "vk_core.h"
 #include <vulkan/vulkan.h>
 
 #include "renderer/backend/compute_pipeline.h"

@@ -1,13 +1,15 @@
-using System;
+using System.Runtime.InteropServices;
 
 namespace PhosEngine
 {
-    public class Entity
+    [StructLayout(LayoutKind.Sequential)]
+    public class ScriptableEntity
     {
-        internal readonly ulong Id;
+        public readonly ulong Id;
 
-        public Entity() => Id = 0;
-        public Entity(ulong id) => Id = id;
+        public ScriptableEntity() => Id = 0;
+
+        public ScriptableEntity(ulong id) => Id = id;
 
         public virtual void OnCreate()
         {
@@ -31,7 +33,7 @@ namespace PhosEngine
         protected Entity Instantiate(Prefab prefab)
         {
             InternalCalls.Entity_Instantiate(prefab.Id, out var id);
-            return new Entity(id);
+            return new Entity() { Id = id };
         }
 
         protected void Destroy(Entity entity)

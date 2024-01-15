@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 enum class EditorState {
     Editing,
     Playing,
@@ -7,19 +9,28 @@ enum class EditorState {
 
 class EditorStateManager {
   public:
-    [[nodiscard]] EditorState get_state() const { return m_state; }
+    EditorStateManager() = delete;
 
-    void set_state(EditorState state) {
-        for (const auto& func : m_state_changed_callback)
-            func(state);
+    [[nodiscard]] static EditorState get_state() { return m_state; }
 
+    // First updates state, then notifies subscribers
+    static void set_state(EditorState state) {
+        auto prev = m_state;
         m_state = state;
+
+        for (const auto& func : m_state_changed_callback)
+            func(prev, state);
     }
 
-    void subscribe(const std::function<void(EditorState)>& func) { m_state_changed_callback.push_back(func); }
+    static void subscribe(const std::function<void(EditorState, EditorState)>& func) {
+        m_state_changed_callback.push_back(func);
+    }
 
   private:
-    EditorState m_state;
+    static EditorState m_state;
 
-    std::vector<std::function<void(EditorState)>> m_state_changed_callback;
+    static std::vector<std::function<void(EditorState, EditorState)>> m_state_changed_callback;
 };
+
+inline EditorState EditorStateManager::m_state = EditorState::Editing;
+inline std::vector<std::function<void(EditorState, EditorState)>> EditorStateManager::m_state_changed_callback{};
