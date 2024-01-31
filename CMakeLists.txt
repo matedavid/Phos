@@ -73,22 +73,6 @@ set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "disable yaml contrib")
 add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/yaml-cpp)
 
 # Mono
-function(mono_build_command cmd)
-    execute_process(COMMAND bash -c ${cmd} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/vendor/mono/ RESULT_VARIABLE ret)
-    if (ret EQUAL 1)
-        message(FATAL_ERROR "Mono build failed")
-    endif ()
-endfunction()
-
-if (NOT EXISTS ${CMAKE_SOURCE_DIR}/vendor/mono/build/)
-    set(MONO_BUILD_PATH ${CMAKE_SOURCE_DIR}/vendor/mono/build)
-    message("Building mono to: " ${MONO_BUILD_PATH})
-
-    mono_build_command("autogen.sh --prefix=${MONO_BUILD_PATH}")
-    mono_build_command("make -j 12")
-    mono_build_command("make install")
-endif ()
-
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/mono/lib/)
     message("Copying mono libraries to: " ${CMAKE_BINARY_DIR}/mono/lib/)
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mono/build/lib/ DESTINATION ${CMAKE_BINARY_DIR}/mono/lib/)
