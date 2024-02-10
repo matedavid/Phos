@@ -1,8 +1,5 @@
 #include "deferred_renderer.h"
 
-// #define GLM_FORCE_RADIANS
-// #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <utility>
@@ -13,10 +10,8 @@
 #include "utility/profiling.h"
 
 #include "managers/shader_manager.h"
-#include "managers/texture_manager.h"
 
 #include "scene/scene.h"
-#include "scene/entity.h"
 #include "scene/model_loader.h"
 
 #include "renderer/mesh.h"
@@ -28,13 +23,11 @@
 #include "renderer/backend/texture.h"
 #include "renderer/backend/image.h"
 #include "renderer/backend/framebuffer.h"
-#include "renderer/backend/shader.h"
 #include "renderer/backend/graphics_pipeline.h"
 #include "renderer/backend/compute_pipeline.h"
 #include "renderer/backend/render_pass.h"
 #include "renderer/backend/buffers.h"
 #include "renderer/backend/material.h"
-#include "renderer/backend/cubemap.h"
 
 namespace Phos {
 
