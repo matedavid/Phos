@@ -214,8 +214,16 @@ class EditorLayer : public Phos::Layer {
 
         ImGui::Begin("Statistics");
 
-        const double fps = 1.0 / ts;
-        const std::string fps_text = "fps = " + std::to_string(fps);
+        constexpr uint32_t frames_update = 30;
+        if (m_fps_counter % frames_update == 0) {
+            m_fps = m_fps_sum / static_cast<double>(frames_update);
+            m_fps_sum = 0.0;
+            m_fps_counter = 0;
+        }
+        m_fps_sum += 1.0 / ts;
+        ++m_fps_counter;
+
+        const std::string fps_text = "fps = " + std::to_string(m_fps);
         ImGui::Text("%s", fps_text.c_str());
 
         ImGui::End();
@@ -253,6 +261,10 @@ class EditorLayer : public Phos::Layer {
     std::shared_ptr<AssetWatcher> m_asset_watcher;
 
     ImGuiID m_dockspace_id{0};
+
+    double m_fps = 0.0;
+    double m_fps_sum = 0.0;
+    uint32_t m_fps_counter = 0;
 
     void open_project(const std::filesystem::path& path) {
         m_project = Phos::Project::open(path);
