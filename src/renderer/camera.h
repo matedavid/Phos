@@ -4,6 +4,23 @@
 
 namespace Phos {
 
+// Forward declarations
+struct AABB;
+
+struct Plane {
+    glm::vec3 normal = glm::vec3(0.0f);
+    float distance = 0.0f;
+};
+
+struct Frustum {
+    Plane top;
+    Plane bottom;
+    Plane left;
+    Plane right;
+    Plane near;
+    Plane far;
+};
+
 class Camera {
   public:
     enum class Type {
@@ -15,6 +32,8 @@ class Camera {
 
     void set_position(const glm::vec3& position);
     void rotate(const glm::vec2& rotation);
+
+    [[nodiscard]] virtual bool is_inside_frustum(const AABB& aabb) const = 0;
 
     [[nodiscard]] glm::vec3 position() const;
     [[nodiscard]] glm::vec3 non_rotated_position() const { return m_position; }
@@ -30,6 +49,7 @@ class Camera {
     glm::vec2 m_rotation{0.0f, 0.0f};
 
     void recalculate_view_matrix();
+    virtual void recalculate_frustum() = 0;
 };
 
 class PerspectiveCamera : public Camera {
@@ -41,12 +61,16 @@ class PerspectiveCamera : public Camera {
     void set_aspect_ratio(float aspect);
     void set_fov(float fov);
 
+    [[nodiscard]] bool is_inside_frustum(const AABB& aabb) const override;
+
     [[nodiscard]] float fov() const { return m_fov; }
 
   private:
     float m_fov, m_aspect, m_znear, m_zfar;
+    Frustum m_frustum;
 
     void recalculate_projection_matrix();
+    void recalculate_frustum() override;
 };
 
 /*

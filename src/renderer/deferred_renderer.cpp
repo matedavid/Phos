@@ -143,10 +143,18 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
         {
             Renderer::begin_render_pass(command_buffer, m_geometry_pass);
 
-            // Draw model
+            // Draw models
             Renderer::bind_graphics_pipeline(command_buffer, m_geometry_pipeline);
 
             for (const auto& entity : renderable_entities) {
+                auto aabb = entity.mesh->get_bounding_box();
+                aabb.min = entity.model * glm::vec4(aabb.min, 1.0);
+                aabb.max = entity.model * glm::vec4(aabb.max, 1.0);
+
+                if (!camera->is_inside_frustum(aabb)) {
+                    continue;
+                }
+
                 auto constants = ModelInfoPushConstant{
                     .model = entity.model,
                     .color = glm::vec4(1.0f),

@@ -1,6 +1,9 @@
 #include "camera.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_access.hpp>
+
+#include "renderer/mesh.h"
 
 namespace Phos {
 
@@ -23,6 +26,8 @@ void Camera::recalculate_view_matrix() {
     m_view = glm::translate(m_view, -m_position);
     m_view = glm::rotate(m_view, m_rotation.y, glm::vec3(1.0f, 0.0f, 0.0f));
     m_view = glm::rotate(m_view, -m_rotation.x, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    recalculate_frustum();
 }
 
 //
@@ -54,8 +59,70 @@ void PerspectiveCamera::set_fov(float fov) {
     recalculate_projection_matrix();
 }
 
+bool PerspectiveCamera::is_inside_frustum(const AABB& aabb) const {
+    const auto test_plane = [](const AABB& _aabb, const Plane& plane) -> bool {
+        const auto center = (_aabb.min + _aabb.max) * 0.5f;
+        const auto radius = glm::abs(_aabb.max - _aabb.min) * 0.5f;
+
+        const auto distance = glm::dot(plane.normal, center) + plane.distance;
+
+        return distance >= -glm::dot(glm::abs(plane.normal), radius);
+    };
+
+    // clang-format off
+    return test_plane(aabb, m_frustum.left)
+        && test_plane(aabb, m_frustum.right)
+        && test_plane(aabb, m_frustum.bottom)
+        && test_plane(aabb, m_frustum.top)
+        && test_plane(aabb, m_frustum.near)
+        && test_plane(aabb, m_frustum.far);
+    // clang-format on
+}
+
 void PerspectiveCamera::recalculate_projection_matrix() {
     m_projection = glm::perspective(m_fov, m_aspect, m_znear, m_zfar);
+
+    recalculate_frustum();
+}
+
+void PerspectiveCamera::recalculate_frustum() {
+    const auto VP = m_projection * m_view;
+
+    // Frustum creation from: https://gdbooks.gitbooks.io/legacyopengl/content/Chapter8/frustum.html
+    const auto row1 = glm::row(VP, 0);
+    const auto row2 = glm::row(VP, 1);
+    const auto row3 = glm::row(VP, 2);
+    const auto row4 = glm::row(VP, 3);
+
+    m_frustum.left = {
+        .normal = row4 + row1,
+        .distance = row4.w + row1.w,
+    };
+
+    m_frustum.right = {
+        .normal = row4 - row1,
+        .distance = row4.w - row1.w,
+    };
+
+    m_frustum.bottom = {
+        .normal = row4 + row2,
+        .distance = row4.w + row2.w,
+    };
+
+    m_frustum.top = {
+        .normal = row4 - row2,
+        .distance = row4.w - row2.w,
+    };
+
+    m_frustum.near = {
+        .normal = row4 + row3,
+        .distance = row4.w + row3.w,
+    };
+
+    m_frustum.far = {
+        .normal = row4 - row3,
+        .distance = row4.w - row3.w,
+    };
 }
 
 //
