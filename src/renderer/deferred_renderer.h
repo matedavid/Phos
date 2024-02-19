@@ -4,6 +4,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+#include "renderer/backend/renderer.h"
 #include "scene/scene_renderer.h"
 
 namespace Phos {
@@ -50,14 +51,25 @@ class DeferredRenderer : public ISceneRenderer {
     std::vector<std::shared_ptr<CommandBuffer>> m_command_buffers;
 
     // Shadow mapping pass
-    std::shared_ptr<Texture> m_shadow_map_texture;
-    std::shared_ptr<Framebuffer> m_shadow_map_framebuffer;
+    // std::shared_ptr<Texture> m_shadow_map_texture;
+    std::array<std::shared_ptr<Texture>, MAX_DIRECTIONAL_LIGHTS> m_directional_shadow_maps;
+    // std::shared_ptr<Framebuffer> m_shadow_map_framebuffer;
+    std::array<std::shared_ptr<Framebuffer>, MAX_DIRECTIONAL_LIGHTS> m_directional_shadow_map_framebuffers;
     std::shared_ptr<Material> m_shadow_map_material;
 
-    std::shared_ptr<GraphicsPipeline> m_shadow_map_pipeline;
-    std::shared_ptr<RenderPass> m_shadow_map_pass;
+    std::array<std::shared_ptr<GraphicsPipeline>, MAX_DIRECTIONAL_LIGHTS> m_directional_shadow_map_pipelines;
+    std::shared_ptr<RenderPass> m_directional_shadow_map_pass;
 
-    glm::mat4 m_light_space_matrix{};
+    struct ShadowMappingPushConstants {
+        glm::mat4 light_space_matrix;
+        glm::mat4 model;
+    };
+
+    struct ShadowMappingInfo {
+        std::array<glm::mat4, MAX_DIRECTIONAL_LIGHTS> light_space_matrices{};
+        uint32_t number_directional_shadow_maps{};
+    };
+    std::shared_ptr<UniformBuffer> m_shadow_mapping_info;
 
     // Geometry pass
     std::shared_ptr<Texture> m_position_texture;

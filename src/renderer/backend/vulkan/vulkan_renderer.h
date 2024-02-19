@@ -16,9 +16,6 @@ class VulkanSwapchain;
 class VulkanQueue;
 class VulkanDescriptorAllocator;
 
-constexpr uint32_t MAX_POINT_LIGHTS = 10;
-constexpr uint32_t MAX_DIRECTIONAL_LIGHTS = 1;
-
 class VulkanRenderer : public INativeRenderer {
   public:
     explicit VulkanRenderer(const RendererConfig& config);

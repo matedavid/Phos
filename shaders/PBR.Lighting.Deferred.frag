@@ -2,7 +2,7 @@
 
 layout (location = 0) in vec2 vTextureCoords;
 layout (location = 1) in vec3 vCameraPosition;
-layout (location = 2) in mat4 vLightSpaceMatrix;
+// layout (location = 2) in mat4 vLightSpaceMatrix;
 
 layout (location = 0) out vec4 outColor;
 
@@ -13,7 +13,15 @@ layout (set = 1, binding = 1) uniform sampler2D uNormalMap;
 layout (set = 1, binding = 2) uniform sampler2D uAlbedoMap;
 layout (set = 1, binding = 3) uniform sampler2D uMetallicRoughnessAOMap;
 layout (set = 1, binding = 4) uniform sampler2D uEmissionMap;
-layout (set = 1, binding = 5) uniform sampler2D uShadowMap;
+
+// Shadow mapping
+// layout (set = 1, binding = 5) uniform sampler2D uShadowMap;
+
+layout (set = 1, binding = 5) uniform ShadowMappingUniformBuffer {
+    mat4 directionalLightSpaceMatrices[MAX_DIRECTIONAL_LIGHTS];
+    int numberDirectionalShadowMaps;
+} uShadowMappingInfo;
+layout (set = 1, binding = 6) uniform sampler2D uDirectionalShadowMaps[MAX_DIRECTIONAL_LIGHTS];
 
 // Constants
 const float PI = 3.14159265359;
@@ -59,7 +67,7 @@ vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float ShadowCalculation(vec4 fragPosLightSpace) {
+float ShadowCalculation(vec4 fragPosLightSpace, sampler2D shadowMap) {
     // Perspective division
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 
@@ -67,7 +75,7 @@ float ShadowCalculation(vec4 fragPosLightSpace) {
     projCoords = projCoords * 0.5 + 0.5;
 
     // Get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(uShadowMap, projCoords.xy).r * 0.5 + 0.5;
+    float closestDepth = texture(shadowMap, projCoords.xy).r * 0.5 + 0.5;
 
     // Get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
@@ -159,17 +167,30 @@ void main() {
         DirectionalLight light = uLightsInfo.directionalLights[i];
 
         vec3 L = normalize(-light.direction.xyz);
-        Lo += PBRCalculation(info, V, L, F0);
+        vec3 color = PBRCalculation(info, V, L, F0);
+
+        mat4 lightSpacematrix = uShadowMappingInfo.directionalLightSpaceMatrices[i];
+        vec4 fragPosLightSpace = lightSpacematrix * position;
+
+        float shadow = ShadowCalculation(fragPosLightSpace, uDirectionalShadowMaps[i]);
+
+        Lo += color * (shadow == 1.0 ? vec3(0.04) : vec3(1.0));
     }
 
     //
     // Ambient color
     //
 
-    float shadow = ShadowCalculation(vLightSpaceMatrix * position);
+    float shadow = 0.0;
+    for (int i = 0; i < uShadowMappingInfo.numberDirectionalShadowMaps; ++i) {
+        mat4 lightSpaceMatrix = uShadowMappingInfo.directionalLightSpaceMatrices[i];
+        vec4 fragPosLightSpace = lightSpaceMatrix * position;
 
-    vec3 ambient = vec3(0.001) * albedo * ao * (shadow == 1.0 ? vec3(0.04) : vec3(1.0));
-    vec3 color = ambient + (1.0 - shadow) * Lo;
+        shadow = ShadowCalculation(fragPosLightSpace, uDirectionalShadowMaps[i]);
+    }
+
+    vec3 ambient = vec3(0.001) * albedo * ao; // * (shadow == 1.0 ? vec3(0.04) : vec3(1.0));
+    vec3 color = ambient + /*(1.0 - shadow) **/ Lo;
 
     // Add emission
     color += emission;
