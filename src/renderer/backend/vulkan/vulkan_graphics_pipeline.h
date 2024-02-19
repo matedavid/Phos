@@ -33,6 +33,7 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
 
     void add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) override;
     void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) override;
+    void add_input(std::string_view name, const std::vector<std::shared_ptr<Texture>>& textures) override;
     void add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) override;
 
     [[nodiscard]] VkPipeline handle() const { return m_pipeline; }
@@ -48,7 +49,7 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
     std::shared_ptr<VulkanDescriptorAllocator> m_allocator;
 
     std::vector<std::pair<VulkanDescriptorInfo, VkDescriptorBufferInfo>> m_buffer_descriptor_info;
-    std::vector<std::pair<VulkanDescriptorInfo, VkDescriptorImageInfo>> m_image_descriptor_info;
+    std::vector<std::pair<VulkanDescriptorInfo, VkDescriptorImageInfo*>> m_image_descriptor_info;
 
     VkDescriptorSet m_set{VK_NULL_HANDLE};
 

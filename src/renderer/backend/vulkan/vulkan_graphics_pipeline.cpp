@@ -142,6 +142,14 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
 VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
     // Destroy pipeline
     vkDestroyPipeline(VulkanContext::device->handle(), m_pipeline, nullptr);
+
+    // Release image descriptors
+    for (const auto& [info, write] : m_image_descriptor_info) {
+        if (info.count > 1)
+            delete[] write;
+        else
+            delete write;
+    }
 }
 
 void VulkanGraphicsPipeline::bind(const std::shared_ptr<CommandBuffer>& command_buffer) {
@@ -178,11 +186,11 @@ bool VulkanGraphicsPipeline::bake() {
     auto builder = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator);
 
     for (const auto& [info, write] : m_buffer_descriptor_info) {
-        builder = builder.bind_buffer(info.binding, write, info.type, info.stage);
+        builder = builder.bind_buffer(info.binding, &write, info.type, info.stage, info.count);
     }
 
     for (const auto& [info, write] : m_image_descriptor_info) {
-        builder = builder.bind_image(info.binding, write, info.type, info.stage);
+        builder = builder.bind_image(info.binding, write, info.type, info.stage, info.count);
     }
 
     return builder.build(m_set);
@@ -231,16 +239,39 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
                 "Graphics Pipeline does not contain Sampler with name: {}",
                 name);
 
-    VkDescriptorImageInfo descriptor{};
-    descriptor.imageView = native_image->view();
-    descriptor.sampler = native_texture->sampler();
-    descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    auto* descriptor = new VkDescriptorImageInfo{};
+    descriptor->imageView = native_image->view();
+    descriptor->sampler = native_texture->sampler();
+    descriptor->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     // @TODO: UGLY :)
     if (native_image->description().storage && !native_image->description().attachment)
-        descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        descriptor->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     m_image_descriptor_info.emplace_back(info.value(), descriptor);
+}
+
+void VulkanGraphicsPipeline::add_input(std::string_view name, const std::vector<std::shared_ptr<Texture>>& textures) {
+    const auto info = m_shader->descriptor_info(name);
+    PHOS_ASSERT(info.has_value() && info->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                "Graphics Pipeline does not contain Sampler Array with name: {}",
+                name);
+
+    auto* image_infos = new VkDescriptorImageInfo[textures.size()];
+    for (std::size_t i = 0; i < textures.size(); ++i) {
+        const auto native_texture = std::dynamic_pointer_cast<VulkanTexture>(textures[i]);
+        const auto native_image = std::dynamic_pointer_cast<VulkanImage>(textures[i]->get_image());
+
+        image_infos[i].sampler = native_texture->sampler();
+        image_infos[i].imageView = native_image->view();
+        image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        // @TODO: UGLY :)
+        if (native_image->description().storage && !native_image->description().attachment)
+            image_infos[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    }
+
+    m_image_descriptor_info.emplace_back(info.value(), image_infos);
 }
 
 void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) {
@@ -252,10 +283,10 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
                 "Graphics Pipeline does not contain Sampler with name: {}",
                 name);
 
-    VkDescriptorImageInfo descriptor{};
-    descriptor.imageView = native_cubemap->view();
-    descriptor.sampler = native_cubemap->sampler();
-    descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    auto* descriptor = new VkDescriptorImageInfo{};
+    descriptor->imageView = native_cubemap->view();
+    descriptor->sampler = native_cubemap->sampler();
+    descriptor->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     m_image_descriptor_info.emplace_back(info.value(), descriptor);
 }

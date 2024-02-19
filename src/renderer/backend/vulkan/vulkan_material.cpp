@@ -137,7 +137,7 @@ bool VulkanMaterial::bake() {
 
         const auto& descriptor = m_name_to_descriptor_info[name];
         builder = builder.bind_image(
-            descriptor.binding, *image_infos.back(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, descriptor.stage);
+            descriptor.binding, image_infos.back(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, descriptor.stage);
     }
 
     // Build uniform buffers
@@ -152,7 +152,7 @@ bool VulkanMaterial::bake() {
 
         const auto& descriptor = m_name_to_descriptor_info[name];
         builder = builder.bind_buffer(
-            descriptor.binding, *buffer_infos.back(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, descriptor.stage);
+            descriptor.binding, buffer_infos.back(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, descriptor.stage);
     }
 
     const auto success = builder.build(m_set);

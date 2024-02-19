@@ -59,8 +59,8 @@ VulkanRenderer::VulkanRenderer(const RendererConfig& config) {
 
         [[maybe_unused]] const bool built =
             VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator)
-                .bind_buffer(0, camera_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .bind_buffer(1, lights_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .bind_buffer(0, &camera_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                .bind_buffer(1, &lights_info, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
                 .build(m_frame_descriptor_sets[i]);
 
         PHOS_ASSERT(built, "Error creating frame descriptor set");
@@ -130,6 +130,7 @@ void VulkanRenderer::begin_frame(const FrameInformation& info) {
     // Lights
     LightsUniformBuffer lights_info{};
 
+    int32_t directional_shadow_idx = 0;
     for (const auto& light : info.lights) {
         if (light->type() == Light::Type::Point && lights_info.number_point_lights < MAX_POINT_LIGHTS) {
             const auto& pl = std::dynamic_pointer_cast<PointLight>(light);
