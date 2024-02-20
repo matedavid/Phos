@@ -164,6 +164,16 @@ void VulkanGraphicsPipeline::bind(const std::shared_ptr<CommandBuffer>& command_
     // Bind pipeline
     vkCmdBindPipeline(native_command_buffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
+    set_viewport(command_buffer,
+                 {
+                     .x = 0.0f,
+                     .y = 0.0f,
+                     .width = static_cast<float>(m_target_framebuffer->width()),
+                     .height = static_cast<float>(m_target_framebuffer->height()),
+                     .minDepth = 0.0f,
+                     .maxDepth = 1.0f,
+                 });
+
     // Bind descriptor set
     if (has_descriptor_set) {
         const std::vector<VkDescriptorSet> descriptor_sets = {m_set};
@@ -198,6 +208,21 @@ bool VulkanGraphicsPipeline::bake() {
 
 std::shared_ptr<Framebuffer> VulkanGraphicsPipeline::target_framebuffer() const {
     return m_target_framebuffer;
+}
+
+void VulkanGraphicsPipeline::set_viewport(const std::shared_ptr<CommandBuffer>& comand_buffer,
+                                          const Viewport& viewport) const {
+    const auto native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(comand_buffer);
+
+    VkViewport vk_viewport{};
+    vk_viewport.x = viewport.x;
+    vk_viewport.y = viewport.y;
+    vk_viewport.width = viewport.width;
+    vk_viewport.height = viewport.height;
+    vk_viewport.minDepth = viewport.minDepth;
+    vk_viewport.maxDepth = viewport.maxDepth;
+
+    vkCmdSetViewport(native_command_buffer->handle(), 0, 1, &vk_viewport);
 }
 
 void VulkanGraphicsPipeline::bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,

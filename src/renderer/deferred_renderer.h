@@ -51,13 +51,11 @@ class DeferredRenderer : public ISceneRenderer {
     std::vector<std::shared_ptr<CommandBuffer>> m_command_buffers;
 
     // Shadow mapping pass
-    // std::shared_ptr<Texture> m_shadow_map_texture;
-    std::array<std::shared_ptr<Texture>, MAX_DIRECTIONAL_LIGHTS> m_directional_shadow_maps;
-    // std::shared_ptr<Framebuffer> m_shadow_map_framebuffer;
-    std::array<std::shared_ptr<Framebuffer>, MAX_DIRECTIONAL_LIGHTS> m_directional_shadow_map_framebuffers;
+    std::shared_ptr<Texture> m_directional_shadow_map_texture;
+    std::shared_ptr<Framebuffer> m_directional_shadow_map_framebuffer;
     std::shared_ptr<Material> m_shadow_map_material;
 
-    std::array<std::shared_ptr<GraphicsPipeline>, MAX_DIRECTIONAL_LIGHTS> m_directional_shadow_map_pipelines;
+    std::shared_ptr<GraphicsPipeline> m_directional_shadow_map_pipeline;
     std::shared_ptr<RenderPass> m_directional_shadow_map_pass;
 
     struct ShadowMappingPushConstants {

@@ -23,6 +23,12 @@ enum class DepthCompareOp {
     LessEq,
 };
 
+struct Viewport {
+    float x{}, y{};
+    float width{}, height{};
+    float minDepth = 0.0f, maxDepth = 1.0f;
+};
+
 class GraphicsPipeline {
   public:
     struct Description {
@@ -43,6 +49,8 @@ class GraphicsPipeline {
 
     [[nodiscard]] virtual bool bake() = 0;
     [[nodiscard]] virtual std::shared_ptr<Framebuffer> target_framebuffer() const = 0;
+
+    virtual void set_viewport(const std::shared_ptr<CommandBuffer>& command_buffer, const Viewport& viewport) const = 0;
 
     virtual void bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,
                                      std::string_view name,

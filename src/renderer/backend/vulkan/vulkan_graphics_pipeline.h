@@ -23,8 +23,9 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
 
     /// Builds the descriptor sets
     [[nodiscard]] bool bake() override;
-
     [[nodiscard]] std::shared_ptr<Framebuffer> target_framebuffer() const override;
+
+    void set_viewport(const std::shared_ptr<CommandBuffer>& comand_buffer, const Viewport& viewport) const override;
 
     void bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,
                              std::string_view name,

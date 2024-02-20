@@ -31,6 +31,9 @@
 
 namespace Phos {
 
+// TODO: Move somewhere else
+constexpr uint32_t SHADOW_MAP_RESOLUTION = 256;
+
 DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererConfig config)
       : m_scene(std::move(scene)), m_config(std::move(config)) {
     for (uint32_t i = 0; i < Renderer::config().num_frames; ++i)
@@ -102,6 +105,51 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             auto shadow_mapping_info = ShadowMappingInfo{};
             shadow_mapping_info.number_directional_shadow_maps = directional_lights.size();
 
+            Renderer::begin_render_pass(command_buffer, m_directional_shadow_map_pass);
+
+            Renderer::bind_graphics_pipeline(command_buffer, m_directional_shadow_map_pipeline);
+
+            Viewport viewport{};
+            viewport.width = static_cast<float>(SHADOW_MAP_RESOLUTION);
+            viewport.height = static_cast<float>(SHADOW_MAP_RESOLUTION);
+
+            for (std::size_t i = 0; i < directional_lights.size(); ++i) {
+                viewport.x = static_cast<float>(i * SHADOW_MAP_RESOLUTION);
+
+                m_directional_shadow_map_pipeline->set_viewport(command_buffer, viewport);
+
+                const auto directional_light = directional_lights[i];
+
+                // Prepare light space matrix
+                constexpr float znear = 0.01f, zfar = 40.0f;
+                constexpr float size = 10.0f;
+                const auto light_view = glm::lookAt(directional_light->position,
+                                                    directional_light->position + directional_light->direction,
+                                                    glm::vec3(0.0f, 1.0f, 0.0f));
+                const auto light_projection = glm::ortho(-size, size, size, -size, znear, zfar);
+
+                const auto light_space_matrix = light_projection * light_view;
+                shadow_mapping_info.light_space_matrices[i] = light_space_matrix;
+
+                // Render models
+                for (const auto& entity : renderable_entities) {
+                    const auto constants = ShadowMappingPushConstants{
+                        .light_space_matrix = light_space_matrix,
+                        .model = entity.model,
+                    };
+
+                    m_directional_shadow_map_pipeline->bind_push_constants(
+                        command_buffer, "ShadowMapPushConstants", constants);
+
+                    Renderer::submit_static_mesh(command_buffer, entity.mesh, m_shadow_map_material);
+                }
+            }
+
+            Renderer::end_render_pass(command_buffer, m_directional_shadow_map_pass);
+
+            m_shadow_mapping_info->update(shadow_mapping_info);
+
+            /*
             for (std::size_t i = 0; i < directional_lights.size(); ++i) {
                 m_directional_shadow_map_pass->begin(command_buffer, m_directional_shadow_map_framebuffers[i]);
 
@@ -137,6 +185,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             }
 
             m_shadow_mapping_info->update(shadow_mapping_info);
+            */
 
             /*
             const auto it = std::ranges::find_if(frame_info.lights, [](const std::shared_ptr<Light>& light) {
@@ -208,13 +257,6 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
 
             // Draw quad
             Renderer::bind_graphics_pipeline(command_buffer, m_lighting_pipeline);
-
-            // auto lighting_constants = ShadowMappingPushConstants{
-            //     .light_space_matrix = m_light_space_matrix,
-            //     .model = glm::mat4(1.0f),
-            // };
-            // m_lighting_pipeline->bind_push_constants(command_buffer, "LightingPassPushConstants",
-            // lighting_constants);
 
             Renderer::draw_screen_quad(command_buffer);
 
@@ -293,39 +335,38 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
 
     // Shadow mapping pass
     {
-        for (std::size_t i = 0; i < MAX_DIRECTIONAL_LIGHTS; ++i) {
-            m_directional_shadow_maps[i] = Texture::create(Image::create({
-                .width = 512,
-                .height = 512,
-                .type = Image::Type::Image2D,
-                .format = Image::Format::D32_SFLOAT,
-                .transfer = false,
-                .attachment = true,
-            }));
+        // Texture laid out horizontally, all shadow maps saved next to each other
+        m_directional_shadow_map_texture = Texture::create(Image::create({
+            .width = SHADOW_MAP_RESOLUTION * MAX_DIRECTIONAL_LIGHTS,
+            .height = SHADOW_MAP_RESOLUTION,
+            .type = Image::Type::Image2D,
+            .format = Image::Format::D32_SFLOAT,
+            .transfer = false,
+            .attachment = true,
+        }));
 
-            const auto shadow_depth_attachment = Framebuffer::Attachment{
-                .image = m_directional_shadow_maps[i]->get_image(),
-                .load_operation = LoadOperation::Clear,
-                .store_operation = StoreOperation::Store,
-                .clear_value = glm::vec3(1.0f),
+        const auto directional_shadow_map_attachment = Framebuffer::Attachment{
+            .image = m_directional_shadow_map_texture->get_image(),
+            .load_operation = LoadOperation::Clear,
+            .store_operation = StoreOperation::Store,
+            .clear_value = glm::vec3(1.0f),
 
-                .input_depth = true,
-            };
+            .input_depth = true,
+        };
 
-            m_directional_shadow_map_framebuffers[i] = Framebuffer::create({
-                .attachments = {shadow_depth_attachment},
-            });
+        m_directional_shadow_map_framebuffer = Framebuffer::create({
+            .attachments = {directional_shadow_map_attachment},
+        });
 
-            m_directional_shadow_map_pipelines[i] = GraphicsPipeline::create({
-                .shader = Renderer::shader_manager()->get_builtin_shader("ShadowMap"),
-                .target_framebuffer = m_directional_shadow_map_framebuffers[i],
-                .depth_write = true,
-            });
-        }
+        m_directional_shadow_map_pipeline = GraphicsPipeline::create({
+            .shader = Renderer::shader_manager()->get_builtin_shader("ShadowMap"),
+            .target_framebuffer = m_directional_shadow_map_framebuffer,
+            .depth_write = true,
+        });
 
         m_directional_shadow_map_pass = RenderPass::create({
             .debug_name = "Shadow Mapping pass",
-            .target_framebuffer = m_directional_shadow_map_framebuffers[0],
+            .target_framebuffer = m_directional_shadow_map_framebuffer,
         });
 
         m_shadow_mapping_info = UniformBuffer::create<ShadowMappingInfo>();
@@ -357,7 +398,6 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
             .attachment = true,
         }));
 
-        // m_metallic_roughness_ao_texture = Texture::create(width, height);
         m_metallic_roughness_ao_texture = Texture::create(Image::create({
             .width = width,
             .height = height,
@@ -470,8 +510,7 @@ void DeferredRenderer::init(uint32_t width, uint32_t height) {
         m_lighting_pipeline->add_input("uMetallicRoughnessAOMap", m_metallic_roughness_ao_texture);
         m_lighting_pipeline->add_input("uEmissionMap", m_emission_texture);
         m_lighting_pipeline->add_input("uShadowMappingInfo", m_shadow_mapping_info);
-        m_lighting_pipeline->add_input("uDirectionalShadowMaps",
-                                       std::vector(m_directional_shadow_maps.begin(), m_directional_shadow_maps.end()));
+        m_lighting_pipeline->add_input("uDirectionalShadowMaps", m_directional_shadow_map_texture);
         PHOS_ASSERT(m_lighting_pipeline->bake(), "Failed to bake Lighting Pipeline");
 
         m_lighting_pass = RenderPass::create(RenderPass::Description{
