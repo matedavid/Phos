@@ -68,6 +68,8 @@ class GraphicsPipeline {
     virtual void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) = 0;
     virtual void add_input(std::string_view name, const std::vector<std::shared_ptr<Texture>>& textures) = 0;
     virtual void add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) = 0;
+
+    virtual void update_input(std::string_view name, const std::shared_ptr<Texture>& texture) = 0;
 };
 
 } // namespace Phos

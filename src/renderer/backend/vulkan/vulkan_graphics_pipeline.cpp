@@ -316,6 +316,38 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
     m_image_descriptor_info.emplace_back(info.value(), descriptor);
 }
 
+void VulkanGraphicsPipeline::update_input(std::string_view name, const std::shared_ptr<Texture>& texture) {
+    const auto native_texture = std::dynamic_pointer_cast<VulkanTexture>(texture);
+    const auto native_image = std::dynamic_pointer_cast<VulkanImage>(texture->get_image());
+
+    auto it =
+        std::ranges::find_if(m_image_descriptor_info, [&name](const auto& pair) { return pair.first.name == name; });
+    if (it == m_image_descriptor_info.end()) {
+        PHOS_LOG_WARNING("Graphics Pipeline does not have Sampler set with name: {}", name);
+        return;
+    }
+
+    // Modify values in descriptor info array
+    delete it->second;
+
+    it->second = new VkDescriptorImageInfo{};
+    it->second->imageView = native_image->view();
+    it->second->sampler = native_texture->sampler();
+    it->second->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    // Update descriptor set
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.pNext = nullptr;
+    write.descriptorCount = it->first.count;
+    write.descriptorType = it->first.type;
+    write.pImageInfo = it->second;
+    write.dstSet = m_set;
+    write.dstBinding = it->first.binding;
+
+    vkUpdateDescriptorSets(VulkanContext::device->handle(), 1, &write, 0, nullptr);
+}
+
 VkCompareOp VulkanGraphicsPipeline::get_depth_compare_op(DepthCompareOp op) {
     switch (op) {
     default:

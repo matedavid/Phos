@@ -36,11 +36,11 @@ class DeferredRenderer : public ISceneRenderer {
     explicit DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererConfig config);
     ~DeferredRenderer() override;
 
-    void change_config(const SceneRendererConfig& config) override;
-    void set_scene(std::shared_ptr<Scene> scene) override;
-
     void render(const std::shared_ptr<Camera>& camera) override;
     [[nodiscard]] std::shared_ptr<Texture> output_texture() const override;
+
+    void change_config(const SceneRendererConfig& config) override;
+    void set_scene(std::shared_ptr<Scene> scene) override;
 
     void window_resized(uint32_t width, uint32_t height) override;
 
@@ -112,6 +112,7 @@ class DeferredRenderer : public ISceneRenderer {
     std::shared_ptr<Texture> m_bloom_upsample_texture;
 
     void init(uint32_t width, uint32_t height);
+    void init_shadow_map_pipeline(uint32_t shadow_map_resolution);
     void init_bloom_pipeline(const BloomConfig& config);
     void init_skybox_pipeline(const EnvironmentConfig& config);
 
