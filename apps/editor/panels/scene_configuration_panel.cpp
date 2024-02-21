@@ -22,6 +22,7 @@ SceneConfigurationPanel::SceneConfigurationPanel(std::string name,
 void SceneConfigurationPanel::on_imgui_render() {
     ImGui::Begin(m_name.c_str());
 
+    RENDER_FUNC(render_rendering_config);
     RENDER_FUNC(render_bloom_config);
     RENDER_FUNC(render_environment_config);
 
@@ -31,6 +32,20 @@ void SceneConfigurationPanel::on_imgui_render() {
 
     ImGui::End();
 }
+
+void SceneConfigurationPanel::render_rendering_config() {
+    auto& config = m_config.rendering_config;
+    ImGui::Text("Rendering Config");
+
+    ImGui::AlignTextToFramePadding();
+
+    ImGui::Text("Shadow Map Resolution:");
+    ImGui::SameLine();
+    ImGui::InputScalar("##ShadowMapResolution", ImGuiDataType_U32, &config.shadow_map_resolution);
+
+    config.shadow_map_resolution = std::max(1u, config.shadow_map_resolution);
+}
+
 
 void SceneConfigurationPanel::render_bloom_config() {
     auto& config = m_config.bloom_config;
