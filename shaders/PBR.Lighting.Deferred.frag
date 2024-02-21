@@ -170,12 +170,15 @@ void main() {
         vec3 L = normalize(-light.direction.xyz);
         vec3 color = PBRCalculation(info, V, L, F0);
 
-        mat4 lightSpacematrix = uShadowMappingInfo.directionalLightSpaceMatrices[i];
+        mat4 lightSpacematrix = uShadowMappingInfo.directionalLightSpaceMatrices[light.shadowMapIdx];
         vec4 fragPosLightSpace = lightSpacematrix * position;
 
-        float shadow = ShadowCalculation(fragPosLightSpace, uDirectionalShadowMaps, i);
-
-        Lo += color * (shadow == 1.0 ? vec3(0.04) : vec3(1.0));
+        if (light.shadowMapIdx >= 0 && light.shadowMapIdx < uShadowMappingInfo.numberDirectionalShadowMaps) {
+            float shadow = ShadowCalculation(fragPosLightSpace, uDirectionalShadowMaps, light.shadowMapIdx);
+            Lo += color * (shadow == 1.0 ? vec3(0.04) : vec3(1.0));
+        } else {
+            Lo += color;
+        }
     }
 
     //

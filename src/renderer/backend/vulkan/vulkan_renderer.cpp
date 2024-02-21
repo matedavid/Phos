@@ -145,6 +145,10 @@ void VulkanRenderer::begin_frame(const FrameInformation& info) {
             lights_info.directional_lights[lights_info.number_directional_lights] = {
                 .color = dl->color,
                 .direction = glm::vec4(dl->direction, 0.0f),
+                .shadow_map_idx =
+                    dl->shadow_type != Light::ShadowType::None && directional_shadow_idx + 1 <= MAX_DIRECTIONAL_LIGHTS
+                        ? directional_shadow_idx++
+                        : -1,
             };
             lights_info.number_directional_lights += 1;
         }

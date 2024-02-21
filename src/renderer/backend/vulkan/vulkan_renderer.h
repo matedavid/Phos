@@ -67,6 +67,9 @@ class VulkanRenderer : public INativeRenderer {
     struct DirectionalLightStruct {
         glm::vec4 color;
         glm::vec4 direction;
+        int32_t shadow_map_idx;
+
+        float _padding[3];
     };
 
     struct LightsUniformBuffer {
