@@ -139,7 +139,7 @@ void main() {
     info.roughness = roughness;
     info.ao = ao;
 
-    vec3 V = normalize(vCameraPosition - position.rgb);
+    vec3 V = normalize(vCameraPosition - position.xyz);
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
