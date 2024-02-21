@@ -63,6 +63,10 @@ class INativeRenderer {
     [[nodiscard]] virtual uint32_t current_frame() = 0;
 };
 
+// Should match with values in "shaders/LightInformation.glslh"
+constexpr uint32_t MAX_POINT_LIGHTS = 10;
+constexpr uint32_t MAX_DIRECTIONAL_LIGHTS = 5;
+
 class Renderer {
   public:
     static void initialize(const RendererConfig& config);

@@ -16,9 +16,6 @@ class VulkanSwapchain;
 class VulkanQueue;
 class VulkanDescriptorAllocator;
 
-constexpr uint32_t MAX_POINT_LIGHTS = 10;
-constexpr uint32_t MAX_DIRECTIONAL_LIGHTS = 1;
-
 class VulkanRenderer : public INativeRenderer {
   public:
     explicit VulkanRenderer(const RendererConfig& config);
@@ -70,6 +67,9 @@ class VulkanRenderer : public INativeRenderer {
     struct DirectionalLightStruct {
         glm::vec4 color;
         glm::vec4 direction;
+        int32_t shadow_map_idx;
+
+        float _padding[3];
     };
 
     struct LightsUniformBuffer {

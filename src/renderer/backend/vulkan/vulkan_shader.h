@@ -30,6 +30,7 @@ struct VulkanDescriptorInfo {
     uint32_t set;
     uint32_t binding;
     uint32_t size;
+    uint32_t count;
 
     std::vector<VulkanUniformBufferMember> members;
 };

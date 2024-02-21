@@ -23,8 +23,9 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
 
     /// Builds the descriptor sets
     [[nodiscard]] bool bake() override;
-
     [[nodiscard]] std::shared_ptr<Framebuffer> target_framebuffer() const override;
+
+    void set_viewport(const std::shared_ptr<CommandBuffer>& comand_buffer, const Viewport& viewport) const override;
 
     void bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,
                              std::string_view name,
@@ -33,7 +34,10 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
 
     void add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) override;
     void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) override;
+    void add_input(std::string_view name, const std::vector<std::shared_ptr<Texture>>& textures) override;
     void add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) override;
+
+    void update_input(std::string_view name, const std::shared_ptr<Texture>& texture) override;
 
     [[nodiscard]] VkPipeline handle() const { return m_pipeline; }
     [[nodiscard]] VkPipelineLayout layout() const;
@@ -48,7 +52,7 @@ class VulkanGraphicsPipeline : public GraphicsPipeline {
     std::shared_ptr<VulkanDescriptorAllocator> m_allocator;
 
     std::vector<std::pair<VulkanDescriptorInfo, VkDescriptorBufferInfo>> m_buffer_descriptor_info;
-    std::vector<std::pair<VulkanDescriptorInfo, VkDescriptorImageInfo>> m_image_descriptor_info;
+    std::vector<std::pair<VulkanDescriptorInfo, VkDescriptorImageInfo*>> m_image_descriptor_info;
 
     VkDescriptorSet m_set{VK_NULL_HANDLE};
 

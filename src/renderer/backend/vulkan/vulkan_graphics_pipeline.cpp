@@ -142,6 +142,14 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Description& description) {
 VulkanGraphicsPipeline::~VulkanGraphicsPipeline() {
     // Destroy pipeline
     vkDestroyPipeline(VulkanContext::device->handle(), m_pipeline, nullptr);
+
+    // Release image descriptors
+    for (const auto& [info, write] : m_image_descriptor_info) {
+        if (info.count > 1)
+            delete[] write;
+        else
+            delete write;
+    }
 }
 
 void VulkanGraphicsPipeline::bind(const std::shared_ptr<CommandBuffer>& command_buffer) {
@@ -155,6 +163,16 @@ void VulkanGraphicsPipeline::bind(const std::shared_ptr<CommandBuffer>& command_
 
     // Bind pipeline
     vkCmdBindPipeline(native_command_buffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+
+    set_viewport(command_buffer,
+                 {
+                     .x = 0.0f,
+                     .y = 0.0f,
+                     .width = static_cast<float>(m_target_framebuffer->width()),
+                     .height = static_cast<float>(m_target_framebuffer->height()),
+                     .minDepth = 0.0f,
+                     .maxDepth = 1.0f,
+                 });
 
     // Bind descriptor set
     if (has_descriptor_set) {
@@ -178,11 +196,11 @@ bool VulkanGraphicsPipeline::bake() {
     auto builder = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator);
 
     for (const auto& [info, write] : m_buffer_descriptor_info) {
-        builder = builder.bind_buffer(info.binding, write, info.type, info.stage);
+        builder = builder.bind_buffer(info.binding, &write, info.type, info.stage, info.count);
     }
 
     for (const auto& [info, write] : m_image_descriptor_info) {
-        builder = builder.bind_image(info.binding, write, info.type, info.stage);
+        builder = builder.bind_image(info.binding, write, info.type, info.stage, info.count);
     }
 
     return builder.build(m_set);
@@ -190,6 +208,21 @@ bool VulkanGraphicsPipeline::bake() {
 
 std::shared_ptr<Framebuffer> VulkanGraphicsPipeline::target_framebuffer() const {
     return m_target_framebuffer;
+}
+
+void VulkanGraphicsPipeline::set_viewport(const std::shared_ptr<CommandBuffer>& comand_buffer,
+                                          const Viewport& viewport) const {
+    const auto native_command_buffer = std::dynamic_pointer_cast<VulkanCommandBuffer>(comand_buffer);
+
+    VkViewport vk_viewport{};
+    vk_viewport.x = viewport.x;
+    vk_viewport.y = viewport.y;
+    vk_viewport.width = viewport.width;
+    vk_viewport.height = viewport.height;
+    vk_viewport.minDepth = viewport.minDepth;
+    vk_viewport.maxDepth = viewport.maxDepth;
+
+    vkCmdSetViewport(native_command_buffer->handle(), 0, 1, &vk_viewport);
 }
 
 void VulkanGraphicsPipeline::bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,
@@ -231,16 +264,39 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
                 "Graphics Pipeline does not contain Sampler with name: {}",
                 name);
 
-    VkDescriptorImageInfo descriptor{};
-    descriptor.imageView = native_image->view();
-    descriptor.sampler = native_texture->sampler();
-    descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    auto* descriptor = new VkDescriptorImageInfo{};
+    descriptor->imageView = native_image->view();
+    descriptor->sampler = native_texture->sampler();
+    descriptor->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     // @TODO: UGLY :)
     if (native_image->description().storage && !native_image->description().attachment)
-        descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        descriptor->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     m_image_descriptor_info.emplace_back(info.value(), descriptor);
+}
+
+void VulkanGraphicsPipeline::add_input(std::string_view name, const std::vector<std::shared_ptr<Texture>>& textures) {
+    const auto info = m_shader->descriptor_info(name);
+    PHOS_ASSERT(info.has_value() && info->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                "Graphics Pipeline does not contain Sampler Array with name: {}",
+                name);
+
+    auto* image_infos = new VkDescriptorImageInfo[textures.size()];
+    for (std::size_t i = 0; i < textures.size(); ++i) {
+        const auto native_texture = std::dynamic_pointer_cast<VulkanTexture>(textures[i]);
+        const auto native_image = std::dynamic_pointer_cast<VulkanImage>(textures[i]->get_image());
+
+        image_infos[i].sampler = native_texture->sampler();
+        image_infos[i].imageView = native_image->view();
+        image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        // @TODO: UGLY :)
+        if (native_image->description().storage && !native_image->description().attachment)
+            image_infos[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    }
+
+    m_image_descriptor_info.emplace_back(info.value(), image_infos);
 }
 
 void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) {
@@ -252,12 +308,44 @@ void VulkanGraphicsPipeline::add_input(std::string_view name, const std::shared_
                 "Graphics Pipeline does not contain Sampler with name: {}",
                 name);
 
-    VkDescriptorImageInfo descriptor{};
-    descriptor.imageView = native_cubemap->view();
-    descriptor.sampler = native_cubemap->sampler();
-    descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    auto* descriptor = new VkDescriptorImageInfo{};
+    descriptor->imageView = native_cubemap->view();
+    descriptor->sampler = native_cubemap->sampler();
+    descriptor->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     m_image_descriptor_info.emplace_back(info.value(), descriptor);
+}
+
+void VulkanGraphicsPipeline::update_input(std::string_view name, const std::shared_ptr<Texture>& texture) {
+    const auto native_texture = std::dynamic_pointer_cast<VulkanTexture>(texture);
+    const auto native_image = std::dynamic_pointer_cast<VulkanImage>(texture->get_image());
+
+    auto it =
+        std::ranges::find_if(m_image_descriptor_info, [&name](const auto& pair) { return pair.first.name == name; });
+    if (it == m_image_descriptor_info.end()) {
+        PHOS_LOG_WARNING("Graphics Pipeline does not have Sampler set with name: {}", name);
+        return;
+    }
+
+    // Modify values in descriptor info array
+    delete it->second;
+
+    it->second = new VkDescriptorImageInfo{};
+    it->second->imageView = native_image->view();
+    it->second->sampler = native_texture->sampler();
+    it->second->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    // Update descriptor set
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.pNext = nullptr;
+    write.descriptorCount = it->first.count;
+    write.descriptorType = it->first.type;
+    write.pImageInfo = it->second;
+    write.dstSet = m_set;
+    write.dstBinding = it->first.binding;
+
+    vkUpdateDescriptorSets(VulkanContext::device->handle(), 1, &write, 0, nullptr);
 }
 
 VkCompareOp VulkanGraphicsPipeline::get_depth_compare_op(DepthCompareOp op) {

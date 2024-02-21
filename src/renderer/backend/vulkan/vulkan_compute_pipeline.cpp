@@ -86,11 +86,11 @@ VkDescriptorSet VulkanComputePipelineStepBuilder::build() const {
     auto builder = VulkanDescriptorBuilder::begin(VulkanContext::descriptor_layout_cache, m_allocator);
 
     for (const auto& [info, write] : m_buffer_descriptor_info) {
-        builder = builder.bind_buffer(info.binding, write, info.type, info.stage);
+        builder = builder.bind_buffer(info.binding, &write, info.type, info.stage);
     }
 
     for (const auto& [info, write] : m_image_descriptor_info) {
-        builder = builder.bind_image(info.binding, write, info.type, info.stage);
+        builder = builder.bind_image(info.binding, &write, info.type, info.stage);
     }
 
     VkDescriptorSet set;

@@ -326,10 +326,12 @@ void VulkanShader::retrieve_set_bindings(const std::vector<SpvReflectDescriptorS
             binding.stageFlags = stage;
             binding.pImmutableSamplers = VK_NULL_HANDLE;
 
-            // Don't know why, but it's done this way in the example
-            // (https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_descriptors.cpp)
-            for (uint32_t i_dim = 0; i_dim < set_binding->array.dims_count; ++i_dim)
-                binding.descriptorCount *= set_binding->array.dims[i_dim];
+            if (binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+                // Don't know why, but it's done this way in the example
+                // (https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_descriptors.cpp)
+                for (uint32_t i_dim = 0; i_dim < set_binding->array.dims_count; ++i_dim)
+                    binding.descriptorCount *= set_binding->array.dims[i_dim];
+            }
 
             PHOS_ASSERT(set_info->set < MAX_DESCRIPTOR_SET,
                         "Trying to create descriptor set with value {} but maximum set is {}",
@@ -346,6 +348,7 @@ void VulkanShader::retrieve_set_bindings(const std::vector<SpvReflectDescriptorS
             descriptor_info.set = set_binding->set;
             descriptor_info.binding = set_binding->binding;
             descriptor_info.size = set_binding->block.size;
+            descriptor_info.count = set_binding->count;
 
             for (uint32_t j = 0; j < set_binding->block.member_count; ++j) {
                 const auto mem = set_binding->block.members[j];

@@ -33,6 +33,7 @@ class SceneConfigurationPanel : public IImGuiPanel {
 
     std::function<void(Phos::SceneRendererConfig)> m_scene_config_updated_callback;
 
+  void render_rendering_config();
     void render_bloom_config();
     void render_environment_config();
 };

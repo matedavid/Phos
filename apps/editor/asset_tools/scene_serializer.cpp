@@ -22,6 +22,14 @@ void SceneSerializer::serialize(const std::shared_ptr<Phos::Scene>& scene, const
     auto config_builder = AssetBuilder();
 
     {
+        // Rendering config
+        auto rendering_config = AssetBuilder();
+        rendering_config.dump("shadowMapResolution", config.rendering_config.shadow_map_resolution);
+
+        config_builder.dump("renderingConfig", rendering_config);
+    }
+
+    {
         // Bloom config
         auto bloom_config = AssetBuilder();
         bloom_config.dump("enabled", config.bloom_config.enabled);

@@ -74,14 +74,16 @@ class VulkanDescriptorBuilder {
                                          std::shared_ptr<VulkanDescriptorAllocator> allocator);
 
     [[nodiscard]] VulkanDescriptorBuilder& bind_buffer(uint32_t binding,
-                                                       const VkDescriptorBufferInfo& buffer_info,
+                                                       const VkDescriptorBufferInfo* buffer_info,
                                                        VkDescriptorType type,
-                                                       VkShaderStageFlags stage_flags);
+                                                       VkShaderStageFlags stage_flags,
+                                                       uint32_t descriptor_count = 1);
 
     [[nodiscard]] VulkanDescriptorBuilder& bind_image(uint32_t binding,
-                                                      const VkDescriptorImageInfo& image_info,
+                                                      const VkDescriptorImageInfo* image_info,
                                                       VkDescriptorType type,
-                                                      VkShaderStageFlags stage_flags);
+                                                      VkShaderStageFlags stage_flags,
+                                                      uint32_t descriptor_count = 1);
 
     [[nodiscard]] bool build(VkDescriptorSet& set, VkDescriptorSetLayout& layout);
     [[nodiscard]] bool build(VkDescriptorSet& set);

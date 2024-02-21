@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 namespace Phos {
 
@@ -20,6 +21,12 @@ enum class FrontFace {
 enum class DepthCompareOp {
     Less,
     LessEq,
+};
+
+struct Viewport {
+    float x{}, y{};
+    float width{}, height{};
+    float minDepth = 0.0f, maxDepth = 1.0f;
 };
 
 class GraphicsPipeline {
@@ -43,6 +50,8 @@ class GraphicsPipeline {
     [[nodiscard]] virtual bool bake() = 0;
     [[nodiscard]] virtual std::shared_ptr<Framebuffer> target_framebuffer() const = 0;
 
+    virtual void set_viewport(const std::shared_ptr<CommandBuffer>& command_buffer, const Viewport& viewport) const = 0;
+
     virtual void bind_push_constants(const std::shared_ptr<CommandBuffer>& command_buffer,
                                      std::string_view name,
                                      uint32_t size,
@@ -57,7 +66,10 @@ class GraphicsPipeline {
 
     virtual void add_input(std::string_view name, const std::shared_ptr<UniformBuffer>& ubo) = 0;
     virtual void add_input(std::string_view name, const std::shared_ptr<Texture>& texture) = 0;
+    virtual void add_input(std::string_view name, const std::vector<std::shared_ptr<Texture>>& textures) = 0;
     virtual void add_input(std::string_view name, const std::shared_ptr<Cubemap>& cubemap) = 0;
+
+    virtual void update_input(std::string_view name, const std::shared_ptr<Texture>& texture) = 0;
 };
 
 } // namespace Phos

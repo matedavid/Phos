@@ -374,6 +374,9 @@ std::shared_ptr<IAsset> SceneParser::parse(const YAML::Node& node, [[maybe_unuse
     const auto config_node = node["config"];
     auto& renderer_config = scene->config();
 
+    renderer_config.rendering_config.shadow_map_resolution =
+        config_node["renderingConfig"]["shadowMapResolution"].as<uint32_t>();
+
     renderer_config.bloom_config.enabled = config_node["bloomConfig"]["enabled"].as<bool>();
     renderer_config.bloom_config.threshold = config_node["bloomConfig"]["threshold"].as<float>();
 
