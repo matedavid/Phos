@@ -6,7 +6,7 @@ layout (binding = 1, rgba16f) restrict writeonly uniform image2D uOutputImage;
 layout (push_constant) uniform BloomInformation {
     int mode;
     float threshold;
-} uInfo;
+} uBloomInfo;
 
 #define MODE_DOWNSAMPLE 0
 #define MODE_UPSAMPLE   1
@@ -91,7 +91,7 @@ vec3 QuadraticThreshold(vec3 color, float threshold, vec3 curve) {
 vec3 Prefilter(vec3 color) {
     float clampValue = 20.0f;
     color = clamp(color, vec3(0.0f), vec3(clampValue));
-    color = QuadraticThreshold(color, uInfo.threshold, vec3(uInfo.threshold - KNEE, KNEE * 2.0f, 0.25f / KNEE));
+    color = QuadraticThreshold(color, uBloomInfo.threshold, vec3(uBloomInfo.threshold - KNEE, KNEE * 2.0f, 0.25f / KNEE));
     return color;
 }
 
@@ -108,14 +108,14 @@ void main() {
     vec2 texSize = vec2(textureSize(uInputImage, 0));
 
     vec3 color = vec3(0.0f);
-    if (uInfo.mode == MODE_DOWNSAMPLE) {
+    if (uBloomInfo.mode == MODE_DOWNSAMPLE) {
         color = DownsampleBox13(uInputImage, texCoords, 1.0f / texSize);
-    } else if (uInfo.mode == MODE_UPSAMPLE) {
+    } else if (uBloomInfo.mode == MODE_UPSAMPLE) {
         float sampleScale = 2.0f;
 
         vec2 bloomTexSize = vec2(textureSize(uInputImage, 0));
         color = UpsampleTent9(uInputImage, texCoords, 1.0f / bloomTexSize, sampleScale);
-    } else if (uInfo.mode == MODE_PREFILTER) {
+    } else if (uBloomInfo.mode == MODE_PREFILTER) {
         color = DownsampleBox13(uInputImage, texCoords, 1.0f / texSize);
         color = Prefilter(color);
     }

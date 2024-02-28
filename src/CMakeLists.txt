@@ -100,11 +100,28 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/)
 #
 
 # GLFW
+FetchContent_Declare(
+        glfw
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG 3.4
+        GIT_PROGRESS TRUE
+)
+FetchContent_MakeAvailable(glfw)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 
 # glm
+FetchContent_Declare(
+        glm
+        GIT_REPOSITORY https://github.com/g-truc/glm.git
+        GIT_TAG 1.0.1
+        GIT_PROGRESS TRUE
+)
+FetchContent_MakeAvailable(glm)
+
 target_compile_definitions(${PROJECT_NAME} PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE) # Only for Vulkan
 target_compile_definitions(${PROJECT_NAME} PUBLIC GLM_FORCE_RADIANS)
+target_compile_definitions(${PROJECT_NAME} PUBLIC GLM_ENABLE_EXPERIMENTAL)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC glm::glm)
 
@@ -113,23 +130,78 @@ find_package(Vulkan REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
 
 # stb
+add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/stb ${CMAKE_CURRENT_BINARY_DIR}/stb)
 target_link_libraries(${PROJECT_NAME} PRIVATE stb)
 
 # spdlog
-target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
+FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG v1.13.0
+        GIT_PROGRESS TRUE
+)
+FetchContent_MakeAvailable(spdlog)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC spdlog)
 
 # assimp
-target_link_libraries(${PROJECT_NAME} PRIVATE assimp)
+FetchContent_Declare(
+        assimp
+        GIT_REPOSITORY https://github.com/assimp/assimp
+        GIT_TAG v5.3.1
+        GIT_PROGRESS TRUE
+)
+
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(assimp)
+target_link_libraries(${PROJECT_NAME} PUBLIC assimp::assimp)
 
 # Spirv-reflect
+FetchContent_Declare(
+        spirv-reflect
+        GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Reflect.git
+        GIT_TAG vulkan-sdk-1.3.275.0
+        GIT_PROGRESS TRUE
+)
+set(SPIRV_REFLECT_EXECUTABLE OFF CACHE BOOL "" FORCE)
+set(SPIRV_REFLECT_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(SPIRV_REFLECT_STATIC_LIB ON CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(spirv-reflect)
 target_link_libraries(${PROJECT_NAME} PRIVATE spirv-reflect-static)
 
 # yaml-cpp
-target_link_libraries(${PROJECT_NAME} PRIVATE yaml-cpp)
+FetchContent_Declare(
+        yaml-cpp
+        GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+        GIT_TAG 0.8.0
+        GIT_PROGRESS TRUE
+)
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "disable yaml tests")
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "disable yaml tools")
+set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "disable yaml contrib")
+
+FetchContent_MakeAvailable(yaml-cpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC yaml-cpp)
 
 # Mono
 target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/vendor/mono/build/lib/libmono-2.0.so)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/vendor/mono/build/include/mono-2.0/)
 
 # Tracy
+FetchContent_Declare(
+        tracy
+        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+        GIT_TAG v0.10
+        GIT_PROGRESS TRUE
+)
+
+option(TRACY_ENABLE "" ON)
+option(TRACY_ON_DEMAND "" ON)
+
+FetchContent_MakeAvailable(tracy)
 target_link_libraries(${PROJECT_NAME} PUBLIC Tracy::TracyClient)

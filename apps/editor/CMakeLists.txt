@@ -37,16 +37,26 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/)
 # PhosEngine
 target_link_libraries(${PROJECT_NAME} PRIVATE PhosEngine)
 
-# yaml-cpp
-target_link_libraries(${PROJECT_NAME} PUBLIC yaml-cpp)
-
 # imgui
+FetchContent_Declare(
+        imgui
+        GIT_REPOSITORY https://github.com/matedavid/imgui_cmake.git
+        GIT_TAG docking
+        GIT_PROGRESS TRUE
+)
+FetchContent_MakeAvailable(imgui)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE imgui)
 target_link_libraries(${PROJECT_NAME} PRIVATE imgui_impl_glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE imgui_impl_vulkan)
 
-# assimp
-target_link_libraries(${PROJECT_NAME} PRIVATE assimp)
-
 # nfd
+FetchContent_Declare(
+        nfd
+        GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended.git
+        GIT_TAG master
+        GIT_PROGRESS TRUE
+)
+FetchContent_MakeAvailable(nfd)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE nfd)

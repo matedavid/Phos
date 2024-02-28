@@ -117,7 +117,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                     };
 
                     m_directional_shadow_map_pipeline->bind_push_constants(
-                        command_buffer, "ShadowMapPushConstants", constants);
+                        command_buffer, "uShadowMapInfo", constants);
 
                     Renderer::submit_static_mesh(command_buffer, entity.mesh, m_shadow_map_material);
                 }
@@ -150,7 +150,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                     .color = glm::vec4(1.0f),
                 };
 
-                m_geometry_pipeline->bind_push_constants(command_buffer, "ModelInfoPushConstants", constants);
+                m_geometry_pipeline->bind_push_constants(command_buffer, "uModelInfo", constants);
                 Renderer::submit_static_mesh(command_buffer, entity.mesh, entity.material);
             }
 
@@ -178,7 +178,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                     .model = model,
                     .color = glm::vec4{1.0f},
                 };
-                m_skybox_pipeline->bind_push_constants(command_buffer, "ModelInfoPushConstants", constants);
+                m_skybox_pipeline->bind_push_constants(command_buffer, "uModelInfo", constants);
 
                 Renderer::submit_static_mesh(command_buffer, m_cube_mesh, m_cube_material);
             }
@@ -206,7 +206,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             Renderer::begin_render_pass(command_buffer, m_tone_mapping_pass);
 
             Renderer::bind_graphics_pipeline(command_buffer, m_tone_mapping_pipeline);
-            m_tone_mapping_pipeline->bind_push_constants(command_buffer, "ToneMappingConfig", constants);
+            m_tone_mapping_pipeline->bind_push_constants(command_buffer, "uConfig", constants);
             Renderer::draw_screen_quad(command_buffer);
 
             Renderer::end_render_pass(command_buffer, m_tone_mapping_pass);
@@ -561,7 +561,7 @@ void DeferredRenderer::init_bloom_pipeline(const BloomConfig& config) {
         [&](ComputePipeline::StepBuilder& builder) {
             builder.set("uInputImage", m_lighting_texture);
             builder.set("uOutputImage", m_bloom_downsample_texture, 1);
-            builder.set_push_constants("BloomInformation", bloom_constants);
+            builder.set_push_constants("uBloomInfo", bloom_constants);
         },
         {work_groups, 1});
 
@@ -578,7 +578,7 @@ void DeferredRenderer::init_bloom_pipeline(const BloomConfig& config) {
             [&](ComputePipeline::StepBuilder& builder) {
                 builder.set("uInputImage", m_bloom_downsample_texture, i - 1);
                 builder.set("uOutputImage", m_bloom_downsample_texture, i);
-                builder.set_push_constants("BloomInformation", bloom_constants);
+                builder.set_push_constants("uBloomInfo", bloom_constants);
             },
             {work_groups, 1});
     }
@@ -594,7 +594,7 @@ void DeferredRenderer::init_bloom_pipeline(const BloomConfig& config) {
             [&](ComputePipeline::StepBuilder& builder) {
                 builder.set("uInputImage", m_bloom_downsample_texture, i);
                 builder.set("uOutputImage", m_bloom_upsample_texture, i - 1);
-                builder.set_push_constants("BloomInformation", bloom_constants);
+                builder.set_push_constants("uBloomInfo", bloom_constants);
             },
             {work_groups, 1});
     }
