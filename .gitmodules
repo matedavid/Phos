@@ -1,3 +1,0 @@
-[submodule "vendor/mono"]
-	path = vendor/mono
-	url = git@github.com:mono/mono.git

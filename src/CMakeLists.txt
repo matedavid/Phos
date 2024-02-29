@@ -189,8 +189,8 @@ FetchContent_MakeAvailable(yaml-cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC yaml-cpp)
 
 # Mono
-target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/vendor/mono/build/lib/libmono-2.0.so)
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/vendor/mono/build/include/mono-2.0/)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/vendor/mono/libmonosgen-2.0.a)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/vendor/mono/include/)
 
 # Tracy
 FetchContent_Declare(
