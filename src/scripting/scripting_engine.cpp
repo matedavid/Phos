@@ -6,18 +6,25 @@
 #include "scripting/script_glue.h"
 #include "utility/logging.h"
 
+#ifndef PHOS_MONO_LIB_PATH
+#error Mono library path must be defined in order to use scripting
+#endif
+
 namespace Phos {
 
 MonoDomain* ScriptingEngine::m_root_domain = nullptr;
 ScriptingEngine::ScriptingEngineContext ScriptingEngine::m_context;
 
 void ScriptingEngine::initialize() {
+    mono_set_assemblies_path(PHOS_MONO_LIB_PATH);
+
     // Initialize mono runtime and root domain
     m_root_domain = mono_jit_init("PhosScriptingEngine");
     PHOS_ASSERT(m_root_domain, "Failed to Initialize Mono Runtime");
 
     // Load Core domain
-    const std::filesystem::path CORE_DLL_PATH = "../../../ScriptGlue/bin/Debug/PhosEngine.dll"; // @TODO: Careful with path!
+    const std::filesystem::path CORE_DLL_PATH =
+        "../../../ScriptGlue/bin/Debug/PhosEngine.dll"; // @TODO: Careful with path!
 
     [[maybe_unused]] const auto loaded = load_mono_assembly(
         CORE_DLL_PATH, "PhosCoreDomain", m_context.core_domain, m_context.core_assembly, m_context.core_image);

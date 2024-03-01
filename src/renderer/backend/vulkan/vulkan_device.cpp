@@ -184,6 +184,10 @@ VulkanPhysicalDevice VulkanDevice::select_physical_device(const std::unique_ptr<
         if (graphics_compute_same_queue && queue_families.graphics == queue_families.compute)
             score += 10;
 
+        // Prefer discrete GPUs
+        if (device.get_properties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+            score += 40;
+
         if (score > max_score) {
             max_device = device;
             max_score = score;

@@ -155,6 +155,7 @@ FetchContent_Declare(
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "" FORCE)
+set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(assimp)
@@ -189,6 +190,10 @@ FetchContent_MakeAvailable(yaml-cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC yaml-cpp)
 
 # Mono
+set(MONO_LIB_INSTALL_PATH ${CMAKE_BINARY_DIR}/lib/)
+file(COPY ${CMAKE_SOURCE_DIR}/vendor/mono/lib/ DESTINATION ${MONO_LIB_INSTALL_PATH})
+target_compile_definitions(${PROJECT_NAME} PRIVATE PHOS_MONO_LIB_PATH="${MONO_LIB_INSTALL_PATH}")
+
 target_link_libraries(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/vendor/mono/libmonosgen-2.0.a)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/vendor/mono/include/)
 
