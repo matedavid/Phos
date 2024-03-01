@@ -1,11 +1,17 @@
 #include "shader_manager.h"
 
+#include <filesystem>
+
 #include "utility/logging.h"
 #include "renderer/backend/shader.h"
 
 namespace Phos {
 
-#define SHADER_PATH(name) std::string("../../../shaders/build/") + name
+#ifndef PHOS_BASE_SHADER_PATH
+#define PHOS_BASE_SHADER_PATH "../../../shaders/build/"
+#endif
+
+#define SHADER_PATH(name) std::filesystem::path(PHOS_BASE_SHADER_PATH) / name
 
 ShaderManager::ShaderManager() {
     // PBR Deferred Shaders

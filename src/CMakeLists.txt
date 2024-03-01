@@ -92,8 +92,42 @@ target_sources(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/)
 
 #
-# TODO: Shaders
+# Shaders
 #
+set(OUT_SHADER_PATH ${CMAKE_BINARY_DIR}/shaders)
+target_compile_definitions(${PROJECT_NAME} PRIVATE PHOS_BASE_SHADER_PATH="${OUT_SHADER_PATH}")
+
+find_program(glslc NAMES glslc REQUIRED)
+
+function(compile_shader shader_path)
+    get_filename_component(shader_id ${shader_path} NAME)
+    get_filename_component(shader_name ${shader_path} NAME_WLE)
+    get_filename_component(shader_ext ${shader_path} LAST_EXT)
+
+    set(shader_identifier Vert)
+    if (${shader_ext} STREQUAL ".frag")
+        set(shader_identifier Frag)
+    elseif (${shader_ext} STREQUAL ".comp")
+        set(shader_identifier Compute)
+    endif ()
+
+    set(shader_output_path ${OUT_SHADER_PATH}/${shader_name}.${shader_identifier}.spv)
+
+    add_custom_command(
+            OUTPUT ${shader_output_path}
+            COMMAND ${glslc} ${shader_path} -o ${shader_output_path}
+            DEPENDS ${shader_path}
+            COMMENT "Compiling shader ${shader_id}"
+    )
+
+    add_custom_target(${shader_id} DEPENDS ${shader_output_path})
+    add_dependencies(${PROJECT_NAME} ${shader_id})
+endfunction()
+
+file(GLOB_RECURSE SHADER_FILES ${CMAKE_SOURCE_DIR}/shaders/*.vert ${CMAKE_SOURCE_DIR}/shaders/*.frag ${CMAKE_SOURCE_DIR}/shaders/*.comp)
+foreach (SHADER_PATH ${SHADER_FILES})
+    compile_shader(${SHADER_PATH})
+endforeach ()
 
 #
 # Dependencies
