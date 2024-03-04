@@ -97,6 +97,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/)
 set(OUT_SHADER_PATH ${CMAKE_BINARY_DIR}/shaders)
 target_compile_definitions(${PROJECT_NAME} PRIVATE PHOS_BASE_SHADER_PATH="${OUT_SHADER_PATH}")
 
+if (NOT EXISTS ${OUT_SHADER_PATH})
+    file(MAKE_DIRECTORY ${OUT_SHADER_PATH})
+endif ()
+
 find_program(glslc NAMES glslc REQUIRED)
 
 function(compile_shader shader_path)
