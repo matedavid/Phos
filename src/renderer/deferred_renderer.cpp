@@ -3,6 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <utility>
+#include <stack>
 
 #include "core/window.h"
 
@@ -629,8 +630,8 @@ std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
         const auto light_component = entity.get_component<LightComponent>();
 
         if (light_component.type == Light::Type::Point) {
-            auto light = std::make_shared<PointLight>(
-                transform.position, light_component.color, light_component.intensity);
+            auto light =
+                std::make_shared<PointLight>(transform.position, light_component.color, light_component.intensity);
             lights.push_back(light);
         } else if (light_component.type == Light::Type::Directional) {
             auto direction = glm::vec3(0.0f, 0.0f, 1.0f); // Z+
@@ -651,20 +652,40 @@ std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
 }
 
 std::vector<DeferredRenderer::RenderableEntity> DeferredRenderer::get_renderable_entities() const {
+    const auto apply_transform = [](const TransformComponent& transform, glm::mat4& model) {
+        model = glm::translate(model, transform.position);
+        model = glm::rotate(model, glm::radians(transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::rotate(model, glm::radians(transform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(transform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, transform.scale);
+    };
+
     std::vector<RenderableEntity> entities;
     for (const auto& entity : m_scene->get_entities_with<MeshRendererComponent>()) {
         const auto& [mesh, material] = entity.get_component<MeshRendererComponent>();
         if (mesh == nullptr || material == nullptr)
             continue;
 
-        const auto& transform = entity.get_component<TransformComponent>();
+        // Resolve transform in a parent-first manner
+        auto transforms = std::stack<TransformComponent>();
 
+        auto current_entity_uuid = std::optional<UUID>(entity.get_component<UUIDComponent>().uuid);
+        while (current_entity_uuid) {
+            const auto& current_entity = m_scene->get_entity_with_uuid(*current_entity_uuid);
+
+            const auto& transform = current_entity.get_component<TransformComponent>();
+            transforms.push(transform);
+
+            current_entity_uuid = current_entity.get_component<RelationshipComponent>().parent;
+        }
+
+        // Apply transforms
         glm::mat4 model{1.0f};
-        model = glm::translate(model, transform.position);
-        model = glm::rotate(model, glm::radians(transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-        model = glm::rotate(model, glm::radians(transform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(transform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::scale(model, transform.scale);
+        while (!transforms.empty()) {
+            const auto& transform = transforms.top();
+            apply_transform(transform, model);
+            transforms.pop();
+        }
 
         entities.emplace_back(model, mesh, material);
     }
