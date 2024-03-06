@@ -228,7 +228,7 @@ FetchContent_MakeAvailable(yaml-cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC yaml-cpp)
 
 # Mono
-set(MONO_LIB_INSTALL_PATH ${CMAKE_BINARY_DIR}/lib/)
+set(MONO_LIB_INSTALL_PATH ${CMAKE_BINARY_DIR}/mono/lib/)
 file(COPY ${CMAKE_SOURCE_DIR}/vendor/mono/lib/ DESTINATION ${MONO_LIB_INSTALL_PATH})
 target_compile_definitions(${PROJECT_NAME} PRIVATE PHOS_MONO_LIB_PATH="${MONO_LIB_INSTALL_PATH}")
 
