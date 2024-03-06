@@ -156,7 +156,7 @@ void main() {
 
         float dist = length(light.position.xyz - position.xyz);
         float attenuation = 1.0 / (dist * dist);
-        vec3 radiance = (light.color * attenuation).rgb;
+        vec3 radiance = (light.color * light.intensity * attenuation).rgb;
 
         Lo += PBRCalculation(info, V, L, F0) * radiance;
     }
@@ -167,8 +167,10 @@ void main() {
     for (int i = 0; i < uLightsInfo.numberDirectionalLights; ++i) {
         DirectionalLight light = uLightsInfo.directionalLights[i];
 
+        vec3 radiance = light.color.rgb * light.intensity;
+
         vec3 L = normalize(-light.direction.xyz);
-        vec3 color = PBRCalculation(info, V, L, F0);
+        vec3 color = PBRCalculation(info, V, L, F0) * radiance;
 
         mat4 lightSpacematrix = uShadowMappingInfo.directionalLightSpaceMatrices[light.shadowMapIdx];
         vec4 fragPosLightSpace = lightSpacematrix * position;

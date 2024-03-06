@@ -37,8 +37,8 @@ struct TransformComponent {
 struct LightComponent {
     Light::Type type = Light::Type::Point;
 
-    float radius = 10.0f; // Only Point lights
     glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
+    float intensity = 1.0f;
 
     Light::ShadowType shadow_type = Light::ShadowType::Hard;
 };

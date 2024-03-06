@@ -23,17 +23,18 @@ class Light {
 
     glm::vec3 position{};
     glm::vec4 color{};
+    float intensity = 1.0f;
     ShadowType shadow_type = ShadowType::None;
 
   protected:
     Light() = default;
-    Light(glm::vec3 position, glm::vec4 color);
+    Light(glm::vec3 position, glm::vec4 color, float intensity);
 };
 
 class PointLight : public Light {
   public:
     PointLight() = default;
-    explicit PointLight(glm::vec3 position, glm::vec4 color);
+    PointLight(glm::vec3 position, glm::vec4 color, float intensity);
     ~PointLight() override = default;
 
     [[nodiscard]] Type type() const override { return Type::Point; }
@@ -42,7 +43,7 @@ class PointLight : public Light {
 class DirectionalLight : public Light {
   public:
     DirectionalLight() = default;
-    explicit DirectionalLight(glm::vec3 position, glm::vec3 direction, glm::vec4 color);
+    DirectionalLight(glm::vec3 position, glm::vec3 direction, glm::vec4 color, float intensity);
     ~DirectionalLight() override = default;
 
     [[nodiscard]] Type type() const override { return Type::Directional; }

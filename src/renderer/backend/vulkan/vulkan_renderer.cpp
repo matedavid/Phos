@@ -137,6 +137,7 @@ void VulkanRenderer::begin_frame(const FrameInformation& info) {
             lights_info.point_lights[lights_info.number_point_lights] = {
                 .color = pl->color,
                 .position = glm::vec4(pl->position, 1.0f),
+                .intensity = pl->intensity,
             };
             lights_info.number_point_lights += 1;
         } else if (light->type() == Light::Type::Directional &&
@@ -145,10 +146,11 @@ void VulkanRenderer::begin_frame(const FrameInformation& info) {
             lights_info.directional_lights[lights_info.number_directional_lights] = {
                 .color = dl->color,
                 .direction = glm::vec4(dl->direction, 0.0f),
-                .shadow_map_idx =
-                    dl->shadow_type != Light::ShadowType::None && directional_shadow_idx + 1 <= MAX_DIRECTIONAL_LIGHTS
-                        ? directional_shadow_idx++
-                        : -1,
+                .intensity = dl->intensity,
+                .shadow_map_idx = dl->shadow_type != Light::ShadowType::None &&
+                                          directional_shadow_idx + 1 <= static_cast<int32_t>(MAX_DIRECTIONAL_LIGHTS)
+                                      ? directional_shadow_idx++
+                                      : -1,
             };
             lights_info.number_directional_lights += 1;
         }

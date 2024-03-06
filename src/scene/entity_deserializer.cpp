@@ -112,7 +112,7 @@ DESERIALIZE_COMPONENT_T(LightComponent) {
     else if (light_type_str == "directional")
         light_type = Light::Type::Directional;
 
-    const auto radius = node["radius"].as<float>();
+    const auto intensity = node["intensity"].as<float>();
 
     const auto color_node = node["color"];
     const glm::vec4 color = {
@@ -131,8 +131,8 @@ DESERIALIZE_COMPONENT_T(LightComponent) {
 
     entity.add_component<LightComponent>({
         .type = light_type,
-        .radius = radius,
         .color = color,
+        .intensity = intensity,
         .shadow_type = shadow_type,
     });
 }

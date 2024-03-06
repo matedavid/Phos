@@ -278,15 +278,13 @@ RENDER_COMPONENT(Phos::LightComponent) {
         component.color.w = color[3];
     }
 
-    if (component.type == Phos::Light::Type::Point) {
-        ImGui::TableNextRow();
+    ImGui::TableNextRow();
 
-        ImGui::TableSetColumnIndex(0);
-        { ImGui::Text("Radius:"); }
+    ImGui::TableSetColumnIndex(0);
+    { ImGui::Text("Intensity:"); }
 
-        ImGui::TableSetColumnIndex(1);
-        { ImGui::InputFloat("##RadiusInput", &component.radius); }
-    }
+    ImGui::TableSetColumnIndex(1);
+    { ImGui::InputFloat("##IntensityInput", &component.intensity); }
 
     ImGui::TableNextRow();
 

@@ -116,8 +116,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
                         .model = entity.model,
                     };
 
-                    m_directional_shadow_map_pipeline->bind_push_constants(
-                        command_buffer, "uShadowMapInfo", constants);
+                    m_directional_shadow_map_pipeline->bind_push_constants(command_buffer, "uShadowMapInfo", constants);
 
                     Renderer::submit_static_mesh(command_buffer, entity.mesh, m_shadow_map_material);
                 }
@@ -630,7 +629,8 @@ std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
         const auto light_component = entity.get_component<LightComponent>();
 
         if (light_component.type == Light::Type::Point) {
-            auto light = std::make_shared<PointLight>(transform.position, light_component.color);
+            auto light = std::make_shared<PointLight>(
+                transform.position, light_component.color, light_component.intensity);
             lights.push_back(light);
         } else if (light_component.type == Light::Type::Directional) {
             auto direction = glm::vec3(0.0f, 0.0f, 1.0f); // Z+
@@ -639,7 +639,8 @@ std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
             direction = glm::rotate(direction, glm::radians(transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
             direction = glm::normalize(direction);
 
-            auto light = std::make_shared<DirectionalLight>(transform.position, direction, light_component.color);
+            auto light = std::make_shared<DirectionalLight>(
+                transform.position, direction, light_component.color, light_component.intensity);
             light->shadow_type = light_component.shadow_type;
 
             lights.push_back(light);

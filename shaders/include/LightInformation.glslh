@@ -1,11 +1,13 @@
 struct PointLight {
     vec4 color;
     vec4 position;
+    float intensity;
 };
 
 struct DirectionalLight {
     vec4 color;
     vec4 direction;
+    float intensity;
     int shadowMapIdx;
 };
 

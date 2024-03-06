@@ -100,7 +100,7 @@ SERIALIZE_COMPONENT_T(Phos::LightComponent) {
         break;
     }
 
-    component_builder.dump("radius", component.radius);
+    component_builder.dump("intensity", component.intensity);
     component_builder.dump("color", component.color);
 
     switch (component.shadow_type) {
