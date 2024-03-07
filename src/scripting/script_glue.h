@@ -44,6 +44,8 @@ class ScriptGlue {
 
     static void Input_IsKeyDown(uint32_t key, bool* is_down);
     static void Input_IsMouseButtonDown(uint32_t mouse_button, bool* is_down);
+    static void Input_HorizontalAxisChange(float* out);
+    static void Input_VerticalAxisChange(float* out);
 
     // endregion
 

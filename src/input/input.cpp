@@ -23,4 +23,14 @@ bool Input::is_mouse_button_pressed(MouseButton button) {
     return status == GLFW_PRESS;
 }
 
+float Input::horizontal_axis_change() {
+    const auto& window = Application::instance()->get_window();
+    return window->get_mouse_change().x;
+}
+
+float Input::vertical_axis_change() {
+    const auto& window = Application::instance()->get_window();
+    return window->get_mouse_change().y;
+}
+
 } // namespace Phos

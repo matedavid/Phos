@@ -13,5 +13,17 @@ namespace PhosEngine
             InternalCalls.Input_IsMouseButtonDown((uint)mouseButton, out var isDown);
             return isDown;
         }
+
+        public static float HorizontalAxisChange()
+        {
+            InternalCalls.Input_HorizontalAxisChange(out var change);
+            return change;
+        }
+
+        public static float VerticalAxisChange()
+        {
+            InternalCalls.Input_VerticalAxisChange(out var change);
+            return change;
+        }
     }
 }

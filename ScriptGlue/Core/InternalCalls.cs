@@ -35,6 +35,12 @@ namespace PhosEngine
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void Input_IsMouseButtonDown(uint mouseButton, out bool isDown);
 
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Input_HorizontalAxisChange(out float change);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Input_VerticalAxisChange(out float change);
+
         #endregion
 
         #region TransformComponent

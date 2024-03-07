@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 #include <functional>
 #include <string_view>
+#include <glm/glm.hpp>
 
 #include "input/events.h"
 
@@ -17,7 +18,7 @@ class Window {
     Window(std::string_view title, uint32_t width, uint32_t height);
     ~Window();
 
-    void update() const;
+    void update();
     [[nodiscard]] bool should_close() const;
     [[nodiscard]] double get_current_time() const;
 
@@ -28,6 +29,7 @@ class Window {
 
     [[nodiscard]] uint32_t get_width() const { return m_data.width; }
     [[nodiscard]] uint32_t get_height() const { return m_data.height; }
+    [[nodiscard]] glm::vec2 get_mouse_change() const { return m_data.mouse_change; }
 
     [[nodiscard]] GLFWwindow* handle() const { return m_window; }
 
@@ -37,6 +39,9 @@ class Window {
     struct WindowData {
         uint32_t width;
         uint32_t height;
+
+        glm::vec2 mouse_position;
+        glm::vec2 mouse_change;
 
         std::function<void(Event&)> event_callback;
     };

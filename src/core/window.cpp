@@ -22,6 +22,8 @@ Window::Window(std::string_view title, uint32_t width, uint32_t height) {
 
     m_data.width = width;
     m_data.height = height;
+    m_data.mouse_position = glm::vec2(0.0f);
+    m_data.mouse_change = glm::vec2(0.0f);
     m_data.event_callback = [&](Event& event) {
         on_event(event);
     };
@@ -44,7 +46,11 @@ Window::Window(std::string_view title, uint32_t width, uint32_t height) {
 
     // Mouse events
     glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos) {
-        const auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+        auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+
+        const auto pos = glm::vec2(xpos, ypos);
+        data->mouse_change = pos - data->mouse_position;
+        data->mouse_position = pos;
 
         auto event = MouseMovedEvent(xpos, ypos);
         data->event_callback(event);
@@ -96,7 +102,8 @@ Window::~Window() {
     glfwTerminate();
 }
 
-void Window::update() const {
+void Window::update() {
+    m_data.mouse_change = glm::vec2(0.0f);
     glfwPollEvents();
 }
 

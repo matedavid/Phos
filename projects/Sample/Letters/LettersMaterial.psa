@@ -39,8 +39,8 @@ properties:
     type: vec3
     data:
       x: 1
-      y: 0.875288367
-      z: 0.15196079
+      y: 0.913725495
+      z: 0.258823544
   uNormalMap:
     type: texture
     data: 0

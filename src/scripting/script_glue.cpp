@@ -32,6 +32,8 @@ void ScriptGlue::initialize() {
 
     ADD_INTERNAL_CALL(Input_IsKeyDown);
     ADD_INTERNAL_CALL(Input_IsMouseButtonDown);
+    ADD_INTERNAL_CALL(Input_HorizontalAxisChange);
+    ADD_INTERNAL_CALL(Input_VerticalAxisChange);
 
     ADD_INTERNAL_CALL(TransformComponent_GetPosition);
     ADD_INTERNAL_CALL(TransformComponent_SetPosition);
@@ -104,6 +106,14 @@ void ScriptGlue::Input_IsKeyDown(uint32_t key, bool* is_down) {
 void ScriptGlue::Input_IsMouseButtonDown(uint32_t mouse_button, bool* is_down) {
     const auto internal_mouse = static_cast<MouseButton>(mouse_button);
     *is_down = Input::is_mouse_button_pressed(internal_mouse);
+}
+
+void ScriptGlue::Input_HorizontalAxisChange(float* out) {
+    *out = Input::horizontal_axis_change();
+}
+
+void ScriptGlue::Input_VerticalAxisChange(float* out) {
+    *out = Input::vertical_axis_change();
 }
 
 void ScriptGlue::TransformComponent_GetPosition(uint64_t id, glm::vec3* out) {
