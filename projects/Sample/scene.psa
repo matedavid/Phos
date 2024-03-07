@@ -1,0 +1,199 @@
+assetType: scene
+name: MainScene
+id: 2384757575
+config:
+  renderingConfig:
+    shadowMapResolution: 1024
+  bloomConfig:
+    enabled: true
+    threshold: 1
+  environmentConfig:
+    skybox: 0
+entities:
+  17793107104647384251:
+    NameComponent: Camera
+    RelationshipComponent: ~
+    TransformComponent:
+      position:
+        x: 0
+        y: 3
+        z: 3
+      rotation:
+        x: 0
+        y: 0
+        z: 0
+      scale:
+        x: 1
+        y: 1
+        z: 1
+    CameraComponent:
+      type: perspective
+      fov: 90
+      size: 5
+      znear: 0.00999999978
+      zfar: 100
+      depth: 0
+  15663874367466728131:
+    NameComponent: Letter P
+    RelationshipComponent:
+      parent: 5899984619836988397
+    TransformComponent:
+      position:
+        x: -3
+        y: 4
+        z: -4
+      rotation:
+        x: 0
+        y: 0
+        z: 0
+      scale:
+        x: 3
+        y: 3
+        z: 3
+    MeshRendererComponent:
+      mesh: 2912084609271177281
+      material: 12539143639830033397
+  18222685411998616453:
+    NameComponent: Floor
+    RelationshipComponent: ~
+    TransformComponent:
+      position:
+        x: 0
+        y: 0
+        z: 0
+      rotation:
+        x: 0
+        y: 0
+        z: 0
+      scale:
+        x: 8
+        y: 0.25
+        z: 6
+    MeshRendererComponent:
+      mesh: 14015935206850821509
+      material: 14941231718017215585
+  3629384489978349630:
+    NameComponent: Light
+    RelationshipComponent: ~
+    TransformComponent:
+      position:
+        x: 0
+        y: 2
+        z: 0
+      rotation:
+        x: 25
+        y: 180
+        z: 0
+      scale:
+        x: 1
+        y: 1
+        z: 1
+    LightComponent:
+      type: point
+      intensity: 10
+      color:
+        x: 1
+        y: 1
+        z: 1
+        w: 1
+      shadow: none
+  8974527689954916856:
+    NameComponent: Wall
+    RelationshipComponent: ~
+    TransformComponent:
+      position:
+        x: 0
+        y: 6
+        z: -6
+      rotation:
+        x: 0
+        y: 0
+        z: 0
+      scale:
+        x: 8
+        y: 6
+        z: 0.25
+    MeshRendererComponent:
+      mesh: 14015935206850821509
+      material: 14941231718017215585
+  5899984619836988397:
+    NameComponent: Name
+    RelationshipComponent:
+      children:
+        - 15663874367466728131
+        - 17902586255812055430
+        - 3730287489804719772
+        - 2778048790540049173
+    TransformComponent:
+      position:
+        x: -1
+        y: 0
+        z: 0
+      rotation:
+        x: 0
+        y: 0
+        z: 0
+      scale:
+        x: 1
+        y: 1
+        z: 1
+  17902586255812055430:
+    NameComponent: Letter H
+    RelationshipComponent:
+      parent: 5899984619836988397
+    TransformComponent:
+      position:
+        x: -0.5
+        y: 4
+        z: -4
+      rotation:
+        x: 0
+        y: 0
+        z: 0
+      scale:
+        x: 3
+        y: 3
+        z: 3
+    MeshRendererComponent:
+      mesh: 14514571106140382874
+      material: 12539143639830033397
+  3730287489804719772:
+    NameComponent: Letter O
+    RelationshipComponent:
+      parent: 5899984619836988397
+    TransformComponent:
+      position:
+        x: 2.5
+        y: 4
+        z: -4
+      rotation:
+        x: 0
+        y: 0
+        z: 0
+      scale:
+        x: 3
+        y: 3
+        z: 3
+    MeshRendererComponent:
+      mesh: 9001794552585135526
+      material: 12539143639830033397
+  2778048790540049173:
+    NameComponent: Letter S
+    RelationshipComponent:
+      parent: 5899984619836988397
+    TransformComponent:
+      position:
+        x: 5
+        y: 4
+        z: -4
+      rotation:
+        x: 0
+        y: 0
+        z: 0
+      scale:
+        x: 3
+        y: 3
+        z: 3
+    MeshRendererComponent:
+      mesh: 8544648087171559788
+      material: 12539143639830033397

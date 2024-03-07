@@ -45,8 +45,7 @@ class EditorLayer : public Phos::Layer {
         ImGuiImpl::initialize(Phos::Application::instance()->get_window());
 
         // Open example project
-        open_project("../../../projects/project1/project1.psproj");
-        // open_project("../../SpaceInvaders/SpaceInvaders.psproj");
+        open_project("../../../projects/Sample/Sample.psproj");
     }
 
     ~EditorLayer() override { ImGuiImpl::shutdown(); }
