@@ -55,7 +55,7 @@ VulkanImage::VulkanImage(const Description& description) : m_description(descrip
     vkGetImageMemoryRequirements(VulkanContext::device->handle(), m_image, &memory_requirements);
 
     const auto memory_type_index = VulkanContext::device->physical_device().find_memory_type(
-        memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     PHOS_ASSERT(memory_type_index.has_value(), "No suitable memory to allocate image");
 
     VkMemoryAllocateInfo allocate_info{};

@@ -139,8 +139,8 @@ VulkanTexture::VulkanTexture(const std::vector<char>& data, uint32_t width, uint
 
     // Create image
     const auto description = VulkanImage::Description{
-        .width = static_cast<uint32_t>(width),
-        .height = static_cast<uint32_t>(height),
+        .width = width,
+        .height = height,
         .type = VulkanImage::Type::Image2D,
         .format = VulkanImage::Format::R8G8B8A8_SRGB,
         .transfer = true,

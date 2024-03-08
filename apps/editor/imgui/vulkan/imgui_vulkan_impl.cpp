@@ -55,7 +55,7 @@ ImGuiVulkanImpl::ImGuiVulkanImpl(std::shared_ptr<Phos::Window> window) : m_windo
     VkDescriptorPoolCreateInfo pool_info = {};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.maxSets = 1;
+    pool_info.maxSets = 10;
     pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
     pool_info.pPoolSizes = pool_sizes;
 
@@ -75,10 +75,11 @@ ImGuiVulkanImpl::ImGuiVulkanImpl(std::shared_ptr<Phos::Window> window) : m_windo
     init_info.ImageCount = m_wd->ImageCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator = nullptr;
+    init_info.RenderPass = m_wd->RenderPass;
     init_info.CheckVkResultFn = [](VkResult result) {
         VK_CHECK(result);
     };
-    ImGui_ImplVulkan_Init(&init_info, m_wd->RenderPass);
+    ImGui_ImplVulkan_Init(&init_info);
 
     // Upload fonts
     ImGui_ImplVulkan_CreateFontsTexture();
