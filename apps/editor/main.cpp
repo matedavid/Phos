@@ -352,8 +352,13 @@ class EditorLayer : public Phos::Layer {
         m_viewport_panel->on_mouse_moved(mouse_moved, m_dockspace_id);
     }
 
-    void on_mouse_scrolled(Phos::MouseScrolledEvent& mouse_scrolled) override {
-        m_viewport_panel->on_mouse_scrolled(mouse_scrolled, m_dockspace_id);
+    void on_key_pressed(Phos::KeyPressedEvent& key_pressed) override {
+        m_viewport_panel->on_key_pressed(key_pressed, m_dockspace_id);
+    }
+
+    void on_key_repeat(Phos::KeyRepeatEvent& key_repeat) override {
+        auto key_pressed = Phos::KeyPressedEvent(key_repeat.get_key(), 0, 0);
+        m_viewport_panel->on_key_pressed(key_pressed, m_dockspace_id);
     }
 };
 

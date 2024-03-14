@@ -32,7 +32,7 @@ class ViewportPanel : public IImGuiPanel {
     void on_imgui_render() override;
 
     void on_mouse_moved(Phos::MouseMovedEvent& mouse_moved, uint32_t dockspace_id);
-    void on_mouse_scrolled(Phos::MouseScrolledEvent& mouse_scrolled, uint32_t dockspace_id);
+    void on_key_pressed(Phos::KeyPressedEvent& key_Pressed, uint32_t dockspace_id);
 
   private:
     std::string m_name;

@@ -138,12 +138,12 @@ void ScriptGlue::TransformComponent_SetScale(uint64_t id, glm::vec3* value) {
 
 void ScriptGlue::TransformComponent_GetRotation(uint64_t id, glm::vec3* out) {
     const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
-    *out = entity.get_component<TransformComponent>().rotation;
+    *out = glm::eulerAngles(entity.get_component<TransformComponent>().rotation);
 }
 
 void ScriptGlue::TransformComponent_SetRotation(uint64_t id, glm::vec3* value) {
     const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
-    entity.get_component<TransformComponent>().rotation = *value;
+    entity.get_component<TransformComponent>().rotation = glm::quat(glm::radians(*value));
 }
 
 } // namespace Phos

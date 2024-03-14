@@ -29,8 +29,6 @@ ViewportPanel::ViewportPanel(std::string name,
 
     const auto aspect_ratio = m_width / m_height;
     m_editor_camera = std::make_shared<Phos::PerspectiveCamera>(glm::radians(90.0f), aspect_ratio, 0.001f, 40.0f);
-    m_editor_camera->set_position({0.0f, 3.0f, 7.0f});
-    m_editor_camera->rotate(glm::vec2(0.0f, glm::radians(30.0f)));
 }
 
 void ViewportPanel::on_imgui_render() {
@@ -77,54 +75,58 @@ void ViewportPanel::on_mouse_moved(Phos::MouseMovedEvent& mouse_moved, uint32_t 
         EditorStateManager::get_state() != EditorState::Editing)
         return;
 
-    double x = mouse_moved.get_xpos();
-    double y = mouse_moved.get_ypos();
+    const glm::vec2 new_pos = {mouse_moved.get_xpos(), mouse_moved.get_ypos()};
 
     if (Phos::Input::is_mouse_button_pressed(Phos::MouseButton::Right)) {
-        float x_rotation = 0.0f;
-        float y_rotation = 0.0f;
+        constexpr float ROTATION_VELOCITY = 0.03f;
 
-        constexpr float ROTATION_CHANGE = 0.03f;
+        const auto offset = (new_pos - m_mouse_pos) * ROTATION_VELOCITY;
 
-        if (x > m_mouse_pos.x) {
-            x_rotation -= ROTATION_CHANGE;
-        } else if (x < m_mouse_pos.x) {
-            x_rotation += ROTATION_CHANGE;
-        }
+        const glm::quat rotation = [&]() {
+            const auto new_rotation = glm::angleAxis(-offset.x, glm::vec3(0.0f, 1.0f, 0.0f)) *
+                                      glm::angleAxis(-offset.y, glm::vec3(1.0f, 0.0f, 0.0f));
 
-        if (y > m_mouse_pos.y) {
-            y_rotation += ROTATION_CHANGE;
-        } else if (y < m_mouse_pos.y) {
-            y_rotation -= ROTATION_CHANGE;
-        }
+            auto rotation = new_rotation * m_editor_camera->rotation();
+            rotation.z = 0.0f; // Prevent rotation on z-axis
 
-        m_editor_camera->rotate({x_rotation, y_rotation});
+            return rotation;
+        }();
+
+        m_editor_camera->set_rotation(rotation);
     } else if (Phos::Input::is_mouse_button_pressed(Phos::MouseButton::Middle)) {
-        auto new_pos = m_editor_camera->non_rotated_position();
+        auto non_rotated_pos = m_editor_camera->non_rotated_position();
 
         constexpr float MOVEMENT = 0.02f;
 
-        const auto x_difference = -static_cast<float>(x - m_mouse_pos.x);
-        const auto y_difference = static_cast<float>(y - m_mouse_pos.y);
+        const auto offset = (new_pos - m_mouse_pos) * MOVEMENT;
 
-        new_pos.x += MOVEMENT * x_difference;
-        new_pos.y += MOVEMENT * y_difference;
-
-        m_editor_camera->set_position(new_pos);
+        const auto inverse_view_matrix = glm::mat3(glm::inverse(m_editor_camera->view_matrix()));
+        m_editor_camera->set_position(m_editor_camera->position() - inverse_view_matrix * glm::vec3(offset, 0.0f));
     }
 
-    m_mouse_pos = glm::vec2(x, y);
+    m_mouse_pos = new_pos;
 }
 
-void ViewportPanel::on_mouse_scrolled(Phos::MouseScrolledEvent& mouse_scrolled, uint32_t dockspace_id) {
+void ViewportPanel::on_key_pressed(Phos::KeyPressedEvent& key_Pressed, uint32_t dockspace_id) {
     if (!ImGui::DockBuilderGetCentralNode(dockspace_id)->IsFocused ||
         EditorStateManager::get_state() != EditorState::Editing)
         return;
 
-    constexpr float DEGREE_CHANGE = 2.0f;
+    constexpr float MOVEMENT_VELOCITY = 0.2f;
+    glm::vec3 movement{0.0f};
 
-    m_editor_camera->set_fov(m_editor_camera->fov() -
-                             static_cast<float>(mouse_scrolled.get_yoffset()) * glm::radians(DEGREE_CHANGE));
+    if (key_Pressed.get_key() == Phos::Key::W) {
+        movement += glm::vec3(0.0f, 0.0f, -1.0f) * MOVEMENT_VELOCITY;
+    } else if (key_Pressed.get_key() == Phos::Key::S) {
+        movement += glm::vec3(0.0f, 0.0f, 1.0f) * MOVEMENT_VELOCITY;
+    } else if (key_Pressed.get_key() == Phos::Key::A) {
+        movement += glm::vec3(-1.0f, 0.0f, 0.0f) * MOVEMENT_VELOCITY;
+    } else if (key_Pressed.get_key() == Phos::Key::D) {
+        movement += glm::vec3(1.0f, 0.0f, 0.0f) * MOVEMENT_VELOCITY;
+    }
+
+    const auto inverse_view_matrix = glm::mat3(glm::inverse(m_editor_camera->view_matrix()));
+    m_editor_camera->set_position(m_editor_camera->position() + inverse_view_matrix * movement);
 }
 
 std::shared_ptr<Phos::Camera> ViewportPanel::get_camera() const {
