@@ -635,9 +635,9 @@ std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
             lights.push_back(light);
         } else if (light_component.type == Light::Type::Directional) {
             auto direction = glm::vec3(0.0f, 0.0f, 1.0f); // Z+
-            direction = glm::rotate(direction, glm::radians(transform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-            direction = glm::rotate(direction, glm::radians(transform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-            direction = glm::rotate(direction, glm::radians(transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+            direction = glm::rotate(direction, transform.rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+            direction = glm::rotate(direction, transform.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+            direction = glm::rotate(direction, transform.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
             direction = glm::normalize(direction);
 
             auto light = std::make_shared<DirectionalLight>(

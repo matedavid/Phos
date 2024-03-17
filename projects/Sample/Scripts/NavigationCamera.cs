@@ -10,16 +10,11 @@ public class NavigationCamera : ScriptableEntity
 
     public override void OnUpdate(float deltaTime)
     {
+        var rotation = GetRotation();
+        Transform.Rotate(rotation * Speed * deltaTime);
+        
         var translation = GetTranslation();
         Transform.Translate(translation * Speed * deltaTime);
-
-        if (Input.IsMouseButtonDown(MouseButton.Right))
-        {
-            var horizontalChange = -Input.HorizontalAxisChange();
-            var verticalChange = Input.VerticalAxisChange();
-
-            Transform.Rotate(horizontalChange * deltaTime, verticalChange * deltaTime, 0.0f);
-        }
     }
 
     private Vector3 GetTranslation()
@@ -46,5 +41,18 @@ public class NavigationCamera : ScriptableEntity
         }
 
         return translation;
+    }
+
+    private Vector3 GetRotation()
+    {
+        if (Input.IsMouseButtonDown(MouseButton.Right))
+        {
+            var horizontalChange = -Input.HorizontalAxisChange();
+            var verticalChange = Input.VerticalAxisChange();
+
+            return new Vector3(-verticalChange, horizontalChange, 0.0f);
+        }
+
+        return Vector3.Zero;
     }
 }

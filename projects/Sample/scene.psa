@@ -110,6 +110,31 @@ entities:
     MeshRendererComponent:
       mesh: 14015935206850821509
       material: 14941231718017215585
+  2289259556100441964:
+    NameComponent: Directional
+    RelationshipComponent: ~
+    TransformComponent:
+      position:
+        x: 0
+        y: 5
+        z: 6
+      rotation:
+        x: 0.87266463
+        y: -1.57079637
+        z: 0
+      scale:
+        x: 0.5
+        y: 0.5
+        z: 0.5
+    LightComponent:
+      type: directional
+      intensity: 1
+      color:
+        x: 1
+        y: 1
+        z: 1
+        w: 1
+      shadow: hard
   3629384489978349630:
     NameComponent: Light
     RelationshipComponent: ~
@@ -204,3 +229,29 @@ entities:
         Speed:
           type: float
           data: 4
+  10814258510960646979:
+    NameComponent: Monkey
+    RelationshipComponent: ~
+    TransformComponent:
+      position:
+        x: -4
+        y: 2
+        z: 0
+      rotation:
+        x: -1.57079637
+        y: 0
+        z: 0
+      scale:
+        x: 1
+        y: 1
+        z: 1
+    MeshRendererComponent:
+      mesh: 9067866174296825853
+      material: 14941231718017215585
+    ScriptComponent:
+      className: RotationScript
+      script: 3681460328360365399
+      fields:
+        Speed:
+          type: float
+          data: 20
