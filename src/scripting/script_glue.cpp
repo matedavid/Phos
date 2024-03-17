@@ -37,10 +37,10 @@ void ScriptGlue::initialize() {
 
     ADD_INTERNAL_CALL(TransformComponent_GetPosition);
     ADD_INTERNAL_CALL(TransformComponent_SetPosition);
-    ADD_INTERNAL_CALL(TransformComponent_GetScale);
-    ADD_INTERNAL_CALL(TransformComponent_SetScale);
     ADD_INTERNAL_CALL(TransformComponent_GetRotation);
     ADD_INTERNAL_CALL(TransformComponent_SetRotation);
+    ADD_INTERNAL_CALL(TransformComponent_GetScale);
+    ADD_INTERNAL_CALL(TransformComponent_SetScale);
 }
 
 void ScriptGlue::shutdown() {
@@ -126,6 +126,16 @@ void ScriptGlue::TransformComponent_SetPosition(uint64_t id, glm::vec3* value) {
     entity.get_component<TransformComponent>().position = *value;
 }
 
+void ScriptGlue::TransformComponent_GetRotation(uint64_t id, glm::vec3* out) {
+    const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
+    *out = glm::degrees(entity.get_component<TransformComponent>().rotation);
+}
+
+void ScriptGlue::TransformComponent_SetRotation(uint64_t id, glm::vec3* value) {
+    const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
+    entity.get_component<TransformComponent>().rotation = glm::radians(*value);
+}
+
 void ScriptGlue::TransformComponent_GetScale(uint64_t id, glm::vec3* out) {
     const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
     *out = entity.get_component<TransformComponent>().scale;
@@ -134,16 +144,6 @@ void ScriptGlue::TransformComponent_GetScale(uint64_t id, glm::vec3* out) {
 void ScriptGlue::TransformComponent_SetScale(uint64_t id, glm::vec3* value) {
     const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
     entity.get_component<TransformComponent>().scale = *value;
-}
-
-void ScriptGlue::TransformComponent_GetRotation(uint64_t id, glm::vec3* out) {
-    const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
-    *out = glm::eulerAngles(entity.get_component<TransformComponent>().rotation);
-}
-
-void ScriptGlue::TransformComponent_SetRotation(uint64_t id, glm::vec3* value) {
-    const auto entity = s_scene->get_entity_with_uuid(Phos::UUID(id));
-    entity.get_component<TransformComponent>().rotation = glm::quat(glm::radians(*value));
 }
 
 } // namespace Phos

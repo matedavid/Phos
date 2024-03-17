@@ -69,7 +69,7 @@ SERIALIZE_COMPONENT_T(Phos::TransformComponent) {
     // Position
     component_builder.dump("position", component.position);
     // Rotation
-    component_builder.dump("rotation", glm::eulerAngles(component.rotation));
+    component_builder.dump("rotation", component.rotation);
     // Scale
     component_builder.dump("scale", component.scale);
 

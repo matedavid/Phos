@@ -653,10 +653,10 @@ std::vector<std::shared_ptr<Light>> DeferredRenderer::get_light_info() const {
 
 std::vector<DeferredRenderer::RenderableEntity> DeferredRenderer::get_renderable_entities() const {
     const auto apply_transform = [](const TransformComponent& transform, glm::mat4& model) {
+        const auto quat_rotation = glm::quat(transform.rotation);
+
         model = glm::translate(model, transform.position);
-        model = glm::rotate(model, glm::radians(transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-        model = glm::rotate(model, glm::radians(transform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(transform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = model * glm::mat4_cast(quat_rotation);
         model = glm::scale(model, transform.scale);
     };
 

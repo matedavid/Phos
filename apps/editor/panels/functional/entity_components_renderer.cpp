@@ -150,18 +150,22 @@ RENDER_COMPONENT(Phos::TransformComponent) {
     // Rotation
     ImGui::TableNextRow();
 
+    auto rotation_degrees = glm::degrees(component.rotation);
+
     ImGui::TableSetColumnIndex(0);
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Rotation:");
 
     ImGui::TableSetColumnIndex(1);
-    render_label_input("X", "Rotation", &component.rotation.x);
+    render_label_input("X", "Rotation", &rotation_degrees.x);
 
     ImGui::TableSetColumnIndex(2);
-    render_label_input("Y", "Rotation", &component.rotation.y);
+    render_label_input("Y", "Rotation", &rotation_degrees.y);
 
     ImGui::TableSetColumnIndex(3);
-    render_label_input("Z", "Rotation", &component.rotation.z);
+    render_label_input("Z", "Rotation", &rotation_degrees.z);
+
+    component.rotation = glm::radians(rotation_degrees);
 
     // Scale
     ImGui::TableNextRow();
