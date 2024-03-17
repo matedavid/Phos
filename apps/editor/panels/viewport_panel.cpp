@@ -98,7 +98,8 @@ void ViewportPanel::on_mouse_moved(Phos::MouseMovedEvent& mouse_moved, uint32_t 
 
         constexpr float MOVEMENT = 0.02f;
 
-        const auto offset = (new_pos - m_mouse_pos) * MOVEMENT;
+        auto offset = (new_pos - m_mouse_pos) * MOVEMENT;
+        offset.y *= -1.0f;
 
         const auto inverse_view_matrix = glm::mat3(glm::inverse(m_editor_camera->view_matrix()));
         m_editor_camera->set_position(m_editor_camera->position() - inverse_view_matrix * glm::vec3(offset, 0.0f));
