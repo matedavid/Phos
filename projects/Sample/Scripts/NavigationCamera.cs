@@ -2,7 +2,8 @@ using PhosEngine;
 
 public class NavigationCamera : ScriptableEntity
 {
-    public float Speed = 1.0f;
+    public float MovementSpeed = 1.0f;
+    public float RotationSpeed = 2.0f;
 
     public override void OnCreate()
     {
@@ -11,10 +12,12 @@ public class NavigationCamera : ScriptableEntity
     public override void OnUpdate(float deltaTime)
     {
         var rotation = GetRotation();
-        Transform.Rotate(rotation * Speed * deltaTime);
-        
+        Transform.Rotate(rotation * RotationSpeed * deltaTime);
+
         var translation = GetTranslation();
-        Transform.Translate(translation * Speed * deltaTime);
+        translation = Quaternion.FromEuler(Transform.Rotation) * translation;
+        
+        Transform.Translate(translation * MovementSpeed * deltaTime);
     }
 
     private Vector3 GetTranslation()

@@ -39,6 +39,7 @@
         <Reference Include="System.Xml"/>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Core\Quaternion.cs" />
         <Compile Include="Field\Entity.cs" />
         <Compile Include="Field\Prefab.cs" />
         <Compile Include="Components\Component.cs" />

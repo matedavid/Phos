@@ -86,16 +86,14 @@ void ViewportPanel::on_mouse_moved(Phos::MouseMovedEvent& mouse_moved, uint32_t 
             const auto new_rotation = glm::angleAxis(-offset.x, glm::vec3(0.0f, 1.0f, 0.0f)) *
                                       glm::angleAxis(-offset.y, glm::vec3(1.0f, 0.0f, 0.0f));
 
-            auto rotation = new_rotation * m_editor_camera->rotation();
-            rotation.z = 0.0f; // Prevent rotation on z-axis
+            auto rot = new_rotation * m_editor_camera->rotation();
+            rot.z = 0.0f; // Prevent rotation on z-axis
 
-            return rotation;
+            return rot;
         }();
 
         m_editor_camera->set_rotation(rotation);
     } else if (Phos::Input::is_mouse_button_pressed(Phos::MouseButton::Middle)) {
-        auto non_rotated_pos = m_editor_camera->non_rotated_position();
-
         constexpr float MOVEMENT = 0.02f;
 
         auto offset = (new_pos - m_mouse_pos) * MOVEMENT;

@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 
 namespace PhosEngine
@@ -24,6 +25,16 @@ namespace PhosEngine
             Y = y;
             Z = z;
         }
+
+        public static float Dot(Vector3 a, Vector3 b) => a.X * b.X + a.Y * b.Y + a.Z * b.Z;
+        public static Vector3 Scalar(Vector3 a, Vector3 b) => new Vector3(a.X * b.X, a.Y * b.Y, a.Z * b.Z);
+
+        public static Vector3 Cross(Vector3 a, Vector3 b) =>
+            new Vector3(
+                a.Y * b.Z - a.Z * b.Y,
+                a.Z * b.X - a.X * b.Z,
+                a.X * b.Y - a.Y * b.X
+            );
 
         public static Vector3 operator +(Vector3 a, Vector3 b) => new Vector3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
         public static Vector3 operator -(Vector3 a, Vector3 b) => new Vector3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
