@@ -243,9 +243,11 @@ void AssetWatcher::update_script() {
         const auto field_values = sc.field_values;
 
         // Remove fields that no longer exist in class
-        for (const auto& name : field_values | std::views::keys) {
+        for (auto it = sc.field_values.begin(); it != sc.field_values.end(); ++it) {
+            const auto& name = it->first;
+
             if (!handle->get_field(name).has_value()) {
-                sc.field_values.erase(name);
+                it = sc.field_values.erase(it);
                 PHOS_LOG_INFO("Removing not longer existing field: {}", name);
             }
         }

@@ -332,10 +332,14 @@ class EditorLayer : public Phos::Layer {
             auto& sc = entity.get_component<Phos::ScriptComponent>();
             const auto& handle = m_project->asset_manager()->load_by_id_type<Phos::ClassHandle>(sc.script);
 
+            PHOS_LOG_INFO("Class name: {}, entity: {}", handle->class_name(), (uint64_t)entity.uuid());
+
             // Remove fields that do no longer exist in class
-            for (const auto& name : sc.field_values | std::views::keys) {
+            for (auto it = sc.field_values.begin(); it != sc.field_values.end(); ++it) {
+                const auto& name = it->first;
+
                 if (!handle->get_field(name).has_value()) {
-                    sc.field_values.erase(name);
+                    it = sc.field_values.erase(it);
                 }
             }
 
