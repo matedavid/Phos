@@ -322,7 +322,8 @@ class EditorLayer : public Phos::Layer {
     }
 
     void save_project() {
-        const auto scene_path = m_project->path() / m_project->scene()->asset_name;
+        // TODO: Don't hardcode the path of the scene, use the current one
+        const auto scene_path = (m_project->project_path() / "Assets") / m_project->scene()->asset_name;
         SceneSerializer::serialize(m_project->scene(), scene_path);
     }
 

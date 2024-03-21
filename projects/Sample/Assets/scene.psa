@@ -231,7 +231,7 @@ entities:
           data: 5
         RotationSpeed:
           type: float
-          data: 3
+          data: 7
   10814258510960646979:
     NameComponent: Monkey
     RelationshipComponent: ~

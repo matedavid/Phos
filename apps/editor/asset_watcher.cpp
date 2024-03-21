@@ -38,7 +38,7 @@ AssetWatcher::AssetWatcher(std::shared_ptr<Phos::Scene> scene,
     }
 
     // Also watch dll project path to listen for script updates
-    m_dll_path = m_project->path() / "bin" / "Debug" / (m_project->name() + ".dll");
+    m_dll_path = m_project->scripting_path();
     start_watching_asset(m_dll_path, Phos::AssetType::Script, Phos::UUID(0));
 
     // Listen to EditorStateManager

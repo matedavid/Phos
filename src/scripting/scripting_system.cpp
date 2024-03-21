@@ -13,8 +13,7 @@
 namespace Phos {
 
 ScriptingSystem::ScriptingSystem(std::shared_ptr<Project> project) : m_project(std::move(project)) {
-    const auto project_path = m_project->path();
-    m_dll_path = project_path / "bin" / "Debug" / (m_project->name() + ".dll");
+    m_dll_path = m_project->scripting_path();
 
     ScriptingEngine::set_dll_path(m_dll_path);
     ScriptGlue::set_asset_manager(m_project->asset_manager());
