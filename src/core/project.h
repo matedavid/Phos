@@ -3,6 +3,8 @@
 #include <filesystem>
 #include <memory>
 
+#include "core/uuid.h"
+
 namespace Phos {
 
 // Forward declarations
@@ -18,7 +20,7 @@ class Project {
     [[nodiscard]] static std::shared_ptr<Project> load(const std::filesystem::path& path);
 
     [[nodiscard]] std::string name() const { return m_name; }
-    [[nodiscard]] std::shared_ptr<Scene> scene() const { return m_scene; }
+    [[nodiscard]] UUID starting_scene_id() const { return m_starting_scene_id; }
     [[nodiscard]] std::shared_ptr<AssetManagerBase> asset_manager() const { return m_asset_manager; }
 
     [[nodiscard]] std::filesystem::path project_path() const { return m_project_path; }
@@ -32,14 +34,14 @@ class Project {
     std::filesystem::path m_assets_path;
     std::filesystem::path m_scripting_path;
 
-    std::shared_ptr<Scene> m_scene;
+    UUID m_starting_scene_id;
     std::shared_ptr<AssetManagerBase> m_asset_manager;
 
     Project(std::string name,
             std::filesystem::path project_path,
             std::filesystem::path assets_path,
             std::filesystem::path scripting_path,
-            std::shared_ptr<Scene> scene,
+            UUID starting_scene_id,
             std::shared_ptr<AssetManagerBase> asset_manager);
 };
 

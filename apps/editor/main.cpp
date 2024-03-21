@@ -148,7 +148,7 @@ class EditorLayer : public Phos::Layer {
         if (selected_entity.has_value()) {
             EntityComponentsRenderer::display(
                 *selected_entity,
-                m_project->scene(),
+                m_scene_manager->active_scene(),
                 std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager()));
         }
 
@@ -267,12 +267,15 @@ class EditorLayer : public Phos::Layer {
 
     void open_project(const std::filesystem::path& path) {
         m_project = Phos::Project::open(path);
-        m_renderer = std::make_shared<Phos::DeferredRenderer>(m_project->scene(), m_project->scene()->config());
+
+        const auto starting_scene =
+            m_project->asset_manager()->load_by_id_type<Phos::Scene>(m_project->starting_scene_id());
+        m_scene_manager = std::make_shared<EditorSceneManager>(starting_scene);
+
+        m_renderer = std::make_shared<Phos::DeferredRenderer>(starting_scene, starting_scene->config());
 
         m_scripting_system = std::make_shared<Phos::ScriptingSystem>(m_project);
         check_script_updates();
-
-        m_scene_manager = std::make_shared<EditorSceneManager>(m_project->scene());
 
         // Editor State Manager
         EditorStateManager::subscribe([&](EditorState prev, EditorState new_) { state_changed(prev, new_); });
@@ -281,7 +284,7 @@ class EditorLayer : public Phos::Layer {
             std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
         PHOS_ASSERT(editor_asset_manager != nullptr, "Project Asset Manager must be of type EditorAssetManager");
 
-        m_asset_watcher = std::make_shared<AssetWatcher>(m_project->scene(), m_project, m_renderer, m_scripting_system);
+        m_asset_watcher = std::make_shared<AssetWatcher>(starting_scene, m_project, m_renderer, m_scripting_system);
 
         // Panels
         m_viewport_panel = std::make_unique<ViewportPanel>("Viewport", m_renderer, m_scene_manager);
@@ -290,13 +293,13 @@ class EditorLayer : public Phos::Layer {
         m_entity_panel =
             std::make_unique<EntityHierarchyPanel>("Entities", m_scene_manager, m_content_browser_panel.get());
         m_asset_inspector_panel =
-            std::make_unique<AssetInspectorPanel>("Inspector", m_project->scene(), editor_asset_manager);
+            std::make_unique<AssetInspectorPanel>("Inspector", starting_scene, editor_asset_manager);
         m_scene_configuration_panel = std::make_unique<SceneConfigurationPanel>(
-            "Scene Configuration", m_project->scene()->config(), editor_asset_manager);
+            "Scene Configuration", starting_scene->config(), editor_asset_manager);
 
         m_scene_configuration_panel->set_scene_config_updated_callback([&](Phos::SceneRendererConfig config) {
-            m_project->scene()->config() = std::move(config);
-            m_renderer->change_config(m_project->scene()->config());
+            starting_scene->config() = std::move(config);
+            m_renderer->change_config(starting_scene->config());
         });
     }
 
@@ -322,14 +325,13 @@ class EditorLayer : public Phos::Layer {
     }
 
     void save_project() {
-        // TODO: Don't hardcode the path of the scene, use the current one
-        const auto scene_path = (m_project->project_path() / "Assets") / m_project->scene()->asset_name;
-        SceneSerializer::serialize(m_project->scene(), scene_path);
+        const auto scene_path = m_project->asset_manager()->get_asset_path(m_scene_manager->editing_scene()->id);
+        SceneSerializer::serialize(m_scene_manager->editing_scene(), scene_path);
     }
 
     void check_script_updates() const {
         // TODO: Also present in AssetWatcher and AssetInspectorPanel, think moving into a separate function
-        for (const auto& entity : m_project->scene()->get_entities_with<Phos::ScriptComponent>()) {
+        for (const auto& entity : m_scene_manager->editing_scene()->get_entities_with<Phos::ScriptComponent>()) {
             auto& sc = entity.get_component<Phos::ScriptComponent>();
             const auto& handle = m_project->asset_manager()->load_by_id_type<Phos::ClassHandle>(sc.script);
 

@@ -12,10 +12,10 @@ Project::Project(std::string name,
                  std::filesystem::path project_path,
                  std::filesystem::path assets_path,
                  std::filesystem::path scripting_path,
-                 std::shared_ptr<Scene> scene,
+                 UUID starting_scene_id,
                  std::shared_ptr<AssetManagerBase> asset_manager)
       : m_name(std::move(name)), m_project_path(std::move(project_path)), m_assets_path(std::move(assets_path)),
-        m_scripting_path(std::move(scripting_path)), m_scene(std::move(scene)),
+        m_scripting_path(std::move(scripting_path)), m_starting_scene_id(starting_scene_id),
         m_asset_manager(std::move(asset_manager)) {}
 
 std::shared_ptr<Project> Project::create(const std::filesystem::path& path) {
@@ -35,15 +35,11 @@ std::shared_ptr<Project> Project::open(const std::filesystem::path& path) {
     const auto asset_manager = std::make_shared<EditorAssetManager>(assets_path);
 
     std::vector<std::shared_ptr<Scene>> scenes;
-    for (uint32_t i = 0; i < node["scenes"].size(); ++i) {
-        const auto scene_id = UUID(node["scenes"][i].as<uint64_t>());
-
-        const auto scene = asset_manager->load_by_id_type<Scene>(scene_id);
-        scenes.push_back(scene);
-    }
+    const auto starting_scene_id = UUID(node["startingScene"].as<uint64_t>());
 
     // TODO: Should pass all of the scenes in the project file, at the moment only one is allowed
-    auto* project = new Project(project_name, project_path, assets_path, scripting_path, scenes[0], asset_manager);
+    auto* project =
+        new Project(project_name, project_path, assets_path, scripting_path, starting_scene_id, asset_manager);
     return std::shared_ptr<Project>(project);
 }
 
