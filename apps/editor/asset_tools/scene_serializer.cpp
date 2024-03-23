@@ -9,8 +9,6 @@
 #include "renderer/backend/cubemap.h"
 
 void SceneSerializer::serialize(const std::shared_ptr<Phos::Scene>& scene, const std::filesystem::path& path) {
-    const auto& entities = scene->get_all_entities();
-
     auto builder = AssetBuilder();
 
     builder.dump("assetType", "scene");
@@ -52,6 +50,11 @@ void SceneSerializer::serialize(const std::shared_ptr<Phos::Scene>& scene, const
 
     // Entities
     auto entities_builder = AssetBuilder();
+
+    auto entities = scene->get_all_entities();
+    std::ranges::sort(entities, [](const Phos::Entity& a, const Phos::Entity& b) {
+        return static_cast<uint64_t>(a.uuid()) < static_cast<uint64_t>(b.uuid());
+    });
 
     for (const auto& entity : entities) {
         auto entity_builder = EntitySerializer::serialize(entity);
