@@ -216,7 +216,7 @@ void AssetInspectorPanel::render_material_asset() const {
 
             std::string asset_name;
             if (asset_id != Phos::UUID(0))
-                asset_name = m_asset_manager->get_asset_name(asset_id);
+                asset_name = *m_asset_manager->get_asset_name(asset_id);
 
             ImGui::InputText(id.c_str(), asset_name.data(), asset_name.length(), ImGuiInputTextFlags_ReadOnly);
 

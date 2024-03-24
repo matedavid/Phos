@@ -490,7 +490,7 @@ RENDER_COMPONENT(Phos::ScriptComponent) {
             ImGui::InputText(id.c_str(), &v);
         } else if (std::holds_alternative<Phos::PrefabRef>(value)) {
             auto& v = const_cast<Phos::PrefabRef&>(std::get<Phos::PrefabRef>(value));
-            auto prefab_name = v.id == Phos::UUID(0) ? "" : asset_manager->get_asset_name(v.id);
+            auto prefab_name = v.id == Phos::UUID(0) ? "" : *asset_manager->get_asset_name(v.id);
             ImGui::InputText(id.c_str(), &prefab_name, ImGuiInputTextFlags_ReadOnly);
 
             const auto prefab_asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");

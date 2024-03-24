@@ -7,14 +7,16 @@
 
 namespace Phos {
 
+// Forward declarations
+class AssetRegistry;
+
 class EditorAssetManager : public AssetManagerBase {
   public:
-    explicit EditorAssetManager(std::string path);
+    explicit EditorAssetManager(std::string path, std::shared_ptr<AssetRegistry> registry);
     ~EditorAssetManager() override = default;
 
-    [[nodiscard]] std::shared_ptr<IAsset> load(const std::string& path) override;
+    [[nodiscard]] std::shared_ptr<IAsset> load(const std::filesystem::path& path) override;
     [[nodiscard]] std::shared_ptr<IAsset> load_by_id(UUID id) override;
-    [[nodiscard]] std::filesystem::path get_asset_path(UUID id) override;
 
     template <typename T>
     [[nodiscard]] std::shared_ptr<T> load_by_id_type_force_reload(UUID id) {
@@ -33,20 +35,23 @@ class EditorAssetManager : public AssetManagerBase {
 
     void remove_asset_type_from_cache(AssetType type);
 
-    [[nodiscard]] AssetType get_asset_type(UUID id) const;
-    [[nodiscard]] std::string get_asset_name(UUID id) const;
-    [[nodiscard]] UUID get_asset_id(const std::filesystem::path& path) const;
+    [[nodiscard]] std::optional<std::filesystem::path> get_asset_path(UUID id) const;
+    [[nodiscard]] std::optional<AssetType> get_asset_type(UUID id) const;
+    [[nodiscard]] std::optional<std::string> get_asset_name(UUID id) const;
+    [[nodiscard]] std::optional<UUID> get_asset_id(const std::filesystem::path& path) const;
 
     [[nodiscard]] std::string path() const { return m_path; }
+    [[nodiscard]] std::shared_ptr<AssetRegistry> asset_registry() const { return m_registry; }
 
   private:
     std::string m_path;
+    std::shared_ptr<AssetRegistry> m_registry;
     std::unique_ptr<AssetLoader> m_loader;
 
     std::unordered_map<UUID, std::shared_ptr<IAsset>> m_id_to_asset;
 
-    // std::shared_ptr<IAsset> load_by_id_r(UUID id, const std::string& folder) const;
-    [[nodiscard]] std::filesystem::path get_path_from_id_r(UUID id, const std::string& folder) const;
+    [[nodiscard]] std::optional<std::filesystem::path> get_path_from_id_r(UUID id,
+                                                                          const std::filesystem::path& folder) const;
 };
 
 } // namespace Phos

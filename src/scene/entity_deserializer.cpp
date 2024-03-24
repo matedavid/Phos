@@ -189,10 +189,10 @@ DESERIALIZE_COMPONENT_T(ScriptComponent) {
     }
 
     const auto script_id = AssetParsingUtils::parse_uuid(node["script"]);
-    const auto class_name = asset_manager->get_asset_path(script_id).stem().stem();
+    const auto handle = asset_manager->load_by_id_type<ClassHandle>(script_id);
 
     entity.add_component(ScriptComponent{
-        .class_name = class_name,
+        .class_name = handle->class_name(),
         .script = script_id,
         .field_values = std::move(field_values),
     });

@@ -23,6 +23,7 @@
 #include "panels/functional/entity_components_renderer.h"
 
 #include "asset/editor_asset_manager.h"
+#include "asset/asset_registry.h"
 
 #include "scene/scene_renderer.h"
 
@@ -267,6 +268,9 @@ class EditorLayer : public Phos::Layer {
 
     void open_project(const std::filesystem::path& path) {
         m_project = Phos::Project::open(path);
+        PHOS_ASSERT(m_project != nullptr, "Failed to open project: {}", path.string());
+
+        m_scripting_system = std::make_shared<Phos::ScriptingSystem>(m_project);
 
         const auto starting_scene =
             m_project->asset_manager()->load_by_id_type<Phos::Scene>(m_project->starting_scene_id());
@@ -274,7 +278,6 @@ class EditorLayer : public Phos::Layer {
 
         m_renderer = std::make_shared<Phos::DeferredRenderer>(starting_scene, starting_scene->config());
 
-        m_scripting_system = std::make_shared<Phos::ScriptingSystem>(m_project);
         check_script_updates();
 
         // Editor State Manager
@@ -298,8 +301,8 @@ class EditorLayer : public Phos::Layer {
             "Scene Configuration", starting_scene->config(), editor_asset_manager);
 
         m_scene_configuration_panel->set_scene_config_updated_callback([&](Phos::SceneRendererConfig config) {
-            starting_scene->config() = std::move(config);
-            m_renderer->change_config(starting_scene->config());
+            m_scene_manager->editing_scene()->config() = std::move(config);
+            m_renderer->change_config(m_scene_manager->editing_scene()->config());
         });
     }
 
@@ -325,8 +328,12 @@ class EditorLayer : public Phos::Layer {
     }
 
     void save_project() {
-        const auto scene_path = m_project->asset_manager()->get_asset_path(m_scene_manager->editing_scene()->id);
-        SceneSerializer::serialize(m_scene_manager->editing_scene(), scene_path);
+        const auto editor_asset_manager =
+            std::dynamic_pointer_cast<Phos::EditorAssetManager>(m_project->asset_manager());
+        const auto scene_path = *editor_asset_manager->get_asset_path(m_scene_manager->editing_scene()->id);
+        SceneSerializer::serialize(m_scene_manager->editing_scene(), editor_asset_manager->path() / scene_path);
+
+        editor_asset_manager->asset_registry()->dump();
     }
 
     void check_script_updates() const {

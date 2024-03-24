@@ -321,7 +321,9 @@ void ContentBrowserPanel::update() {
             continue;
         }
 
-        const auto extension = path.path().extension();
+        const auto relative = std::filesystem::relative(path.path(), m_asset_manager->path());
+
+        const auto extension = relative.extension();
         if (extension != ".psa") {
             if (!AssetImporter::is_automatic_importable_asset(extension))
                 continue;
@@ -332,11 +334,16 @@ void ContentBrowserPanel::update() {
                 PHOS_LOG_WARNING("Non .psa file does not have corresponding psa file: {}, importing automatically",
                                  path.path().string());
                 const auto new_path = AssetImporter::import_asset(path, m_current_path);
+                if (!std::filesystem::exists(new_path)) {
+                    PHOS_LOG_ERROR("Error importing file '{}'", path.path().string());
+                    continue;
+                }
+
                 m_asset_watcher->asset_created(new_path);
 
-                const auto asset_id = m_asset_manager->get_asset_id(new_path);
+                const auto asset_id = *m_asset_manager->get_asset_id(new_path);
                 m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
-                    .type = m_asset_manager->get_asset_type(asset_id),
+                    .type = *m_asset_manager->get_asset_type(asset_id),
                     .path = new_path,
                     .uuid = asset_id,
                 }));
@@ -346,15 +353,19 @@ void ContentBrowserPanel::update() {
         }
 
         try {
-            const auto id = m_asset_manager->get_asset_id(path);
+            const auto id = m_asset_manager->get_asset_id(relative);
+            if (!id) {
+                PHOS_LOG_ERROR("File '{}' does not have corresponding .psa file\n", relative.string());
+                continue;
+            }
 
             m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
-                .type = m_asset_manager->get_asset_type(id),
+                .type = *m_asset_manager->get_asset_type(*id),
                 .path = path.path(),
-                .uuid = id,
+                .uuid = *id,
             }));
         } catch (std::exception&) {
-            PHOS_LOG_ERROR("File '{}' does not have corresponding .psa file\n", path.path().string());
+            PHOS_LOG_ERROR("File '{}' does not have corresponding .psa file\n", relative.string());
         }
     }
 
@@ -524,7 +535,7 @@ void ContentBrowserPanel::create_material(const std::string& name) {
     m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
         .type = Phos::AssetType::Material,
         .path = material_path,
-        .uuid = m_asset_manager->get_asset_id(material_path),
+        .uuid = *m_asset_manager->get_asset_id(material_path),
     }));
     m_renaming_asset_idx = m_assets.size() - 1;
     m_renaming_asset_tmp_name = material_path.stem();
@@ -547,7 +558,7 @@ void ContentBrowserPanel::create_cubemap(const std::string& name) {
     m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
         .type = Phos::AssetType::Cubemap,
         .path = cubemap_path,
-        .uuid = m_asset_manager->get_asset_id(cubemap_path),
+        .uuid = *m_asset_manager->get_asset_id(cubemap_path),
     }));
     m_renaming_asset_idx = m_assets.size() - 1;
     m_renaming_asset_tmp_name = cubemap_path.stem();
@@ -570,7 +581,7 @@ void ContentBrowserPanel::create_prefab(const std::string& name, const Phos::Ent
     m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
         .type = Phos::AssetType::Prefab,
         .path = prefab_path,
-        .uuid = m_asset_manager->get_asset_id(prefab_path),
+        .uuid = *m_asset_manager->get_asset_id(prefab_path),
     }));
     m_renaming_asset_idx = m_assets.size() - 1;
     m_renaming_asset_tmp_name = prefab_path.stem();

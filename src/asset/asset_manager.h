@@ -42,10 +42,10 @@ class AssetManagerBase {
         return type_asset;
     }
 
-    [[nodiscard]] virtual std::shared_ptr<IAsset> load(const std::string& path) = 0;
+    [[nodiscard]] virtual std::shared_ptr<IAsset> load(const std::filesystem::path& path) = 0;
     [[nodiscard]] virtual std::shared_ptr<IAsset> load_by_id(UUID id) = 0;
 
-    [[nodiscard]] virtual std::filesystem::path get_asset_path(UUID id) = 0;
+    // [[nodiscard]] virtual std::optional<std::filesystem::path> get_asset_path(UUID id) = 0;
 };
 
 } // namespace Phos

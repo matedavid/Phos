@@ -1,22 +1,22 @@
 assetType: material
 id: 14941231718017215585
-name: NewMaterial
+name: FloorMaterial
 shader:
   type: builtin
   name: PBR.Geometry.Deferred
 properties:
   uAOMap:
     type: texture
-    data: 0
+    data: 1881429849513053670
   uRoughnessMap:
     type: texture
-    data: 0
+    data: 16951097908046520637
   uMetallicMap:
     type: texture
-    data: 0
+    data: 16951097908046520637
   uAlbedoMap:
     type: texture
-    data: 0
+    data: 18014823613819430369
   uMaterialInfo.albedo:
     type: vec3
     data:

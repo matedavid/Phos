@@ -120,7 +120,12 @@ void AssetWatcher::asset_removed(const std::filesystem::path& path) {
         return;
 
     const auto id = m_asset_manager->get_asset_id(path);
-    const auto type = m_asset_manager->get_asset_type(id);
+    if (!id) {
+        PHOS_LOG_ERROR("Could not remove asset: '{}' because it return invalid id", path.string());
+        return;
+    }
+
+    const auto type = *m_asset_manager->get_asset_type(*id);
 
     if (!is_watchable_asset_type(type))
         return;
@@ -159,16 +164,16 @@ void AssetWatcher::asset_removed(const std::filesystem::path& path) {
 
 void AssetWatcher::add_file(const std::filesystem::path& path) {
     const auto id = m_asset_manager->get_asset_id(path);
-    if (id == Phos::UUID(0)) {
+    if (!id) {
         PHOS_LOG_ERROR("Could not add file: '{}' because it return invalid id", path.string());
         return;
     }
 
-    const auto type = m_asset_manager->get_asset_type(id);
+    const auto type = *m_asset_manager->get_asset_type(*id);
 
     if (is_watchable_asset_type(type)) {
         PHOS_LOG_INFO("Added asset: '{}'", path.string());
-        start_watching_asset(path, type, id);
+        start_watching_asset(path, type, *id);
     }
 }
 

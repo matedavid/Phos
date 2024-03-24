@@ -13,6 +13,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         # Asset
         asset/asset_loader.cpp
         asset/asset_pack.cpp
+        asset/asset_registry.cpp
         asset/model_asset.cpp
         asset/runtime_asset_manager.cpp
         asset/editor_asset_manager.cpp

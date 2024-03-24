@@ -15,10 +15,10 @@
 
 #include "scene/entity_deserializer.h"
 
-#include "asset/asset_manager.h"
 #include "asset/model_asset.h"
 #include "asset/prefab_asset.h"
 #include "asset/asset_parsing_utils.h"
+#include "asset/editor_asset_manager.h"
 
 #include "renderer/backend/renderer.h"
 
@@ -56,7 +56,7 @@ static AssetType string_to_asset_type(const std::string& str) {
 
 #define REGISTER_PARSER(Parser) m_parsers.push_back(std::make_unique<Parser>(m_manager))
 
-AssetLoader::AssetLoader(AssetManagerBase* manager) : m_manager(manager) {
+AssetLoader::AssetLoader(EditorAssetManager* manager) : m_manager(manager) {
     // Register parsers
     REGISTER_PARSER(TextureParser);
     REGISTER_PARSER(CubemapParser);
@@ -150,13 +150,19 @@ std::shared_ptr<IAsset> CubemapParser::parse(const YAML::Node& node, [[maybe_unu
         const auto texture_id = UUID(node["texture"].as<uint64_t>());
 
         const auto texture_asset_path = m_manager->get_asset_path(texture_id);
-        auto node_texture = YAML::LoadFile(texture_asset_path);
+        if (!texture_asset_path) {
+            PHOS_LOG_WARNING("Could not find texture asset path with id {} for cubemap",
+                             static_cast<uint64_t>(texture_id));
+            return nullptr;
+        }
+
+        auto node_texture = YAML::LoadFile(m_manager->path() / *texture_asset_path);
 
         PHOS_ASSERT(node_texture["assetType"].as<std::string>() == "texture",
                     "Cubemap texture asset type is not texture ({})",
                     node_texture["assetType"].as<std::string>());
 
-        const auto texture_complete_path = texture_asset_path.parent_path() / node_texture["path"].as<std::string>();
+        const auto texture_complete_path = texture_asset_path->parent_path() / node_texture["path"].as<std::string>();
         return Cubemap::create(texture_complete_path);
     }
 
@@ -166,9 +172,14 @@ std::shared_ptr<IAsset> CubemapParser::parse(const YAML::Node& node, [[maybe_unu
 
 std::filesystem::path CubemapParser::load_face(const Phos::UUID& id) {
     const auto path = m_manager->get_asset_path(id);
-    const auto containing_folder = path.parent_path();
+    if (!path) {
+        PHOS_LOG_WARNING("Could not find cubemap face with id {}", static_cast<uint64_t>(id));
+        return {};
+    }
 
-    const auto node = YAML::LoadFile(path);
+    const auto containing_folder = m_manager->path() / path->parent_path();
+
+    const auto node = YAML::LoadFile(m_manager->path() / *path);
 
     const auto asset_type = node["assetType"].as<std::string>();
     PHOS_ASSERT(asset_type == "texture",

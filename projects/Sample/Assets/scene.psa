@@ -158,7 +158,7 @@ entities:
         z: 1
     MeshRendererComponent:
       mesh: 9067866174296825853
-      material: 14941231718017215585
+      material: 14794443182700080572
     ScriptComponent:
       className: RotationScript
       script: 3681460328360365399

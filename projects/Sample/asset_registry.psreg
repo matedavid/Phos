@@ -1,0 +1,45 @@
+2384757575:
+  type: scene
+  path: scene.psa
+1881429849513053670:
+  type: texture
+  path: WoodMaterial/wood_floor_worn_ao_4k.png.psa
+2912084609271177281:
+  type: mesh
+  path: Letters/letter_P.psa
+3681460328360365399:
+  type: script
+  path: Scripts/RotationScript.cs.psa
+7654641100851901613:
+  type: script
+  path: Scripts/NavigationCamera.cs.psa
+8544648087171559788:
+  type: mesh
+  path: Letters/letter_S.psa
+9001794552585135526:
+  type: mesh
+  path: Letters/letter_O.psa
+9067866174296825853:
+  type: mesh
+  path: suzanne.psa
+12539143639830033397:
+  type: material
+  path: Letters/LettersMaterial.psa
+14015935206850821509:
+  type: mesh
+  path: cube.psa
+14514571106140382874:
+  type: mesh
+  path: Letters/letter_H.psa
+14794443182700080572:
+  type: material
+  path: MonkeyMaterial.psa
+14941231718017215585:
+  type: material
+  path: FloorMaterial.psa
+16951097908046520637:
+  type: texture
+  path: WoodMaterial/wood_floor_worn_arm_4k.png.psa
+18014823613819430369:
+  type: texture
+  path: WoodMaterial/wood_floor_worn_diff_4k.png.psa

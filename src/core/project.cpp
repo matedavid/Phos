@@ -3,7 +3,10 @@
 #include <yaml-cpp/yaml.h>
 
 #include "utility/logging.h"
+
 #include "asset/editor_asset_manager.h"
+#include "asset/asset_registry.h"
+
 #include "scene/scene.h"
 
 namespace Phos {
@@ -32,12 +35,15 @@ std::shared_ptr<Project> Project::open(const std::filesystem::path& path) {
     const auto assets_path = project_path / "Assets";
     const auto scripting_path = project_path / "bin" / "Debug" / (project_name + ".dll");
 
-    const auto asset_manager = std::make_shared<EditorAssetManager>(assets_path);
+    const auto asset_registry = AssetRegistry::create(project_path / "asset_registry.psreg");
+    if (asset_registry == nullptr)
+        return nullptr;
+
+    const auto asset_manager = std::make_shared<EditorAssetManager>(assets_path, asset_registry);
 
     std::vector<std::shared_ptr<Scene>> scenes;
     const auto starting_scene_id = UUID(node["startingScene"].as<uint64_t>());
 
-    // TODO: Should pass all of the scenes in the project file, at the moment only one is allowed
     auto* project =
         new Project(project_name, project_path, assets_path, scripting_path, starting_scene_id, asset_manager);
     return std::shared_ptr<Project>(project);

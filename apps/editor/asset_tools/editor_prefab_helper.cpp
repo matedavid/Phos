@@ -34,7 +34,7 @@ EditorPrefabHelper::EditorPrefabHelper(const std::filesystem::path& path,
       : m_asset_manager(std::move(asset_manager)), m_path(path) {
     m_prefab_scene = std::make_shared<Phos::Scene>("Prefab scene");
 
-    m_prefab_id = m_asset_manager->get_asset_id(path);
+    m_prefab_id = *m_asset_manager->get_asset_id(path);
     if (m_prefab_id == Phos::UUID(0)) {
         PHOS_LOG_ERROR("Cannot open prefab, no prefab in path: {}", m_path.string());
         return;
