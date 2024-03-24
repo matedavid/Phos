@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 
 #include "utility/logging.h"
 #include "asset/asset_manager.h"
@@ -9,13 +10,14 @@ namespace Phos {
 
 // Forward declarations
 class AssetRegistry;
+class AssetLoader;
 
 class EditorAssetManager : public AssetManagerBase {
   public:
-    explicit EditorAssetManager(std::string path, std::shared_ptr<AssetRegistry> registry);
-    ~EditorAssetManager() override = default;
+    explicit EditorAssetManager(std::filesystem::path path, std::shared_ptr<AssetRegistry> registry);
+    ~EditorAssetManager() override;
 
-    [[nodiscard]] std::shared_ptr<IAsset> load(const std::filesystem::path& path) override;
+    [[nodiscard]] std::shared_ptr<IAsset> load(const std::filesystem::path& path);
     [[nodiscard]] std::shared_ptr<IAsset> load_by_id(UUID id) override;
 
     template <typename T>
@@ -44,7 +46,7 @@ class EditorAssetManager : public AssetManagerBase {
     [[nodiscard]] std::shared_ptr<AssetRegistry> asset_registry() const { return m_registry; }
 
   private:
-    std::string m_path;
+    std::filesystem::path m_path;
     std::shared_ptr<AssetRegistry> m_registry;
     std::unique_ptr<AssetLoader> m_loader;
 

@@ -5,13 +5,16 @@
 #include <ranges>
 
 #include "asset/asset_registry.h"
+#include "asset/asset_loader.h"
 
 namespace Phos {
 
-EditorAssetManager::EditorAssetManager(std::string path, std::shared_ptr<AssetRegistry> registry)
+EditorAssetManager::EditorAssetManager(std::filesystem::path path, std::shared_ptr<AssetRegistry> registry)
       : m_path(std::move(path)), m_registry(std::move(registry)) {
     m_loader = std::make_unique<AssetLoader>(this);
 }
+
+EditorAssetManager::~EditorAssetManager() = default;
 
 std::shared_ptr<IAsset> EditorAssetManager::load(const std::filesystem::path& path) {
     const auto full_path = m_path / path;
@@ -29,7 +32,7 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id(UUID id) {
 
     const auto asset_path = get_asset_path(id);
     if (!asset_path) {
-        PHOS_LOG_ERROR("Could not find path of asset with id {}", static_cast<uint64_t>(id), m_path);
+        PHOS_LOG_ERROR("Could not find path of asset with id {}", static_cast<uint64_t>(id), m_path.string());
         return {};
     }
 
@@ -48,13 +51,13 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id(UUID id) {
 std::shared_ptr<IAsset> EditorAssetManager::load_by_id_force_reload(UUID id) {
     const auto asset_path = get_asset_path(id);
     if (!asset_path) {
-        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path);
+        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path.string());
         return nullptr;
     }
 
     auto asset = m_loader->load(m_path / *asset_path);
     if (asset == nullptr) {
-        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path);
+        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path.string());
         return nullptr;
     }
 
