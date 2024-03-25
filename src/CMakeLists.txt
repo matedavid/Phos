@@ -11,6 +11,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         core/project.cpp
 
         # Asset
+        asset/asset.cpp
         asset/asset_loader.cpp
         asset/asset_pack.cpp
         asset/asset_registry.cpp

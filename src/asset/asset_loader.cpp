@@ -31,29 +31,6 @@
 
 namespace Phos {
 
-static AssetType string_to_asset_type(const std::string& str) {
-    if (str == "texture")
-        return AssetType::Texture;
-    else if (str == "cubemap")
-        return AssetType::Cubemap;
-    else if (str == "shader")
-        return AssetType::Shader;
-    else if (str == "material")
-        return AssetType::Material;
-    else if (str == "mesh")
-        return AssetType::Mesh;
-    else if (str == "model")
-        return AssetType::Model;
-    else if (str == "prefab")
-        return AssetType::Prefab;
-    else if (str == "scene")
-        return AssetType::Scene;
-    else if (str == "script")
-        return AssetType::Script;
-
-    PHOS_FAIL("Asset type '{}' not recognized", str);
-}
-
 #define REGISTER_PARSER(Parser) m_parsers.push_back(std::make_unique<Parser>(m_manager))
 
 AssetLoader::AssetLoader(EditorAssetManager* manager) : m_manager(manager) {
@@ -80,7 +57,7 @@ UUID AssetLoader::get_id(const std::string& path) const {
 
 AssetType AssetLoader::get_type(const std::string& path) const {
     const YAML::Node node = YAML::LoadFile(path);
-    return string_to_asset_type(node["assetType"].as<std::string>());
+    return *AssetType::from_string(node["assetType"].as<std::string>());
 }
 
 std::shared_ptr<IAsset> AssetLoader::load(const std::string& path) const {
@@ -88,7 +65,7 @@ std::shared_ptr<IAsset> AssetLoader::load(const std::string& path) const {
         const YAML::Node node = YAML::LoadFile(path);
 
         const auto type_str = node["assetType"].as<std::string>();
-        const AssetType type = string_to_asset_type(type_str);
+        const AssetType type = *AssetType::from_string(type_str);
 
         const auto id = UUID(node["id"].as<uint64_t>());
 
