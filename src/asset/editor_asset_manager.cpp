@@ -79,7 +79,7 @@ void EditorAssetManager::remove_asset_type_from_cache(AssetType type) {
 
 std::optional<std::filesystem::path> EditorAssetManager::get_asset_path(UUID id) const {
     const auto registry_path = m_registry->get_asset_path(id);
-    return registry_path.has_value() ? registry_path : get_path_from_id_r(id, m_path);
+    return registry_path.has_value() ? registry_path : get_path_from_id(id);
 }
 
 std::optional<AssetType> EditorAssetManager::get_asset_type(UUID id) const {
@@ -120,31 +120,16 @@ std::optional<UUID> EditorAssetManager::get_asset_id(const std::filesystem::path
     return id;
 }
 
-std::optional<std::filesystem::path> EditorAssetManager::get_path_from_id_r(UUID id,
-                                                                            const std::filesystem::path& folder) const {
-    std::queue<std::filesystem::path> pending_directories;
+std::optional<std::filesystem::path> EditorAssetManager::get_path_from_id(UUID id) const {
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(m_path)) {
+        PHOS_LOG_INFO("Entry: {}", entry.path().string());
 
-    for (const auto& entry : std::filesystem::directory_iterator(folder)) {
-        if (entry.is_directory()) {
-            pending_directories.push(entry.path());
+        if (entry.is_directory() || entry.path().extension() != ".psa")
             continue;
-        } else if (entry.path().extension() != ".psa") {
-            continue;
-        }
 
-        // TODO: What if file has asset extension but incorrect format...?
         if (m_loader->get_id(entry.path()) == id) {
             return std::filesystem::relative(entry.path(), m_path);
         }
-    }
-
-    while (!pending_directories.empty()) {
-        const auto pending_folder = pending_directories.front();
-        pending_directories.pop();
-
-        const auto path = get_path_from_id_r(id, pending_folder);
-        if (path)
-            return path;
     }
 
     return {};

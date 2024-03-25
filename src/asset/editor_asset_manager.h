@@ -52,8 +52,7 @@ class EditorAssetManager : public AssetManagerBase {
 
     std::unordered_map<UUID, std::shared_ptr<IAsset>> m_id_to_asset;
 
-    [[nodiscard]] std::optional<std::filesystem::path> get_path_from_id_r(UUID id,
-                                                                          const std::filesystem::path& folder) const;
+    [[nodiscard]] std::optional<std::filesystem::path> get_path_from_id(UUID id) const;
 };
 
 } // namespace Phos
