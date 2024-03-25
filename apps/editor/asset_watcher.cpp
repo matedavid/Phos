@@ -8,6 +8,7 @@
 #include "core/project.h"
 
 #include "asset/editor_asset_manager.h"
+#include "asset/asset_registry.h"
 
 #include "scene/scene.h"
 #include "scene/scene_renderer.h"
@@ -107,6 +108,7 @@ void AssetWatcher::asset_renamed(const std::filesystem::path& old_path, const st
         update_mesh(m_asset_manager->load_by_id_type_force_reload<Phos::Mesh>(id));
     } else if (type == Phos::AssetType::Script) {
         PHOS_LOG_ERROR("Unimplemented");
+        return;
     }
 
     m_watching.erase(old_path);
@@ -156,6 +158,7 @@ void AssetWatcher::asset_removed(const std::filesystem::path& path) {
         }
     } else if (type == Phos::AssetType::Script) {
         PHOS_LOG_ERROR("Unimplemented");
+        return;
     }
 
     m_watching.erase(path);

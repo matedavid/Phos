@@ -17,6 +17,7 @@
 #include "asset_tools/asset_importer.h"
 
 #include "asset/editor_asset_manager.h"
+#include "asset/asset_registry.h"
 
 #include "managers/shader_manager.h"
 
@@ -407,6 +408,7 @@ bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
     }
 
     m_asset_watcher->asset_removed(asset.path);
+    m_asset_manager->asset_registry()->unregister_asset(asset.uuid);
 
     switch (asset.type) {
     default:

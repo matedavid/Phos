@@ -15,6 +15,7 @@ class AssetRegistry {
     [[nodiscard]] static std::shared_ptr<AssetRegistry> create(std::filesystem::path path);
 
     void register_asset(const std::shared_ptr<IAsset>& asset, std::filesystem::path path);
+    void unregister_asset(UUID id);
 
     [[nodiscard]] std::optional<std::filesystem::path> get_asset_path(UUID id) const;
     [[nodiscard]] std::optional<AssetType> get_asset_type(UUID id) const;

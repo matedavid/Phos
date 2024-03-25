@@ -8,6 +8,8 @@
 
 namespace Phos {
 
+#define ASSET_REGISTRY_STRICT_UP_TO_DATE
+
 AssetRegistry::AssetRegistry(std::filesystem::path path) : m_path(std::move(path)) {
     reload();
 }
@@ -36,6 +38,22 @@ void AssetRegistry::register_asset(const std::shared_ptr<IAsset>& asset, std::fi
         .type = asset->asset_type(),
         .path = std::move(path),
     };
+
+#ifdef ASSET_REGISTRY_STRICT_UP_TO_DATE
+    dump();
+#endif
+}
+
+void AssetRegistry::unregister_asset(UUID id) {
+    if (!m_entries.contains(id)) {
+        return;
+    }
+
+    m_entries.erase(id);
+
+#ifdef ASSET_REGISTRY_STRICT_UP_TO_DATE
+    dump();
+#endif
 }
 
 std::optional<std::filesystem::path> AssetRegistry::get_asset_path(UUID id) const {
