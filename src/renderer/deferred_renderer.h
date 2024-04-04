@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <array>
 #include <glm/glm.hpp>
 
 #include "renderer/backend/renderer.h"
