@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include "core/uuid.h"
+#include "asset_tools/asset_importer.h"
 
 // Forward declarations
 struct aiMaterial;
@@ -14,16 +15,14 @@ class AssimpImporter {
   public:
     AssimpImporter() = delete;
 
-    [[nodiscard]] static std::filesystem::path import_model(const std::filesystem::path& path,
-                                                            const std::filesystem::path& containing_folder);
+    static void import_model(const AssetImporter::ImportModelInfo& import_info,
+                             const std::filesystem::path& containing_folder);
 
   private:
-    [[nodiscard]] static Phos::UUID load_mesh(std::size_t idx,
-                                              const std::filesystem::path& model_path,
-                                              const std::filesystem::path& output_path);
+    static void copy_additional_files(const std::filesystem::path& model_path,
+                                      const std::filesystem::path& containing_folder);
 
     [[nodiscard]] static Phos::UUID load_material(const aiMaterial* mat,
-                                                  std::size_t idx,
                                                   std::unordered_map<std::string, Phos::UUID>& texture_map,
                                                   const std::filesystem::path& parent_model_path,
                                                   const std::filesystem::path& output_path);

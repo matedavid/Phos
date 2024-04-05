@@ -74,7 +74,7 @@ bool AssetImporter::import_model(const ImportModelInfo& import_info, const std::
     PHOS_LOG_INFO("    Static Model: {}", import_info.import_static);
     PHOS_LOG_INFO("    Import Materials: {}", import_info.import_materials);
 
-    // TODO: 
+    AssimpImporter::import_model(import_info, containing_folder);
 
     return true;
 }
