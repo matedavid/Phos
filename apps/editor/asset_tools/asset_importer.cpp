@@ -1,6 +1,7 @@
 #include "asset_importer.h"
 
 #include <fstream>
+#include <numeric>
 
 #include "utility/logging.h"
 
@@ -8,26 +9,62 @@
 #include "asset_tools/assimp_importer.h"
 #include "asset_tools/asset_builder.h"
 
-#define IS_TEXTURE(ext) (ext == ".jpg" || ext == ".png" || ext == ".jpeg")
-#define IS_MODEL(ext) (ext == ".fbx" || ext == ".obj" || ext == ".gltf")
-#define IS_SCRIPT(ext) (ext == ".cs")
+static std::vector<std::string> s_texture_extensions{".jpg", ".png", ".jpeg"};
+static std::vector<std::string> s_model_extensions{".fbx", ".obj", ".gltf"};
+static std::vector<std::string> s_script_extensions{".cs"};
 
 std::filesystem::path AssetImporter::import_asset(const std::filesystem::path& asset_path,
                                                   const std::filesystem::path& containing_folder) {
     const auto extension = asset_path.extension();
-    if (IS_TEXTURE(extension))
+    if (is_texture(extension))
         return import_texture(asset_path, containing_folder);
-    if (IS_MODEL(extension))
+    if (is_model(extension))
         return import_model(asset_path, containing_folder);
-    if (IS_SCRIPT(extension))
+    if (is_script(extension))
         return import_script(asset_path, containing_folder);
 
     PHOS_LOG_ERROR("Unsupported file extension: {}", asset_path.extension().string());
     return {};
 }
 
-bool AssetImporter::is_automatic_importable_asset(const std::string& extension) {
-    return IS_TEXTURE(extension) || IS_SCRIPT(extension);
+bool AssetImporter::is_automatically_importable_asset(const std::string& extension) {
+    return is_texture(extension) || is_script(extension);
+}
+
+#define CONTAINS(vec, val) std::ranges::find(vec, val) != vec.end()
+
+bool AssetImporter::is_texture(const std::string& extension) {
+    return CONTAINS(s_texture_extensions, extension);
+}
+
+bool AssetImporter::is_model(const std::string& extension) {
+    return CONTAINS(s_model_extensions, extension);
+}
+
+bool AssetImporter::is_script(const std::string& extension) {
+    return CONTAINS(s_script_extensions, extension);
+}
+
+#define JOIN_STRINGS(vec, delim)                                                                  \
+    std::accumulate(std::next(vec.begin()), vec.end(), vec[0], [](std::string a, std::string b) { \
+        a.erase(0, 1);                                                                            \
+        b.erase(0, 1);                                                                            \
+        return a + delim + b;                                                                     \
+    })
+
+std::vector<std::pair<std::string, std::string>> AssetImporter::get_file_dialog_extensions_filter() {
+    const std::string texture_extensions = JOIN_STRINGS(s_texture_extensions, ",");
+    const std::string model_extensions = JOIN_STRINGS(s_model_extensions, ",");
+    const std::string script_extensions = JOIN_STRINGS(s_script_extensions, ",");
+
+    const std::string all_extensions = texture_extensions + "," + model_extensions + "," + script_extensions;
+
+    return {
+        {"All", all_extensions},
+        {"Texture", texture_extensions},
+        {"Model", model_extensions},
+        {"Script", script_extensions},
+    };
 }
 
 //

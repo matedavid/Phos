@@ -326,7 +326,7 @@ void ContentBrowserPanel::update() {
 
         const auto extension = relative.extension();
         if (extension != ".psa") {
-            if (!AssetImporter::is_automatic_importable_asset(extension))
+            if (!AssetImporter::is_automatically_importable_asset(extension))
                 continue;
 
             // Check if non .psa files have a corresponding phos asset file
@@ -473,9 +473,7 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
 }
 
 void ContentBrowserPanel::import_asset() {
-    // @TODO: Should move to another place, maybe near AssetImporter
-    const std::vector<std::pair<std::string, std::string>> asset_filter = {
-        {"Image", "jpg,jpeg,png"}, {"Model", "fbx,obj,gltf"}, {"Script", "cs"}};
+    const auto asset_filter = AssetImporter::get_file_dialog_extensions_filter();
 
     const auto paths = FileDialog::open_file_dialog_multiple(asset_filter);
     if (paths.empty())
