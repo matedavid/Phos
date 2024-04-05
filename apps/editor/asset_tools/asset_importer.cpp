@@ -16,6 +16,7 @@ static std::vector<std::string> s_script_extensions{".cs"};
 std::filesystem::path AssetImporter::import_asset(const std::filesystem::path& asset_path,
                                                   const std::filesystem::path& containing_folder) {
     const auto extension = asset_path.extension();
+
     if (is_texture(extension))
         return import_texture(asset_path, containing_folder);
     if (is_script(extension))
@@ -43,17 +44,24 @@ bool AssetImporter::is_script(const std::string& extension) {
     return CONTAINS(s_script_extensions, extension);
 }
 
-#define JOIN_STRINGS(vec, delim)                                                                  \
-    std::accumulate(std::next(vec.begin()), vec.end(), vec[0], [](std::string a, std::string b) { \
-        a.erase(0, 1);                                                                            \
-        b.erase(0, 1);                                                                            \
-        return a + delim + b;                                                                     \
-    })
-
 std::vector<std::pair<std::string, std::string>> AssetImporter::get_file_dialog_extensions_filter() {
-    const std::string texture_extensions = JOIN_STRINGS(s_texture_extensions, ",");
-    const std::string model_extensions = JOIN_STRINGS(s_model_extensions, ",");
-    const std::string script_extensions = JOIN_STRINGS(s_script_extensions, ",");
+    const auto join_strings = [](const std::vector<std::string>& values, const std::string& delim) {
+        std::string joined;
+        for (std::size_t i = 0; i < values.size(); ++i) {
+            auto val = values[i];
+            val.erase(0, 1); // remove dot
+            joined += val;
+
+            if (i != values.size() - 1)
+                joined += delim;
+        }
+
+        return joined;
+    };
+
+    const std::string texture_extensions = join_strings(s_texture_extensions, ",");
+    const std::string model_extensions = join_strings(s_model_extensions, ",");
+    const std::string script_extensions = join_strings(s_script_extensions, ",");
 
     const std::string all_extensions = texture_extensions + "," + model_extensions + "," + script_extensions;
 
