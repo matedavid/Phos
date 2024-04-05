@@ -18,12 +18,10 @@ std::filesystem::path AssetImporter::import_asset(const std::filesystem::path& a
     const auto extension = asset_path.extension();
     if (is_texture(extension))
         return import_texture(asset_path, containing_folder);
-    if (is_model(extension))
-        return import_model(asset_path, containing_folder);
     if (is_script(extension))
         return import_script(asset_path, containing_folder);
 
-    PHOS_LOG_ERROR("Unsupported file extension: {}", asset_path.extension().string());
+    PHOS_LOG_ERROR("Not automatically importable extension: {}", asset_path.extension().string());
     return {};
 }
 
@@ -71,6 +69,16 @@ std::vector<std::pair<std::string, std::string>> AssetImporter::get_file_dialog_
 // Specific asset imports
 //
 
+bool AssetImporter::import_model(const ImportModelInfo& import_info, const std::filesystem::path& containing_folder) {
+    PHOS_LOG_INFO("Importing model: {}", import_info.path.string());
+    PHOS_LOG_INFO("    Static Model: {}", import_info.import_static);
+    PHOS_LOG_INFO("    Import Materials: {}", import_info.import_materials);
+
+    // TODO: 
+
+    return true;
+}
+
 std::filesystem::path AssetImporter::import_texture(const std::filesystem::path& asset_path,
                                                     const std::filesystem::path& containing_folder) {
     const auto imported_asset_path = containing_folder / asset_path.filename();
@@ -91,11 +99,6 @@ std::filesystem::path AssetImporter::import_texture(const std::filesystem::path&
     file << texture_builder;
 
     return imported_phos_asset_path;
-}
-
-std::filesystem::path AssetImporter::import_model(const std::filesystem::path& asset_path,
-                                                  const std::filesystem::path& containing_folder) {
-    return AssimpImporter::import_model(asset_path, containing_folder);
 }
 
 std::filesystem::path AssetImporter::import_script(const std::filesystem::path& asset_path,

@@ -14,7 +14,6 @@
 #include "asset_tools/editor_material_helper.h"
 #include "asset_tools/editor_cubemap_helper.h"
 #include "asset_tools/editor_prefab_helper.h"
-#include "asset_tools/asset_importer.h"
 
 #include "asset/editor_asset_manager.h"
 #include "asset/asset_registry.h"
@@ -234,6 +233,41 @@ void ContentBrowserPanel::on_imgui_render() {
 
         if (ImGui::MenuItem("Import")) {
             import_asset();
+        }
+
+        ImGui::EndPopup();
+    }
+
+    if (m_importing_model_info) {
+        ImGui::OpenPopup("Model Import Dialog");
+    }
+
+    if (ImGui::BeginPopupModal("Model Import Dialog")) {
+        ImGui::AlignTextToFramePadding();
+
+        ImGui::Text("Importing model: %s", m_importing_model_info->path.stem().string().c_str());
+
+        ImGui::Checkbox("Static Mesh", &m_importing_model_info->import_static);
+        ImGui::Checkbox("Import Materials", &m_importing_model_info->import_materials);
+
+        if (ImGui::Button("Abort")) {
+            m_importing_model_info = {};
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Import")) {
+            const bool ok = AssetImporter::import_model(*m_importing_model_info, m_current_path);
+            if (!ok) {
+                PHOS_LOG_ERROR("Error while importing model with path: {}", m_importing_model_info->path.string());
+            } else {
+                // TODO: Add files to asset watcher??
+                update();
+            }
+
+            m_importing_model_info = {};
+            ImGui::CloseCurrentPopup();
         }
 
         ImGui::EndPopup();
@@ -475,20 +509,30 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
 void ContentBrowserPanel::import_asset() {
     const auto asset_filter = AssetImporter::get_file_dialog_extensions_filter();
 
-    const auto paths = FileDialog::open_file_dialog_multiple(asset_filter);
-    if (paths.empty())
+    const auto path = FileDialog::open_file_dialog(asset_filter);
+    if (!path)
         return;
 
-    for (const auto& path : paths) {
-        if (!std::filesystem::exists(path)) {
-            PHOS_LOG_ERROR("[ContentBrowserPanel] Importing file '{}' does not exist", path.string());
-            continue;
-        }
+    if (!std::filesystem::exists(*path)) {
+        PHOS_LOG_ERROR("[ContentBrowserPanel] Importing file '{}' does not exist", path->string());
+        return;
+    }
 
-        const auto new_path = AssetImporter::import_asset(path, m_current_path);
+    const auto ext = path->extension();
+
+    if (AssetImporter::is_model(ext)) {
+        m_importing_model_info = AssetImporter::ImportModelInfo{};
+        m_importing_model_info->path = *path;
+        return;
+    }
+
+    if (AssetImporter::is_automatically_importable_asset(ext)) {
+        const auto new_path = AssetImporter::import_asset(*path, m_current_path);
         m_asset_watcher->asset_created(new_path);
 
         update();
+    } else {
+        PHOS_LOG_ERROR("Can't import asset with path: {}", path->string());
     }
 }
 
