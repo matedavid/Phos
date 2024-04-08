@@ -10,16 +10,14 @@ std::optional<std::string> AssetType::to_string(const AssetType& type) {
         return "shader";
     case AssetType::Material:
         return "material";
-    case AssetType::Mesh:
-        return "mesh";
+    case AssetType::StaticMesh:
+        return "StaticMesh";
     case AssetType::Scene:
         return "scene";
     case AssetType::Script:
         return "script";
     case AssetType::Cubemap:
         return "cubemap";
-    case AssetType::Model:
-        return "model";
     case AssetType::Prefab:
         return "prefab";
     }
@@ -36,10 +34,8 @@ std::optional<AssetType> AssetType::from_string(const std::string& str) {
         return AssetType::Shader;
     else if (str == "material")
         return AssetType::Material;
-    else if (str == "mesh")
-        return AssetType::Mesh;
-    else if (str == "model")
-        return AssetType::Model;
+    else if (str == "StaticMesh")
+        return AssetType::StaticMesh;
     else if (str == "prefab")
         return AssetType::Prefab;
     else if (str == "scene")

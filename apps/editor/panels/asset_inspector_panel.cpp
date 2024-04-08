@@ -58,9 +58,7 @@ void AssetInspectorPanel::on_imgui_render() {
     case Phos::AssetType::Material:
         render_material_asset();
         break;
-    case Phos::AssetType::Mesh:
-        break;
-    case Phos::AssetType::Model:
+    case Phos::AssetType::StaticMesh:
         break;
     case Phos::AssetType::Prefab:
         render_prefab_asset();
@@ -109,9 +107,7 @@ void AssetInspectorPanel::set_selected_asset(std::optional<EditorAsset> asset) {
     case Phos::AssetType::Material:
         m_material_helper = EditorMaterialHelper::open(m_selected_asset->path);
         break;
-    case Phos::AssetType::Mesh:
-        break;
-    case Phos::AssetType::Model:
+    case Phos::AssetType::StaticMesh:
         break;
     case Phos::AssetType::Prefab:
         m_prefab_helper = EditorPrefabHelper::open(m_selected_asset->path, m_asset_manager);

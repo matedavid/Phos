@@ -94,7 +94,7 @@ DESERIALIZE_COMPONENT_T(MeshRendererComponent) {
     };
 
     if (mesh_uuid != UUID(0)) {
-        component.mesh = asset_manager->load_by_id_type<Mesh>(mesh_uuid);
+        component.mesh = asset_manager->load_by_id_type<StaticMesh>(mesh_uuid);
     }
 
     if (material_uuid != UUID(0)) {

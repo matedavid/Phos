@@ -205,8 +205,8 @@ RENDER_COMPONENT(Phos::MeshRendererComponent) {
     ImGui::InputText("##MeshInput", mesh_name.data(), mesh_name.length(), ImGuiInputTextFlags_ReadOnly);
 
     const auto mesh_asset = ImGuiUtils::drag_drop_target<EditorAsset>("CONTENT_BROWSER_ITEM");
-    if (mesh_asset.has_value() && !mesh_asset->is_directory && mesh_asset->type == Phos::AssetType::Mesh)
-        component.mesh = asset_manager->load_by_id_type<Phos::Mesh>(mesh_asset->uuid);
+    if (mesh_asset.has_value() && !mesh_asset->is_directory && mesh_asset->type == Phos::AssetType::StaticMesh)
+        component.mesh = asset_manager->load_by_id_type<Phos::StaticMesh>(mesh_asset->uuid);
 
     ImGui::TableNextRow();
 

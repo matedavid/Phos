@@ -12,7 +12,7 @@
 namespace Phos {
 
 // Forward declarations
-class Mesh;
+class StaticMesh;
 class Material;
 class ClassInstanceHandle;
 
@@ -45,7 +45,7 @@ struct LightComponent {
 };
 
 struct MeshRendererComponent {
-    std::shared_ptr<Mesh> mesh;
+    std::shared_ptr<StaticMesh> mesh;
     std::shared_ptr<Material> material;
 };
 

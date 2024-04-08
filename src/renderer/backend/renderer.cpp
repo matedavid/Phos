@@ -55,7 +55,7 @@ void Renderer::end_frame() {
 }
 
 void Renderer::submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                  const std::shared_ptr<Mesh>& mesh,
+                                  const std::shared_ptr<StaticMesh>& mesh,
                                   const std::shared_ptr<Material>& material) {
     PHOS_PROFILE_ZONE_SCOPED_NAMED("Renderer::submit_static_mesh");
     m_native_renderer->submit_static_mesh(command_buffer, mesh, material);

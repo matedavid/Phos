@@ -455,9 +455,15 @@ bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
         return std::filesystem::remove(asset.path) && std::filesystem::remove(texture_path);
     }
 
-    case Phos::AssetType::Model: {
-        PHOS_LOG_ERROR("[ContentBrowserPanel::remove_asset] Unimplemented");
-        return false;
+    case Phos::AssetType::StaticMesh: {
+        const auto node = YAML::LoadFile(asset.path);
+
+        auto source = node["source"].as<std::string>();
+        source = asset.path.parent_path() / source;
+
+        // TODO: Incomplete, should also delete additional source files (e.g. .mtl for .obj model)
+
+        return std::filesystem::remove(asset.path) && std::filesystem::remove(source);
     }
 
     case Phos::AssetType::Script: {
@@ -467,7 +473,6 @@ bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
 
     case Phos::AssetType::Cubemap:
     case Phos::AssetType::Material:
-    case Phos::AssetType::Mesh:
     case Phos::AssetType::Prefab:
     case Phos::AssetType::Shader:
     case Phos::AssetType::Scene:

@@ -15,7 +15,6 @@ target_sources(${PROJECT_NAME} PRIVATE
         asset/asset_loader.cpp
         asset/asset_pack.cpp
         asset/asset_registry.cpp
-        asset/model_asset.cpp
         asset/runtime_asset_manager.cpp
         asset/editor_asset_manager.cpp
         asset/prefab_loader.cpp
@@ -23,7 +22,6 @@ target_sources(${PROJECT_NAME} PRIVATE
         # Scene
         scene/registry.cpp
         scene/scene.cpp
-        scene/model_loader.cpp
         scene/entity_deserializer.cpp
 
         # Scripting

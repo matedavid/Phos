@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "asset/asset.h"
-#include "asset/model_asset.h"
 
 // Forward declarations
 namespace YAML {
@@ -79,25 +78,12 @@ class MaterialParser : public IAssetParser {
     [[nodiscard]] std::shared_ptr<Texture> parse_texture(const YAML::Node& node) const;
 };
 
-class MeshParser : public IAssetParser {
+class StaticMeshParser : public IAssetParser {
   public:
-    explicit MeshParser([[maybe_unused]] EditorAssetManager*) {}
+    explicit StaticMeshParser([[maybe_unused]] EditorAssetManager*) {}
 
-    [[nodiscard]] AssetType type() override { return AssetType::Mesh; }
+    [[nodiscard]] AssetType type() override { return AssetType::StaticMesh; }
     std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
-};
-
-class ModelParser : public IAssetParser {
-  public:
-    explicit ModelParser(EditorAssetManager* manager) : m_manager(manager) {}
-
-    [[nodiscard]] AssetType type() override { return AssetType::Model; }
-    std::shared_ptr<IAsset> parse(const YAML::Node& node, const std::string& path) override;
-
-  private:
-    EditorAssetManager* m_manager;
-
-    [[nodiscard]] ModelAsset::Node* parse_node_r(const YAML::Node& node) const;
 };
 
 class PrefabParser : public IAssetParser {

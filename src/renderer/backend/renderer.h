@@ -6,7 +6,7 @@
 namespace Phos {
 
 // Forward declarations
-class Mesh;
+class StaticMesh;
 class CommandBuffer;
 class RenderPass;
 class GraphicsPipeline;
@@ -44,7 +44,7 @@ class INativeRenderer {
     virtual void wait_idle() = 0;
 
     virtual void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                    const std::shared_ptr<Mesh>& mesh,
+                                    const std::shared_ptr<StaticMesh>& mesh,
                                     const std::shared_ptr<Material>& material) = 0;
 
     virtual void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,
@@ -77,7 +77,7 @@ class Renderer {
     static void end_frame();
 
     static void submit_static_mesh(const std::shared_ptr<CommandBuffer>& command_buffer,
-                                   const std::shared_ptr<Mesh>& mesh,
+                                   const std::shared_ptr<StaticMesh>& mesh,
                                    const std::shared_ptr<Material>& material);
 
     static void bind_graphics_pipeline(const std::shared_ptr<CommandBuffer>& command_buffer,

@@ -1,45 +1,54 @@
 2384757575:
   type: scene
-  path: scene.psa
+  path: Scenes/MainScene.psa
 1881429849513053670:
   type: texture
-  path: WoodMaterial/wood_floor_worn_ao_4k.png.psa
-2912084609271177281:
-  type: mesh
-  path: Letters/letter_P.psa
+  path: Wall/WoodMaterial/wood_floor_worn_ao_4k.png.psa
+3471413385127094841:
+  type: StaticMesh
+  path: Wall/cube.psa
 3681460328360365399:
   type: script
   path: Scripts/RotationScript.cs.psa
+5596999877869798103:
+  type: StaticMesh
+  path: Letters/Letter_H/letter_h.psa
+6023701236421863157:
+  type: texture
+  path: Helmet/aiStandardSurface6SG_normal.png.psa
 7654641100851901613:
   type: script
   path: Scripts/NavigationCamera.cs.psa
-8544648087171559788:
-  type: mesh
-  path: Letters/letter_S.psa
-9001794552585135526:
-  type: mesh
-  path: Letters/letter_O.psa
-9067866174296825853:
-  type: mesh
-  path: suzanne.psa
+9273292888999905396:
+  type: StaticMesh
+  path: Letters/Letter_P/letter_p.psa
 12539143639830033397:
   type: material
   path: Letters/LettersMaterial.psa
-14015935206850821509:
-  type: mesh
-  path: cube.psa
-14514571106140382874:
-  type: mesh
-  path: Letters/letter_H.psa
-14794443182700080572:
+12828477926616358202:
   type: material
-  path: MonkeyMaterial.psa
+  path: Helmet/aiStandardSurface6SG.psa
+12896962681509316211:
+  type: StaticMesh
+  path: Helmet/John_117.psa
 14941231718017215585:
   type: material
-  path: FloorMaterial.psa
+  path: Wall/WoodMaterial/WoodMaterial.psa
+15348411322830662088:
+  type: texture
+  path: Helmet/aiStandardSurface6SG_metallicRoughness.png.psa
+16205750866518408213:
+  type: texture
+  path: Helmet/aiStandardSurface6SG_baseColor.jpg.psa
+16532439430764234550:
+  type: StaticMesh
+  path: Letters/Letter_O/letter_o.psa
 16951097908046520637:
   type: texture
-  path: WoodMaterial/wood_floor_worn_arm_4k.png.psa
+  path: Wall/WoodMaterial/wood_floor_worn_arm_4k.png.psa
+17039889194555857756:
+  type: StaticMesh
+  path: Letters/Letter_S/letter_s.psa
 18014823613819430369:
   type: texture
-  path: WoodMaterial/wood_floor_worn_diff_4k.png.psa
+  path: Wall/WoodMaterial/wood_floor_worn_diff_4k.png.psa

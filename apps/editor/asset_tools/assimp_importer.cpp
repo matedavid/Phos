@@ -55,7 +55,7 @@ void AssimpImporter::import_model(const AssetImporter::ImportModelInfo& import_i
 
         const Phos::UUID id{};
 
-        static_mesh_builder.dump("assetType", *Phos::AssetType::to_string(Phos::AssetType::Mesh));
+        static_mesh_builder.dump("assetType", *Phos::AssetType::to_string(Phos::AssetType::StaticMesh));
         static_mesh_builder.dump("id", id);
 
         static_mesh_builder.dump("source", std::filesystem::relative(output_model_path, containing_folder));

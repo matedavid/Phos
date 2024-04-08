@@ -14,7 +14,7 @@ class ScriptingSystem;
 
 class Cubemap;
 class Material;
-class Mesh;
+class StaticMesh;
 
 } // namespace Phos
 
@@ -51,7 +51,7 @@ class AssetWatcher {
 
     void update_cubemap(const std::shared_ptr<Phos::Cubemap>& cubemap) const;
     void update_material(const std::shared_ptr<Phos::Material>& mat) const;
-    void update_mesh(const std::shared_ptr<Phos::Mesh>& mesh) const;
+    void update_mesh(const std::shared_ptr<Phos::StaticMesh>& mesh) const;
     void update_script();
 
     bool m_script_update_pending = false;
