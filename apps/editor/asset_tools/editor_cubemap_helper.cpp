@@ -5,6 +5,8 @@
 #include "utility/logging.h"
 #include "asset_tools/asset_builder.h"
 
+#include "asset/asset.h"
+
 std::shared_ptr<EditorCubemapHelper> EditorCubemapHelper::create(std::string name) {
     return std::shared_ptr<EditorCubemapHelper>(new EditorCubemapHelper(std::move(name)));
 }
@@ -97,7 +99,7 @@ void EditorCubemapHelper::save() const {
 void EditorCubemapHelper::save(const std::filesystem::path& path) const {
     auto cubemap_builder = AssetBuilder();
 
-    cubemap_builder.dump("assetType", "cubemap");
+    cubemap_builder.dump("assetType", *Phos::AssetType::to_string(Phos::AssetType::Cubemap));
     cubemap_builder.dump("id", m_cubemap_id);
 
     switch (m_type) {

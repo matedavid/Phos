@@ -119,7 +119,7 @@ std::filesystem::path AssetImporter::import_script(const std::filesystem::path& 
 
     auto script_builder = AssetBuilder();
 
-    script_builder.dump("assetType", "script");
+    script_builder.dump("assetType", *Phos::AssetType::to_string(Phos::AssetType::Script));
     script_builder.dump("id", Phos::UUID());
 
     std::ofstream file(imported_phos_asset_path);

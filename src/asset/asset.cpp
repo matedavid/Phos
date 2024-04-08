@@ -5,42 +5,42 @@ namespace Phos {
 std::optional<std::string> AssetType::to_string(const AssetType& type) {
     switch (type) {
     case AssetType::Texture:
-        return "texture";
+        return "Texture";
     case AssetType::Shader:
-        return "shader";
+        return "Shader";
     case AssetType::Material:
-        return "material";
+        return "Material";
     case AssetType::StaticMesh:
         return "StaticMesh";
     case AssetType::Scene:
-        return "scene";
+        return "Scene";
     case AssetType::Script:
         return "script";
     case AssetType::Cubemap:
-        return "cubemap";
+        return "Cubemap";
     case AssetType::Prefab:
-        return "prefab";
+        return "Prefab";
     }
 
     return {};
 }
 
 std::optional<AssetType> AssetType::from_string(const std::string& str) {
-    if (str == "texture")
+    if (str == "Texture")
         return AssetType::Texture;
-    else if (str == "cubemap")
+    else if (str == "Cubemap")
         return AssetType::Cubemap;
-    else if (str == "shader")
+    else if (str == "Shader")
         return AssetType::Shader;
-    else if (str == "material")
+    else if (str == "Material")
         return AssetType::Material;
     else if (str == "StaticMesh")
         return AssetType::StaticMesh;
-    else if (str == "prefab")
+    else if (str == "Prefab")
         return AssetType::Prefab;
-    else if (str == "scene")
+    else if (str == "Scene")
         return AssetType::Scene;
-    else if (str == "script")
+    else if (str == "Script")
         return AssetType::Script;
 
     return {};

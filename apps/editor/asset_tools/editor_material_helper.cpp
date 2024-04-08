@@ -9,6 +9,7 @@
 #include "core/uuid.h"
 #include "managers/shader_manager.h"
 #include "asset/asset_parsing_utils.h"
+#include "asset/asset.h"
 
 #include "renderer/backend/renderer.h"
 
@@ -85,7 +86,7 @@ void EditorMaterialHelper::save() const {
 void EditorMaterialHelper::save(const std::filesystem::path& path) const {
     auto material_builder = AssetBuilder();
 
-    material_builder.dump("assetType", "material");
+    material_builder.dump("assetType", *Phos::AssetType::to_string(Phos::AssetType::Material));
     material_builder.dump("id", m_material_id);
     material_builder.dump("name", m_material_name);
 

@@ -30,17 +30,17 @@
 
 namespace Phos {
 
-#define REGISTER_PARSER(Parser) m_parsers.push_back(std::make_unique<Parser>(m_manager))
+#define REGISTER_PARSER(Parser, Type) m_parsers.insert({AssetType::Type, std::make_unique<Parser>(m_manager)})
 
 AssetLoader::AssetLoader(EditorAssetManager* manager) : m_manager(manager) {
     // Register parsers
-    REGISTER_PARSER(TextureParser);
-    REGISTER_PARSER(CubemapParser);
-    REGISTER_PARSER(MaterialParser);
-    REGISTER_PARSER(StaticMeshParser);
-    REGISTER_PARSER(PrefabParser);
-    REGISTER_PARSER(SceneParser);
-    REGISTER_PARSER(ScriptParser);
+    REGISTER_PARSER(TextureParser, Texture);
+    REGISTER_PARSER(CubemapParser, Cubemap);
+    REGISTER_PARSER(MaterialParser, Material);
+    REGISTER_PARSER(StaticMeshParser, StaticMesh);
+    REGISTER_PARSER(PrefabParser, Prefab);
+    REGISTER_PARSER(SceneParser, Scene);
+    REGISTER_PARSER(ScriptParser, Script);
 }
 
 UUID AssetLoader::get_id(const std::string& path) const {
@@ -65,12 +65,15 @@ std::shared_ptr<IAsset> AssetLoader::load(const std::string& path) const {
         const auto type_str = node["assetType"].as<std::string>();
         const AssetType type = *AssetType::from_string(type_str);
 
+        const auto parser_it = m_parsers.find(type);
+        if (parser_it == m_parsers.end()) {
+            PHOS_LOG_WARNING("Parser not found for asset type: {}", type_str);
+            return nullptr;
+        }
+
         const auto id = UUID(node["id"].as<uint64_t>());
 
-        const auto it = std::ranges::find_if(m_parsers, [&type](const auto& parser) { return parser->type() == type; });
-        PHOS_ASSERT(it != m_parsers.end(), "Parser not found for asset type: {}\n", type_str);
-
-        auto asset = (*it)->parse(node, path);
+        auto asset = parser_it->second->parse(node, path);
         asset->id = id;
         asset->asset_name = std::filesystem::path(path).filename();
 
@@ -133,7 +136,7 @@ std::shared_ptr<IAsset> CubemapParser::parse(const YAML::Node& node, [[maybe_unu
 
         auto node_texture = YAML::LoadFile(m_manager->path() / *texture_asset_path);
 
-        PHOS_ASSERT(node_texture["assetType"].as<std::string>() == "texture",
+        PHOS_ASSERT(node_texture["assetType"].as<std::string>() == AssetType::to_string(AssetType::Texture),
                     "Cubemap texture asset type is not texture ({})",
                     node_texture["assetType"].as<std::string>());
 
@@ -157,7 +160,7 @@ std::filesystem::path CubemapParser::load_face(const Phos::UUID& id) {
     const auto node = YAML::LoadFile(m_manager->path() / *path);
 
     const auto asset_type = node["assetType"].as<std::string>();
-    PHOS_ASSERT(asset_type == "texture",
+    PHOS_ASSERT(asset_type == AssetType::to_string(AssetType::Texture),
                 "Cubemap face with id {} is not of type texture ({})",
                 static_cast<uint64_t>(id),
                 asset_type);

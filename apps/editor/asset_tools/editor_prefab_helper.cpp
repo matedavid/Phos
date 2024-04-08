@@ -90,7 +90,7 @@ void EditorPrefabHelper::save() const {
 void EditorPrefabHelper::save(const std::filesystem::path& path) const {
     auto prefab_builder = AssetBuilder();
 
-    prefab_builder.dump("assetType", "prefab");
+    prefab_builder.dump("assetType", *Phos::AssetType::to_string(Phos::AssetType::Prefab));
     prefab_builder.dump("id", m_prefab_id);
 
     auto entity_builder = EntitySerializer::serialize(m_prefab_entity);

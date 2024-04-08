@@ -11,7 +11,7 @@
 void SceneSerializer::serialize(const std::shared_ptr<Phos::Scene>& scene, const std::filesystem::path& path) {
     auto builder = AssetBuilder();
 
-    builder.dump("assetType", "scene");
+    builder.dump("assetType", *Phos::AssetType::to_string(Phos::AssetType::Scene));
     builder.dump("name", scene->name());
     builder.dump("id", scene->id);
 
