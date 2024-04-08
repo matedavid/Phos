@@ -118,6 +118,13 @@ void ImGuiVulkanImpl::new_frame() {
 void ImGuiVulkanImpl::render_frame(ImDrawData* draw_data) {
     VkDevice device = Phos::VulkanContext::device->handle();
 
+    ImGui_ImplVulkanH_Frame* fd = &m_wd->Frames[m_wd->FrameIndex];
+    {
+        VK_CHECK(vkWaitForFences(
+            device, 1, &fd->Fence, VK_TRUE, UINT64_MAX)); // wait indefinitely instead of periodically checking
+        VK_CHECK(vkResetFences(device, 1, &fd->Fence));
+    }
+
     VkSemaphore image_acquired_semaphore = m_wd->FrameSemaphores[m_wd->SemaphoreIndex].ImageAcquiredSemaphore;
     VkSemaphore render_complete_semaphore = m_wd->FrameSemaphores[m_wd->SemaphoreIndex].RenderCompleteSemaphore;
     auto err = vkAcquireNextImageKHR(
@@ -127,13 +134,6 @@ void ImGuiVulkanImpl::render_frame(ImDrawData* draw_data) {
         return;
     }
     VK_CHECK(err);
-
-    ImGui_ImplVulkanH_Frame* fd = &m_wd->Frames[m_wd->FrameIndex];
-    {
-        VK_CHECK(vkWaitForFences(
-            device, 1, &fd->Fence, VK_TRUE, UINT64_MAX)); // wait indefinitely instead of periodically checking
-        VK_CHECK(vkResetFences(device, 1, &fd->Fence));
-    }
 
     {
         VK_CHECK(vkResetCommandPool(device, fd->CommandPool, 0));

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <array>
 #include <glm/glm.hpp>
 
 #include "renderer/backend/renderer.h"
@@ -19,7 +20,7 @@ class RenderPass;
 class VertexBuffer;
 class IndexBuffer;
 class UniformBuffer;
-class Mesh;
+class StaticMesh;
 class Material;
 class Light;
 class Cubemap;
@@ -103,7 +104,7 @@ class DeferredRenderer : public ISceneRenderer {
     bool m_skybox_enabled = true;
 
     // Skybox cube
-    std::shared_ptr<Mesh> m_cube_mesh;
+    std::shared_ptr<StaticMesh> m_cube_mesh;
     std::shared_ptr<Material> m_cube_material;
 
     // Bloom pass
@@ -120,7 +121,7 @@ class DeferredRenderer : public ISceneRenderer {
 
     struct RenderableEntity {
         glm::mat4 model;
-        std::shared_ptr<Mesh> mesh;
+        std::shared_ptr<StaticMesh> mesh;
         std::shared_ptr<Material> material;
     };
     [[nodiscard]] std::vector<RenderableEntity> get_renderable_entities() const;

@@ -17,7 +17,3 @@ void EditorSceneManager::running_changed(bool running) {
     else
         m_active_scene = m_editing_scene;
 }
-
-std::shared_ptr<Phos::Scene> EditorSceneManager::active_scene() const {
-    return m_active_scene;
-}

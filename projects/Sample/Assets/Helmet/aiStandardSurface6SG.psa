@@ -1,0 +1,46 @@
+assetType: Material
+id: 12828477926616358202
+name: aiStandardSurface6SG
+shader:
+  type: builtin
+  name: PBR.Geometry.Deferred
+properties:
+  uAOMap:
+    type: texture
+    data: 15348411322830662088
+  uRoughnessMap:
+    type: texture
+    data: 15348411322830662088
+  uMetallicMap:
+    type: texture
+    data: 15348411322830662088
+  uAlbedoMap:
+    type: texture
+    data: 16205750866518408213
+  uMaterialInfo.albedo:
+    type: vec3
+    data:
+      x: 1
+      y: 1
+      z: 1
+  uMaterialInfo.metallic:
+    type: float
+    data: 1
+  uMaterialInfo.roughness:
+    type: float
+    data: 1
+  uMaterialInfo.ao:
+    type: float
+    data: 1
+  uMaterialInfo.emissionIntensity:
+    type: float
+    data: 0
+  uMaterialInfo.emissionColor:
+    type: vec3
+    data:
+      x: 1
+      y: 1
+      z: 1
+  uNormalMap:
+    type: texture
+    data: 6023701236421863157

@@ -11,9 +11,10 @@ target_sources(${PROJECT_NAME} PRIVATE
         core/project.cpp
 
         # Asset
+        asset/asset.cpp
         asset/asset_loader.cpp
         asset/asset_pack.cpp
-        asset/model_asset.cpp
+        asset/asset_registry.cpp
         asset/runtime_asset_manager.cpp
         asset/editor_asset_manager.cpp
         asset/prefab_loader.cpp
@@ -21,7 +22,6 @@ target_sources(${PROJECT_NAME} PRIVATE
         # Scene
         scene/registry.cpp
         scene/scene.cpp
-        scene/model_loader.cpp
         scene/entity_deserializer.cpp
 
         # Scripting
@@ -43,6 +43,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         renderer/mesh.cpp
         renderer/camera.cpp
         renderer/light.cpp
+        renderer/primitive_factory.cpp
 
         renderer/deferred_renderer.cpp
         # src/renderer/forward_renderer.cpp

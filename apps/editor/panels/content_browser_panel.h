@@ -7,6 +7,7 @@
 
 #include "asset/asset.h"
 #include "asset_tools/editor_asset.h"
+#include "asset_tools/asset_importer.h"
 
 namespace Phos {
 
@@ -53,6 +54,8 @@ class ContentBrowserPanel : public IImGuiPanel {
 
     std::optional<std::size_t> m_renaming_asset_idx;
     std::string m_renaming_asset_tmp_name;
+
+    std::optional<AssetImporter::ImportModelInfo> m_importing_model_info;
 
     void display_asset(const EditorAsset& asset, std::size_t asset_idx);
 

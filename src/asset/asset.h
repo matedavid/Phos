@@ -1,20 +1,35 @@
 #pragma once
 
 #include <string>
+#include <optional>
 #include "core/uuid.h"
 
 namespace Phos {
 
-enum class AssetType {
-    Texture,
-    Cubemap,
-    Shader,
-    Material,
-    Mesh,
-    Model,
-    Prefab,
-    Scene,
-    Script,
+class AssetType {
+  public:
+    enum Value : uint8_t {
+        Texture,
+        Cubemap,
+        Shader,
+        Material,
+        StaticMesh,
+        Prefab,
+        Scene,
+        Script,
+    };
+
+    AssetType() = default;
+    constexpr AssetType(Value type) : m_type(type) {}
+
+    constexpr operator Value() const { return m_type; }
+    explicit operator bool() const = delete;
+
+    static std::optional<std::string> to_string(const AssetType& type);
+    static std::optional<AssetType> from_string(const std::string& str);
+
+  private:
+    Value m_type{};
 };
 
 class IAsset {

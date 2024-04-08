@@ -15,64 +15,65 @@
 
 #include "managers/shader_manager.h"
 #include "renderer/backend/renderer.h"
+#include "asset/asset.h"
 
-// constexpr uint32_t import_flags =
-//     aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
+void AssimpImporter::import_model(const AssetImporter::ImportModelInfo& import_info,
+                                  const std::filesystem::path& containing_folder) {
+    PHOS_ASSERT(
+        std::filesystem::exists(import_info.path), "Model path: '{}' does not exist", import_info.path.string());
 
-constexpr uint32_t import_flags = aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes;
-
-std::filesystem::path AssimpImporter::import_model(const std::filesystem::path& path,
-                                                   const std::filesystem::path& containing_folder) {
-    PHOS_ASSERT(std::filesystem::exists(path), "Model path: '{}' does not exist", path.string());
+    uint32_t import_flags = aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes;
+    if (import_info.import_static) {
+        import_flags |= aiProcess_OptimizeGraph;
+    }
 
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path.c_str(), import_flags);
+    const aiScene* scene = importer.ReadFile(import_info.path.c_str(), import_flags);
 
     if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
-        PHOS_LOG_ERROR("[AssimpImporter::import_model] Failed to load model: '{}'", path.string());
-        return {};
+        PHOS_LOG_ERROR("Failed to load model: '{}'", import_info.path.string());
+        return;
     }
-
-    const auto output_folder_path = containing_folder / scene->mName.C_Str();
-    if (!std::filesystem::exists(output_folder_path))
-        std::filesystem::create_directory(output_folder_path);
-
-    PHOS_LOG_INFO("Loading model: '{}'", path.filename().string());
-    PHOS_LOG_INFO("     Num meshes: {}", scene->mNumMeshes);
-    PHOS_LOG_INFO("     Num materials: {}", scene->mNumMaterials);
 
     // Copy original asset to output_folder_path
-    if (const auto output_model_path = output_folder_path / path.filename();
-        !std::filesystem::exists(output_model_path)) {
-        std::filesystem::copy(path, output_model_path);
+    const auto output_model_path = containing_folder / import_info.path.filename();
+    if (!std::filesystem::exists(output_model_path)) {
+        std::filesystem::copy(import_info.path, output_model_path);
     } else {
-        PHOS_LOG_WARNING("[AssimpImporter::import_model] Model file in project ({}) already exists",
-                         output_model_path.string());
+        PHOS_LOG_WARNING("Model file '{}' already exists in project path '{}'",
+                         import_info.path.filename().string(),
+                         containing_folder.string());
     }
 
-    if (path.extension() == ".gltf") {
-        const auto bin_path = path.parent_path() / (path.stem().string() + ".bin");
-        const auto bin_output_path = output_folder_path / bin_path.filename();
-        if (!std::filesystem::exists(bin_output_path)) {
-            std::filesystem::copy(bin_path, bin_output_path);
-        } else {
-            PHOS_LOG_WARNING("[AssimpImporter::import_model] GLTF bin file in project ({}) already exists",
-                             bin_path.string());
-        }
-    }
+    // Copy additional files based on model extension
+    copy_additional_files(import_info.path, containing_folder);
 
     // Load meshes
     std::vector<Phos::UUID> mesh_ids;
-    for (std::size_t i = 0; i < scene->mNumMeshes; ++i) {
-        const auto id = load_mesh(i, path.filename(), output_folder_path);
+    if (import_info.import_static) {
+        AssetBuilder static_mesh_builder{};
+
+        const Phos::UUID id{};
+
+        static_mesh_builder.dump("assetType", *Phos::AssetType::to_string(Phos::AssetType::StaticMesh));
+        static_mesh_builder.dump("id", id);
+
+        static_mesh_builder.dump("source", std::filesystem::relative(output_model_path, containing_folder));
+
+        const auto static_mesh_path = containing_folder / (import_info.path.stem().string() + ".psa");
+        std::ofstream file(static_mesh_path);
+        file << static_mesh_builder;
+
         mesh_ids.push_back(id);
+    } else {
+        PHOS_FAIL("Not implemented");
     }
 
     // Load textures
     std::unordered_map<std::string, Phos::UUID> texture_map;
     for (std::size_t i = 0; i < scene->mNumTextures; ++i) {
         const auto texture = scene->mTextures[i];
-        const auto texture_path = path.parent_path() / texture->mFilename.C_Str();
+        const auto texture_path = import_info.path.parent_path() / texture->mFilename.C_Str();
         const auto new_texture_path = containing_folder / std::filesystem::path(texture->mFilename.C_Str()).filename();
 
         if (std::filesystem::exists(new_texture_path))
@@ -81,57 +82,54 @@ std::filesystem::path AssimpImporter::import_model(const std::filesystem::path& 
         texture_map[texture->mFilename.C_Str()] = load_texture(texture_path, new_texture_path);
     }
 
-    // Load materials
     std::vector<Phos::UUID> material_ids;
-    for (std::size_t i = 0; i < scene->mNumMaterials; ++i) {
-        const auto id = load_material(scene->mMaterials[i], i, texture_map, path.parent_path(), output_folder_path);
-        material_ids.push_back(id);
+    if (import_info.import_materials) {
+        // Load materials
+        for (std::size_t i = 0; i < scene->mNumMaterials; ++i) {
+            const auto id =
+                load_material(scene->mMaterials[i], texture_map, import_info.path.parent_path(), containing_folder);
+
+            if (id != Phos::UUID(0))
+                material_ids.push_back(id);
+        }
     }
-
-    // Process scene
-    auto model_builder = AssetBuilder();
-
-    model_builder.dump("assetType", "model");
-    model_builder.dump("id", Phos::UUID());
-
-    const auto root_node_builder = process_model_node_r(scene->mRootNode, scene, mesh_ids, material_ids);
-    model_builder.dump("node_0", root_node_builder);
-
-    const auto model_psa_path = output_folder_path / (path.filename().string() + ".psa");
-    std::ofstream file(model_psa_path);
-    file << model_builder;
-
-    return output_folder_path;
 }
 
-Phos::UUID AssimpImporter::load_mesh(std::size_t idx,
-                                     const std::filesystem::path& model_path,
-                                     const std::filesystem::path& output_path) {
-    const auto asset_id = Phos::UUID();
+void AssimpImporter::copy_additional_files(const std::filesystem::path& model_path,
+                                           const std::filesystem::path& containing_folder) {
+    const auto ext = model_path.extension();
 
-    auto mesh_builder = AssetBuilder();
+    if (ext == ".obj") {
+        const auto mtl_path = model_path.parent_path() / (model_path.stem().string() + ".mtl");
+        if (!std::filesystem::exists(mtl_path)) {
+            PHOS_LOG_WARNING("No .mtl file found for .obj model in folder: {}", model_path.parent_path().string());
+            return;
+        }
 
-    mesh_builder.dump("assetType", "mesh");
-    mesh_builder.dump("id", asset_id);
+        const auto output_mtl_path = containing_folder / (model_path.stem().string() + ".mtl");
+        std::filesystem::copy(mtl_path, output_mtl_path);
+    } else if (ext == ".gltf") {
+        const auto bin_path = model_path.parent_path() / (model_path.stem().string() + ".bin");
+        if (!std::filesystem::exists(bin_path)) {
+            PHOS_LOG_WARNING("No .bin file found for .gltf model in folder: {}", model_path.parent_path().string());
+            return;
+        }
 
-    mesh_builder.dump("path", model_path);
-    mesh_builder.dump("index", idx);
-
-    const auto path = output_path / ("mesh_" + std::to_string(idx) + ".psa");
-    std::ofstream file(path);
-    file << mesh_builder;
-
-    return asset_id;
+        const auto output_bin_path = containing_folder / (model_path.stem().string() + ".bin");
+        std::filesystem::copy(bin_path, output_bin_path);
+    }
 }
 
 Phos::UUID AssimpImporter::load_material(const aiMaterial* mat,
-                                         std::size_t idx,
                                          std::unordered_map<std::string, Phos::UUID>& texture_map,
                                          const std::filesystem::path& parent_model_path,
                                          const std::filesystem::path& output_path) {
     const auto shader = Phos::Renderer::shader_manager()->get_builtin_shader("PBR.Geometry.Deferred");
 
     const std::string mat_name = mat->GetName().C_Str();
+    if (mat_name.empty())
+        return Phos::UUID(0);
+
     const auto material = EditorMaterialHelper::create(shader, mat_name);
 
     const auto get_texture_if_exists_else_add = [&](const std::string& name) -> Phos::UUID {
@@ -188,7 +186,7 @@ Phos::UUID AssimpImporter::load_material(const aiMaterial* mat,
         id = get_texture_if_exists_else_add(name);
     }
 
-    const auto material_path = output_path / ("material_" + std::to_string(idx) + ".psa");
+    const auto material_path = output_path / (mat_name + ".psa");
     material->save(material_path);
 
     return material->get_material_id();

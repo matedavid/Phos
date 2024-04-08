@@ -2,19 +2,23 @@
 
 #include <yaml-cpp/yaml.h>
 #include <queue>
-#include <algorithm>
 #include <ranges>
 
-#include "asset/asset_pack.h"
+#include "asset/asset_registry.h"
+#include "asset/asset_loader.h"
 
 namespace Phos {
 
-EditorAssetManager::EditorAssetManager(std::string path) : m_path(std::move(path)) {
+EditorAssetManager::EditorAssetManager(std::filesystem::path path, std::shared_ptr<AssetRegistry> registry)
+      : m_path(std::move(path)), m_registry(std::move(registry)) {
     m_loader = std::make_unique<AssetLoader>(this);
 }
 
-std::shared_ptr<IAsset> EditorAssetManager::load(const std::string& path) {
-    const auto id = m_loader->get_id(path);
+EditorAssetManager::~EditorAssetManager() = default;
+
+std::shared_ptr<IAsset> EditorAssetManager::load(const std::filesystem::path& path) {
+    const auto full_path = m_path / path;
+    const auto id = m_loader->get_id(full_path);
     if (id == UUID(0))
         return nullptr;
 
@@ -26,42 +30,34 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id(UUID id) {
         return m_id_to_asset[id];
     }
 
-    const auto path = get_path_from_id_r(id, m_path);
-    if (!std::filesystem::exists(path)) {
-        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path);
-        return nullptr;
-    }
-
-    auto asset = m_loader->load(path);
-    if (asset == nullptr) {
-        PHOS_LOG_ERROR(" No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path);
-        return nullptr;
-    }
-
-    m_id_to_asset[asset->id] = asset;
-    return asset;
-}
-
-std::filesystem::path EditorAssetManager::get_asset_path(UUID id) {
-    auto path = get_path_from_id_r(id, m_path);
-    if (!std::filesystem::exists(path)) {
-        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path);
+    const auto asset_path = get_asset_path(id);
+    if (!asset_path) {
+        PHOS_LOG_ERROR("Could not find path of asset with id {}", static_cast<uint64_t>(id), m_path.string());
         return {};
     }
 
-    return path;
-}
-
-std::shared_ptr<IAsset> EditorAssetManager::load_by_id_force_reload(UUID id) {
-    const auto path = get_path_from_id_r(id, m_path);
-    if (!std::filesystem::exists(path)) {
-        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path);
+    auto asset = m_loader->load(m_path / *asset_path);
+    if (asset == nullptr) {
+        PHOS_LOG_ERROR("Could not load asset with id {} and path {}", static_cast<uint64_t>(id), asset_path->string());
         return nullptr;
     }
 
-    auto asset = m_loader->load(path);
+    m_registry->register_asset(asset, *asset_path);
+    m_id_to_asset[asset->id] = asset;
+
+    return asset;
+}
+
+std::shared_ptr<IAsset> EditorAssetManager::load_by_id_force_reload(UUID id) {
+    const auto asset_path = get_asset_path(id);
+    if (!asset_path) {
+        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path.string());
+        return nullptr;
+    }
+
+    auto asset = m_loader->load(m_path / *asset_path);
     if (asset == nullptr) {
-        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path);
+        PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path.string());
         return nullptr;
     }
 
@@ -81,50 +77,59 @@ void EditorAssetManager::remove_asset_type_from_cache(AssetType type) {
     }
 }
 
-AssetType EditorAssetManager::get_asset_type(Phos::UUID id) const {
-    const auto path = get_path_from_id_r(id, m_path);
-    return m_loader->get_type(path);
+std::optional<std::filesystem::path> EditorAssetManager::get_asset_path(UUID id) const {
+    const auto registry_path = m_registry->get_asset_path(id);
+    return registry_path.has_value() ? registry_path : get_path_from_id(id);
 }
 
-std::string EditorAssetManager::get_asset_name(Phos::UUID id) const {
-    const auto path = get_path_from_id_r(id, m_path);
-    const auto node = YAML::LoadFile(path);
+std::optional<AssetType> EditorAssetManager::get_asset_type(UUID id) const {
+    const auto registry_type = m_registry->get_asset_type(id);
+    if (registry_type)
+        return *registry_type;
 
-    const auto asset_type = m_loader->get_type(path);
+    const auto path = get_asset_path(id);
+    if (!path) {
+        PHOS_LOG_ERROR("Could not find path of asset with id {}", static_cast<uint64_t>(id));
+        return {};
+    }
+
+    return m_loader->get_type(m_path / *path);
+}
+
+std::optional<std::string> EditorAssetManager::get_asset_name(UUID id) const {
+    const auto path = get_asset_path(id);
+    if (!path) {
+        PHOS_LOG_ERROR("Could not find path of asset with id {}", static_cast<uint64_t>(id));
+        return {};
+    }
+
+    const auto node = YAML::LoadFile(m_path / *path);
+
+    const auto asset_type = m_loader->get_type(m_path / *path);
     if (asset_type == AssetType::Material || asset_type == AssetType::Shader)
         return node["name"].as<std::string>();
     else
-        return path.stem();
+        return path->stem();
 }
 
-UUID EditorAssetManager::get_asset_id(const std::filesystem::path& path) const {
-    return m_loader->get_id(path);
+std::optional<UUID> EditorAssetManager::get_asset_id(const std::filesystem::path& path) const {
+    const auto id = m_loader->get_id(m_path / path);
+    if (id == UUID(0))
+        return {};
+
+    return id;
 }
 
-std::filesystem::path EditorAssetManager::get_path_from_id_r(UUID id, const std::string& folder) const {
-    std::queue<std::string> pending_directories;
+std::optional<std::filesystem::path> EditorAssetManager::get_path_from_id(UUID id) const {
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(m_path)) {
+        PHOS_LOG_INFO("Entry: {}", entry.path().string());
 
-    for (const auto& entry : std::filesystem::directory_iterator(folder)) {
-        if (entry.is_directory()) {
-            pending_directories.push(entry.path());
+        if (entry.is_directory() || entry.path().extension() != ".psa")
             continue;
-        } else if (entry.path().extension() != ".psa") {
-            continue;
-        }
 
-        // TODO: What if file has asset extension but incorrect format...?
         if (m_loader->get_id(entry.path()) == id) {
-            return entry.path();
+            return std::filesystem::relative(entry.path(), m_path);
         }
-    }
-
-    while (!pending_directories.empty()) {
-        const auto pending_folder = pending_directories.front();
-        pending_directories.pop();
-
-        const auto path = get_path_from_id_r(id, pending_folder);
-        if (std::filesystem::exists(path))
-            return path;
     }
 
     return {};

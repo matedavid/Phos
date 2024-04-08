@@ -1,7 +1,7 @@
 #pragma once
 
-#include "asset/asset.h"
 #include <filesystem>
+#include "asset/asset.h"
 
 namespace Phos {
 
@@ -9,13 +9,12 @@ namespace Phos {
 class Scene;
 class Project;
 class EditorAssetManager;
-class Entity;
 class ISceneRenderer;
 class ScriptingSystem;
 
 class Cubemap;
 class Material;
-class Mesh;
+class StaticMesh;
 
 } // namespace Phos
 
@@ -41,7 +40,7 @@ class AssetWatcher {
     std::shared_ptr<Phos::ScriptingSystem> m_scripting;
 
     std::filesystem::path m_dll_path;
-    std::unordered_map<std::filesystem::path, uint64_t> m_watching;
+    std::unordered_map<std::filesystem::path, int64_t> m_watching;
     std::unordered_map<std::filesystem::path, std::pair<Phos::UUID, Phos::AssetType>> m_path_to_info;
 
     void add_file(const std::filesystem::path& path);
@@ -52,7 +51,7 @@ class AssetWatcher {
 
     void update_cubemap(const std::shared_ptr<Phos::Cubemap>& cubemap) const;
     void update_material(const std::shared_ptr<Phos::Material>& mat) const;
-    void update_mesh(const std::shared_ptr<Phos::Mesh>& mesh) const;
+    void update_mesh(const std::shared_ptr<Phos::StaticMesh>& mesh) const;
     void update_script();
 
     bool m_script_update_pending = false;

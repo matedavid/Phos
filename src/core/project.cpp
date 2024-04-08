@@ -3,16 +3,22 @@
 #include <yaml-cpp/yaml.h>
 
 #include "utility/logging.h"
+
 #include "asset/editor_asset_manager.h"
+#include "asset/asset_registry.h"
+
 #include "scene/scene.h"
 
 namespace Phos {
 
 Project::Project(std::string name,
-                 std::filesystem::path path,
-                 std::shared_ptr<Scene> scene,
+                 std::filesystem::path project_path,
+                 std::filesystem::path assets_path,
+                 std::filesystem::path scripting_path,
+                 UUID starting_scene_id,
                  std::shared_ptr<AssetManagerBase> asset_manager)
-      : m_name(std::move(name)), m_path(std::move(path)), m_scene(std::move(scene)),
+      : m_name(std::move(name)), m_project_path(std::move(project_path)), m_assets_path(std::move(assets_path)),
+        m_scripting_path(std::move(scripting_path)), m_starting_scene_id(starting_scene_id),
         m_asset_manager(std::move(asset_manager)) {}
 
 std::shared_ptr<Project> Project::create(const std::filesystem::path& path) {
@@ -22,23 +28,24 @@ std::shared_ptr<Project> Project::create(const std::filesystem::path& path) {
 }
 
 std::shared_ptr<Project> Project::open(const std::filesystem::path& path) {
-    const auto containing_folder = std::filesystem::path(path).parent_path();
-
     const auto node = YAML::LoadFile(path);
     const auto project_name = node["name"].as<std::string>();
 
-    const auto asset_manager = std::make_shared<EditorAssetManager>(containing_folder);
+    const auto project_path = std::filesystem::path(path).parent_path();
+    const auto assets_path = project_path / "Assets";
+    const auto scripting_path = project_path / "bin" / "Debug" / (project_name + ".dll");
+
+    const auto asset_registry = AssetRegistry::create(project_path / "asset_registry.psreg");
+    if (asset_registry == nullptr)
+        return nullptr;
+
+    const auto asset_manager = std::make_shared<EditorAssetManager>(assets_path, asset_registry);
 
     std::vector<std::shared_ptr<Scene>> scenes;
-    for (uint32_t i = 0; i < node["scenes"].size(); ++i) {
-        const auto scene_id = UUID(node["scenes"][i].as<uint64_t>());
+    const auto starting_scene_id = UUID(node["startingScene"].as<uint64_t>());
 
-        const auto scene = asset_manager->load_by_id_type<Scene>(scene_id);
-        scenes.push_back(scene);
-    }
-
-    // TODO: Should pass all of the scenes in the project file, at the moment only one is allowed
-    auto* project = new Project(project_name, std::filesystem::absolute(path.parent_path()), scenes[0], asset_manager);
+    auto* project =
+        new Project(project_name, project_path, assets_path, scripting_path, starting_scene_id, asset_manager);
     return std::shared_ptr<Project>(project);
 }
 

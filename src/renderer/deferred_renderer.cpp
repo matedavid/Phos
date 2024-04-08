@@ -13,11 +13,11 @@
 #include "managers/shader_manager.h"
 
 #include "scene/scene.h"
-#include "scene/model_loader.h"
 
 #include "renderer/mesh.h"
 #include "renderer/camera.h"
 #include "renderer/light.h"
+#include "renderer/primitive_factory.h"
 
 #include "renderer/backend/renderer.h"
 #include "renderer/backend/command_buffer.h"
@@ -42,7 +42,7 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererCo
     [[maybe_unused]] const auto shadow_map_material_baked = m_shadow_map_material->bake();
     PHOS_ASSERT(shadow_map_material_baked, "Failed to bake Shadow Map material");
 
-    m_cube_mesh = ModelLoader::load_single_mesh("../../../assets/cube.fbx");
+    m_cube_mesh = PrimitiveFactory::get_cube();
     m_cube_material = Material::create(Renderer::shader_manager()->get_builtin_shader("Skybox"), "SkyboxMaterial");
     [[maybe_unused]] const auto cube_material_baked = m_cube_material->bake();
     PHOS_ASSERT(cube_material_baked, "Failed to bake cube material");
@@ -52,6 +52,7 @@ DeferredRenderer::DeferredRenderer(std::shared_ptr<Scene> scene, SceneRendererCo
 
 DeferredRenderer::~DeferredRenderer() {
     Renderer::wait_idle();
+    PrimitiveFactory::shutdown();
 }
 
 void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
@@ -137,7 +138,7 @@ void DeferredRenderer::render(const std::shared_ptr<Camera>& camera) {
             Renderer::bind_graphics_pipeline(command_buffer, m_geometry_pipeline);
 
             for (const auto& entity : renderable_entities) {
-                auto aabb = entity.mesh->get_bounding_box();
+                auto aabb = entity.mesh->bounding_box();
                 aabb.min = entity.model * glm::vec4(aabb.min, 1.0);
                 aabb.max = entity.model * glm::vec4(aabb.max, 1.0);
 

@@ -14,9 +14,9 @@
 #include "asset_tools/editor_material_helper.h"
 #include "asset_tools/editor_cubemap_helper.h"
 #include "asset_tools/editor_prefab_helper.h"
-#include "asset_tools/asset_importer.h"
 
 #include "asset/editor_asset_manager.h"
+#include "asset/asset_registry.h"
 
 #include "managers/shader_manager.h"
 
@@ -238,6 +238,41 @@ void ContentBrowserPanel::on_imgui_render() {
         ImGui::EndPopup();
     }
 
+    if (m_importing_model_info) {
+        ImGui::OpenPopup("Model Import Dialog");
+    }
+
+    if (ImGui::BeginPopupModal("Model Import Dialog")) {
+        ImGui::AlignTextToFramePadding();
+
+        ImGui::Text("Importing model: %s", m_importing_model_info->path.stem().string().c_str());
+
+        ImGui::Checkbox("Static Mesh", &m_importing_model_info->import_static);
+        ImGui::Checkbox("Import Materials", &m_importing_model_info->import_materials);
+
+        if (ImGui::Button("Abort")) {
+            m_importing_model_info = {};
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Import")) {
+            const bool ok = AssetImporter::import_model(*m_importing_model_info, m_current_path);
+            if (!ok) {
+                PHOS_LOG_ERROR("Error while importing model with path: {}", m_importing_model_info->path.string());
+            } else {
+                // TODO: Add files to asset watcher??
+                update();
+            }
+
+            m_importing_model_info = {};
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
     ImGui::End();
 
     if (change_directory)
@@ -321,9 +356,11 @@ void ContentBrowserPanel::update() {
             continue;
         }
 
-        const auto extension = path.path().extension();
+        const auto relative = std::filesystem::relative(path.path(), m_asset_manager->path());
+
+        const auto extension = relative.extension();
         if (extension != ".psa") {
-            if (!AssetImporter::is_automatic_importable_asset(extension))
+            if (!AssetImporter::is_automatically_importable_asset(extension))
                 continue;
 
             // Check if non .psa files have a corresponding phos asset file
@@ -332,11 +369,16 @@ void ContentBrowserPanel::update() {
                 PHOS_LOG_WARNING("Non .psa file does not have corresponding psa file: {}, importing automatically",
                                  path.path().string());
                 const auto new_path = AssetImporter::import_asset(path, m_current_path);
+                if (!std::filesystem::exists(new_path)) {
+                    PHOS_LOG_ERROR("Error importing file '{}'", path.path().string());
+                    continue;
+                }
+
                 m_asset_watcher->asset_created(new_path);
 
-                const auto asset_id = m_asset_manager->get_asset_id(new_path);
+                const auto asset_id = *m_asset_manager->get_asset_id(new_path);
                 m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
-                    .type = m_asset_manager->get_asset_type(asset_id),
+                    .type = *m_asset_manager->get_asset_type(asset_id),
                     .path = new_path,
                     .uuid = asset_id,
                 }));
@@ -346,15 +388,19 @@ void ContentBrowserPanel::update() {
         }
 
         try {
-            const auto id = m_asset_manager->get_asset_id(path);
+            const auto id = m_asset_manager->get_asset_id(relative);
+            if (!id) {
+                PHOS_LOG_ERROR("File '{}' does not have corresponding .psa file\n", relative.string());
+                continue;
+            }
 
             m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
-                .type = m_asset_manager->get_asset_type(id),
+                .type = *m_asset_manager->get_asset_type(*id),
                 .path = path.path(),
-                .uuid = id,
+                .uuid = *id,
             }));
         } catch (std::exception&) {
-            PHOS_LOG_ERROR("File '{}' does not have corresponding .psa file\n", path.path().string());
+            PHOS_LOG_ERROR("File '{}' does not have corresponding .psa file\n", relative.string());
         }
     }
 
@@ -396,6 +442,7 @@ bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
     }
 
     m_asset_watcher->asset_removed(asset.path);
+    m_asset_manager->asset_registry()->unregister_asset(asset.uuid);
 
     switch (asset.type) {
     default:
@@ -408,9 +455,15 @@ bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
         return std::filesystem::remove(asset.path) && std::filesystem::remove(texture_path);
     }
 
-    case Phos::AssetType::Model: {
-        PHOS_LOG_ERROR("[ContentBrowserPanel::remove_asset] Unimplemented");
-        return false;
+    case Phos::AssetType::StaticMesh: {
+        const auto node = YAML::LoadFile(asset.path);
+
+        auto source = node["source"].as<std::string>();
+        source = asset.path.parent_path() / source;
+
+        // TODO: Incomplete, should also delete additional source files (e.g. .mtl for .obj model)
+
+        return std::filesystem::remove(asset.path) && std::filesystem::remove(source);
     }
 
     case Phos::AssetType::Script: {
@@ -420,7 +473,6 @@ bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
 
     case Phos::AssetType::Cubemap:
     case Phos::AssetType::Material:
-    case Phos::AssetType::Mesh:
     case Phos::AssetType::Prefab:
     case Phos::AssetType::Shader:
     case Phos::AssetType::Scene:
@@ -460,24 +512,32 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
 }
 
 void ContentBrowserPanel::import_asset() {
-    // @TODO: Should move to another place, maybe near AssetImporter
-    const std::vector<std::pair<std::string, std::string>> asset_filter = {
-        {"Image", "jpg,jpeg,png"}, {"Model", "fbx,obj,gltf"}, {"Script", "cs"}};
+    const auto asset_filter = AssetImporter::get_file_dialog_extensions_filter();
 
-    const auto paths = FileDialog::open_file_dialog_multiple(asset_filter);
-    if (paths.empty())
+    const auto path = FileDialog::open_file_dialog(asset_filter);
+    if (!path)
         return;
 
-    for (const auto& path : paths) {
-        if (!std::filesystem::exists(path)) {
-            PHOS_LOG_ERROR("[ContentBrowserPanel] Importing file '{}' does not exist", path.string());
-            continue;
-        }
+    if (!std::filesystem::exists(*path)) {
+        PHOS_LOG_ERROR("[ContentBrowserPanel] Importing file '{}' does not exist", path->string());
+        return;
+    }
 
-        const auto new_path = AssetImporter::import_asset(path, m_current_path);
+    const auto ext = path->extension();
+
+    if (AssetImporter::is_model(ext)) {
+        m_importing_model_info = AssetImporter::ImportModelInfo{};
+        m_importing_model_info->path = *path;
+        return;
+    }
+
+    if (AssetImporter::is_automatically_importable_asset(ext)) {
+        const auto new_path = AssetImporter::import_asset(*path, m_current_path);
         m_asset_watcher->asset_created(new_path);
 
         update();
+    } else {
+        PHOS_LOG_ERROR("Can't import asset with path: {}", path->string());
     }
 }
 
@@ -524,7 +584,7 @@ void ContentBrowserPanel::create_material(const std::string& name) {
     m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
         .type = Phos::AssetType::Material,
         .path = material_path,
-        .uuid = m_asset_manager->get_asset_id(material_path),
+        .uuid = *m_asset_manager->get_asset_id(material_path),
     }));
     m_renaming_asset_idx = m_assets.size() - 1;
     m_renaming_asset_tmp_name = material_path.stem();
@@ -547,7 +607,7 @@ void ContentBrowserPanel::create_cubemap(const std::string& name) {
     m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
         .type = Phos::AssetType::Cubemap,
         .path = cubemap_path,
-        .uuid = m_asset_manager->get_asset_id(cubemap_path),
+        .uuid = *m_asset_manager->get_asset_id(cubemap_path),
     }));
     m_renaming_asset_idx = m_assets.size() - 1;
     m_renaming_asset_tmp_name = cubemap_path.stem();
@@ -570,7 +630,7 @@ void ContentBrowserPanel::create_prefab(const std::string& name, const Phos::Ent
     m_assets.push_back(std::make_unique<EditorAsset>(EditorAsset{
         .type = Phos::AssetType::Prefab,
         .path = prefab_path,
-        .uuid = m_asset_manager->get_asset_id(prefab_path),
+        .uuid = *m_asset_manager->get_asset_id(prefab_path),
     }));
     m_renaming_asset_idx = m_assets.size() - 1;
     m_renaming_asset_tmp_name = prefab_path.stem();
