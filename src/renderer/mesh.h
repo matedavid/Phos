@@ -27,6 +27,7 @@ class SubMesh {
     };
 
     SubMesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
+    SubMesh();
     ~SubMesh() = default;
 
     [[nodiscard]] const std::shared_ptr<VertexBuffer>& vertex_buffer() const { return m_vertex_buffer; }

@@ -43,6 +43,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         renderer/mesh.cpp
         renderer/camera.cpp
         renderer/light.cpp
+        renderer/primitive_factory.cpp
 
         renderer/deferred_renderer.cpp
         # src/renderer/forward_renderer.cpp

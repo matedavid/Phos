@@ -10,6 +10,9 @@
 3681460328360365399:
   type: script
   path: Scripts/RotationScript.cs.psa
+5141921474735944922:
+  type: texture
+  path: Skybox/right.jpg.psa
 5596999877869798103:
   type: StaticMesh
   path: Letters/Letter_H/letter_h.psa
@@ -19,9 +22,15 @@
 7654641100851901613:
   type: script
   path: Scripts/NavigationCamera.cs.psa
+8048001347822831655:
+  type: texture
+  path: Skybox/left.jpg.psa
 9273292888999905396:
   type: StaticMesh
   path: Letters/Letter_P/letter_p.psa
+9590743529631023951:
+  type: cubemap
+  path: Skybox/SkyboxCubemap.psa
 12539143639830033397:
   type: material
   path: Letters/LettersMaterial.psa
@@ -31,12 +40,24 @@
 12896962681509316211:
   type: StaticMesh
   path: Helmet/John_117.psa
+14057120215578723615:
+  type: texture
+  path: Skybox/back.jpg.psa
+14188265351994701033:
+  type: texture
+  path: Skybox/front.jpg.psa
 14941231718017215585:
   type: material
   path: Wall/WoodMaterial/WoodMaterial.psa
+15306523284328498852:
+  type: texture
+  path: Skybox/top.jpg.psa
 15348411322830662088:
   type: texture
   path: Helmet/aiStandardSurface6SG_metallicRoughness.png.psa
+15566947957651972671:
+  type: texture
+  path: Skybox/bottom.jpg.psa
 16205750866518408213:
   type: texture
   path: Helmet/aiStandardSurface6SG_baseColor.jpg.psa

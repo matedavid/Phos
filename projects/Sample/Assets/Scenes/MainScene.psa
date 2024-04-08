@@ -8,7 +8,7 @@ config:
     enabled: true
     threshold: 1
   environmentConfig:
-    skybox: 0
+    skybox: 9590743529631023951
 entities:
   976603442953291840:
     NameComponent: Helmet
@@ -235,10 +235,10 @@ entities:
       className: NavigationCamera
       script: 7654641100851901613
       fields:
-        MovementSpeed:
+        RotationSpeed:
           type: float
           data: 5
-        RotationSpeed:
+        MovementSpeed:
           type: float
           data: 5
   18371628650266849369:
