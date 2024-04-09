@@ -15,6 +15,7 @@ Simple Game Engine built using ImGui and Vulkan.
 
 #### Engine
 - C# scripting
+- C# scripting / C++ engine interaction with C# PhosEngine library
 - Asset management
 - ECS system, with entity hirearchy in editor
 
