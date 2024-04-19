@@ -15,6 +15,7 @@ class ImGuiVulkanImpl : public INativeImGuiImpl {
     void present_frame() override;
 
     [[nodiscard]] ImTextureID add_texture(const std::shared_ptr<Phos::Texture>& texture) override;
+    void remove_texture(ImTextureID texture_id) override;
 
   private:
     std::shared_ptr<Phos::Window> m_window;

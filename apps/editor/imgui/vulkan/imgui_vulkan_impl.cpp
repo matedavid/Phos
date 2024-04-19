@@ -210,6 +210,10 @@ ImTextureID ImGuiVulkanImpl::add_texture(const std::shared_ptr<Phos::Texture>& t
         native_texture->sampler(), native_image->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
+void ImGuiVulkanImpl::remove_texture(ImTextureID texture_id) {
+    ImGui_ImplVulkan_RemoveTexture(static_cast<VkDescriptorSet>(texture_id));
+}
+
 void ImGuiVulkanImpl::create_resize_window() {
     const auto graphics_queue = Phos::VulkanContext::device->get_graphics_queue();
     ImGui_ImplVulkanH_CreateOrResizeWindow(Phos::VulkanContext::instance->handle(),

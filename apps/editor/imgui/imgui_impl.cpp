@@ -51,3 +51,7 @@ void ImGuiImpl::present_frame() {
 ImTextureID ImGuiImpl::add_texture(const std::shared_ptr<Phos::Texture>& texture) {
     return m_native_impl->add_texture(texture);
 }
+
+void ImGuiImpl::remove_texture(ImTextureID texture_id) {
+    m_native_impl->remove_texture(texture_id);
+}

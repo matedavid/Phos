@@ -56,6 +56,8 @@ void ViewportPanel::on_imgui_render() {
         m_renderer->window_resized(m_width, m_height);
         m_editor_camera->set_aspect_ratio((float)m_width / (float)m_height);
 
+        ImGuiImpl::remove_texture(m_texture_id);
+
         const auto& output_texture = m_renderer->output_texture();
         m_texture_id = ImGuiImpl::add_texture(output_texture);
     }
