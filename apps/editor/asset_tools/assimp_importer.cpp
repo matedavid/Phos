@@ -28,7 +28,8 @@ void AssimpImporter::import_model(const AssetImporter::ImportModelInfo& import_i
     }
 
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(import_info.path.c_str(), import_flags);
+    auto p = import_info.path.string();
+    const aiScene* scene = importer.ReadFile(p.c_str(), import_flags);
 
     if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
         PHOS_LOG_ERROR("Failed to load model: '{}'", import_info.path.string());

@@ -77,7 +77,7 @@ std::optional<AssetType> AssetRegistry::get_asset_type(UUID id) const {
 void AssetRegistry::reload() {
     m_entries.clear();
 
-    const auto node = YAML::LoadFile(m_path);
+    const auto node = YAML::LoadFile(m_path.string());
 
     for (const auto& entry : node) {
         const auto id = UUID(entry.first.as<uint64_t>());

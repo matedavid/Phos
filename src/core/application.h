@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <string_view>
 
 #include "core/layer.h"
 #include "input/events.h"

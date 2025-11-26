@@ -257,7 +257,7 @@ void AssetInspectorPanel::render_cubemap_asset() {
 
         ImGui::TableSetColumnIndex(1);
         const std::string id = "##CubemapFaceInput" + name;
-        std::string asset_name = std::filesystem::path(m_cubemap_face_textures[face_id]->asset_name).stem();
+        std::string asset_name = std::filesystem::path(m_cubemap_face_textures[face_id]->asset_name).stem().string();
 
         ImGui::InputText(id.c_str(), asset_name.data(), ImGuiInputTextFlags_ReadOnly);
 
@@ -291,7 +291,7 @@ void AssetInspectorPanel::render_cubemap_asset() {
 
         ImGui::TableSetColumnIndex(1);
         const std::string id = "##CubemapEquirectangularInput";
-        std::string asset_name = std::filesystem::path(m_cubemap_equirectangular_texture->asset_name).stem();
+        std::string asset_name = std::filesystem::path(m_cubemap_equirectangular_texture->asset_name).stem().string();
 
         ImGui::InputText(id.c_str(), asset_name.data(), ImGuiInputTextFlags_ReadOnly);
 

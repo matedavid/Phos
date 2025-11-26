@@ -206,12 +206,12 @@ ImTextureID ImGuiVulkanImpl::add_texture(const std::shared_ptr<Phos::Texture>& t
     const auto& native_texture = std::dynamic_pointer_cast<Phos::VulkanTexture>(texture);
     const auto& native_image = std::dynamic_pointer_cast<Phos::VulkanImage>(texture->get_image());
 
-    return ImGui_ImplVulkan_AddTexture(
+    return (ImTextureID)ImGui_ImplVulkan_AddTexture(
         native_texture->sampler(), native_image->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void ImGuiVulkanImpl::remove_texture(ImTextureID texture_id) {
-    ImGui_ImplVulkan_RemoveTexture(static_cast<VkDescriptorSet>(texture_id));
+    ImGui_ImplVulkan_RemoveTexture((VkDescriptorSet)texture_id);
 }
 
 void ImGuiVulkanImpl::create_resize_window() {

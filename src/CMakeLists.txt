@@ -167,6 +167,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC glm::glm)
 # Vulkan
 find_package(Vulkan REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
 
 # stb
 add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/stb ${CMAKE_CURRENT_BINARY_DIR}/stb)

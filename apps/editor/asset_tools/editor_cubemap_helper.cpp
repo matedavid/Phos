@@ -27,13 +27,13 @@ std::shared_ptr<EditorCubemapHelper> EditorCubemapHelper::open(const std::filesy
 
 // open constructor
 EditorCubemapHelper::EditorCubemapHelper(const std::filesystem::path& path) : m_path(path) {
-    const auto node = YAML::LoadFile(path);
+    const auto node = YAML::LoadFile(path.string());
 
     const auto asset_type = node["assetType"].as<std::string>();
     PHOS_ASSERT(asset_type == "cubemap", "Asset in EditorCubemapHelper is not cubemap ({})", asset_type);
 
     m_cubemap_id = Phos::UUID(node["id"].as<uint64_t>());
-    m_cubemap_name = path.stem();
+    m_cubemap_name = path.stem().string();
 
     const auto cubemap_type = node["type"].as<std::string>();
     if (cubemap_type == "faces") {

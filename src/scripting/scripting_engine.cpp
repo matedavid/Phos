@@ -70,7 +70,8 @@ bool ScriptingEngine::load_mono_assembly(const std::filesystem::path& path,
         return false;
 
     // Load assembly
-    assembly = mono_domain_assembly_open(domain, path.c_str());
+    auto s = path.string();
+    assembly = mono_domain_assembly_open(domain, s.c_str());
     if (!assembly)
         return false;
 

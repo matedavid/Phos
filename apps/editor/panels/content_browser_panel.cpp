@@ -155,7 +155,7 @@ void ContentBrowserPanel::on_imgui_render() {
 
             if (ImGui::MenuItem("Rename")) {
                 m_renaming_asset_idx = i;
-                m_renaming_asset_tmp_name = name;
+                m_renaming_asset_tmp_name = name.string();
             }
 
             if (ImGui::MenuItem("Delete")) {
@@ -302,11 +302,12 @@ void ContentBrowserPanel::display_asset(const EditorAsset& asset, std::size_t as
         ImGui::PopItemWidth();
     } else {
         // Asset text
-        const auto text_length = ImGui::CalcTextSize(name.c_str()).x;
+        auto n = name.string();
+        const auto text_length = ImGui::CalcTextSize(n.c_str()).x;
         float text_cursor_x = current_cursor_x + (CELL_SIZE - text_length) * 0.5f;
 
         // If text does not fit in cell, cut and add ".." to the end
-        std::string label_name = name;
+        std::string label_name = n;
         if (text_length > CELL_SIZE) {
             text_cursor_x = current_cursor_x;
 
@@ -360,7 +361,7 @@ void ContentBrowserPanel::update() {
 
         const auto extension = relative.extension();
         if (extension != ".psa") {
-            if (!AssetImporter::is_automatically_importable_asset(extension))
+            if (!AssetImporter::is_automatically_importable_asset(extension.string()))
                 continue;
 
             // Check if non .psa files have a corresponding phos asset file
@@ -419,11 +420,11 @@ std::vector<std::string> ContentBrowserPanel::get_path_components(const std::fil
 
     auto current = path;
     while (current != m_asset_manager->path()) {
-        components.push_back(current.filename());
+        components.push_back(current.filename().string());
         current = current.parent_path();
     }
 
-    components.push_back(current.filename());
+    components.push_back(current.filename().string());
 
     std::ranges::reverse(components);
     return components;
@@ -447,19 +448,19 @@ bool ContentBrowserPanel::remove_asset(const EditorAsset& asset) {
     switch (asset.type) {
     default:
     case Phos::AssetType::Texture: {
-        const auto node = YAML::LoadFile(asset.path);
+        const auto node = YAML::LoadFile(asset.path.string());
 
         auto texture_path = node["path"].as<std::string>();
-        texture_path = asset.path.parent_path() / texture_path;
+        texture_path = (asset.path.parent_path() / texture_path).string();
 
         return std::filesystem::remove(asset.path) && std::filesystem::remove(texture_path);
     }
 
     case Phos::AssetType::StaticMesh: {
-        const auto node = YAML::LoadFile(asset.path);
+        const auto node = YAML::LoadFile(asset.path.string());
 
         auto source = node["source"].as<std::string>();
-        source = asset.path.parent_path() / source;
+        source = (asset.path.parent_path() / source).string();
 
         // TODO: Incomplete, should also delete additional source files (e.g. .mtl for .obj model)
 
@@ -494,7 +495,7 @@ void ContentBrowserPanel::rename_currently_renaming_asset() {
     }
 
     if (!asset.is_directory && asset.type == Phos::AssetType::Texture) {
-        const auto node = YAML::LoadFile(asset.path);
+        const auto node = YAML::LoadFile(asset.path.string());
         const auto texture_path = asset.path.parent_path() / node["path"].as<std::string>();
 
         const auto new_texture_path = texture_path.parent_path() / m_renaming_asset_tmp_name;
@@ -525,13 +526,13 @@ void ContentBrowserPanel::import_asset() {
 
     const auto ext = path->extension();
 
-    if (AssetImporter::is_model(ext)) {
+    if (AssetImporter::is_model(ext.string())) {
         m_importing_model_info = AssetImporter::ImportModelInfo{};
         m_importing_model_info->path = *path;
         return;
     }
 
-    if (AssetImporter::is_automatically_importable_asset(ext)) {
+    if (AssetImporter::is_automatically_importable_asset(ext.string())) {
         const auto new_path = AssetImporter::import_asset(*path, m_current_path);
         m_asset_watcher->asset_created(new_path);
 
@@ -548,7 +549,7 @@ void ContentBrowserPanel::move_into_folder(const EditorAsset& asset, const Edito
     PHOS_LOG_INFO("{} -> {}", asset.path.string(), new_asset_path.string());
 
     if (asset.type == Phos::AssetType::Texture) {
-        const auto node = YAML::LoadFile(asset.path);
+        const auto node = YAML::LoadFile(asset.path.string());
         const auto texture_path = asset.path.parent_path() / node["path"].as<std::string>();
 
         const auto new_texture_path = move_into.path / texture_path.filename();
@@ -576,7 +577,7 @@ void ContentBrowserPanel::create_material(const std::string& name) {
         ++i;
     }
 
-    const auto helper = EditorMaterialHelper::create(shader, material_path.stem());
+    const auto helper = EditorMaterialHelper::create(shader, material_path.stem().string());
     helper->save(material_path);
 
     m_asset_watcher->asset_created(material_path);
@@ -587,7 +588,7 @@ void ContentBrowserPanel::create_material(const std::string& name) {
         .uuid = *m_asset_manager->get_asset_id(material_path),
     }));
     m_renaming_asset_idx = m_assets.size() - 1;
-    m_renaming_asset_tmp_name = material_path.stem();
+    m_renaming_asset_tmp_name = material_path.stem().string();
 }
 
 void ContentBrowserPanel::create_cubemap(const std::string& name) {
@@ -599,7 +600,7 @@ void ContentBrowserPanel::create_cubemap(const std::string& name) {
         ++i;
     }
 
-    const auto helper = EditorCubemapHelper::create(cubemap_path.stem());
+    const auto helper = EditorCubemapHelper::create(cubemap_path.stem().string());
     helper->save(cubemap_path);
 
     m_asset_watcher->asset_created(cubemap_path);
@@ -610,7 +611,7 @@ void ContentBrowserPanel::create_cubemap(const std::string& name) {
         .uuid = *m_asset_manager->get_asset_id(cubemap_path),
     }));
     m_renaming_asset_idx = m_assets.size() - 1;
-    m_renaming_asset_tmp_name = cubemap_path.stem();
+    m_renaming_asset_tmp_name = cubemap_path.stem().string();
 }
 
 void ContentBrowserPanel::create_prefab(const std::string& name, const Phos::Entity& entity) {
@@ -633,5 +634,5 @@ void ContentBrowserPanel::create_prefab(const std::string& name, const Phos::Ent
         .uuid = *m_asset_manager->get_asset_id(prefab_path),
     }));
     m_renaming_asset_idx = m_assets.size() - 1;
-    m_renaming_asset_tmp_name = prefab_path.stem();
+    m_renaming_asset_tmp_name = prefab_path.stem().string();
 }

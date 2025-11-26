@@ -33,9 +33,9 @@ std::shared_ptr<EditorMaterialHelper> EditorMaterialHelper::open(const std::file
 
 // open constructor
 EditorMaterialHelper::EditorMaterialHelper(const std::filesystem::path& path) : m_path(path) {
-    const auto node = YAML::LoadFile(m_path);
+    const auto node = YAML::LoadFile(m_path.string());
 
-    m_material_name = path.stem();
+    m_material_name = path.stem().string();
     m_material_id = Phos::UUID(node["id"].as<uint64_t>());
 
     const auto shader_type = node["shader"]["type"].as<std::string>();

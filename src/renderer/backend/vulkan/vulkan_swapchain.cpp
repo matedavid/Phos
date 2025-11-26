@@ -1,5 +1,9 @@
 #include "vulkan_swapchain.h"
 
+#include <cmath>
+#include <array>
+#include <algorithm>
+
 #include "vk_core.h"
 
 #include "core/window.h"

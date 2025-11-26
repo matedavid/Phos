@@ -42,7 +42,7 @@ class EditorAssetManager : public AssetManagerBase {
     [[nodiscard]] std::optional<std::string> get_asset_name(UUID id) const;
     [[nodiscard]] std::optional<UUID> get_asset_id(const std::filesystem::path& path) const;
 
-    [[nodiscard]] std::string path() const { return m_path; }
+    [[nodiscard]] std::string path() const { return m_path.string(); }
     [[nodiscard]] std::shared_ptr<AssetRegistry> asset_registry() const { return m_registry; }
 
   private:

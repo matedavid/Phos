@@ -5,8 +5,10 @@
 
 namespace Phos {
 
-RuntimeAssetManager::RuntimeAssetManager()  {}
+RuntimeAssetManager::RuntimeAssetManager() {}
 
-std::shared_ptr<IAsset> RuntimeAssetManager::load_by_id(UUID id) {}
+std::shared_ptr<IAsset> RuntimeAssetManager::load_by_id(UUID id) {
+    return nullptr;
+}
 
 } // namespace Phos

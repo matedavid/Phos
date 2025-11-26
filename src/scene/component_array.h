@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include "utility/logging.h"
 
 namespace Phos {

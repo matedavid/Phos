@@ -29,12 +29,12 @@ VulkanCubemap::VulkanCubemap(const Faces& faces, const std::string& directory) {
     const auto dir = std::filesystem::path(directory);
 
     const auto directory_sides = Cubemap::Faces{
-        .right = dir / faces.right,
-        .left = dir / faces.left,
-        .top = dir / faces.top,
-        .bottom = dir / faces.bottom,
-        .front = dir / faces.front,
-        .back = dir / faces.back,
+        .right = (dir / faces.right).string(),
+        .left = (dir / faces.left).string(),
+        .top = (dir / faces.top).string(),
+        .bottom = (dir / faces.bottom).string(),
+        .front = (dir / faces.front).string(),
+        .back = (dir / faces.back).string(),
     };
 
     init(directory_sides);

@@ -17,9 +17,9 @@ std::filesystem::path AssetImporter::import_asset(const std::filesystem::path& a
                                                   const std::filesystem::path& containing_folder) {
     const auto extension = asset_path.extension();
 
-    if (is_texture(extension))
+    if (is_texture(extension.string()))
         return import_texture(asset_path, containing_folder);
-    if (is_script(extension))
+    if (is_script(extension.string()))
         return import_script(asset_path, containing_folder);
 
     PHOS_LOG_ERROR("Not automatically importable extension: {}", asset_path.extension().string());

@@ -28,7 +28,7 @@ std::shared_ptr<Project> Project::create(const std::filesystem::path& path) {
 }
 
 std::shared_ptr<Project> Project::open(const std::filesystem::path& path) {
-    const auto node = YAML::LoadFile(path);
+    const auto node = YAML::LoadFile(path.string());
     const auto project_name = node["name"].as<std::string>();
 
     const auto project_path = std::filesystem::path(path).parent_path();

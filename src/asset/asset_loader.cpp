@@ -75,7 +75,7 @@ std::shared_ptr<IAsset> AssetLoader::load(const std::string& path) const {
 
         auto asset = parser_it->second->parse(node, path);
         asset->id = id;
-        asset->asset_name = std::filesystem::path(path).filename();
+        asset->asset_name = std::filesystem::path(path).string();
 
         return asset;
     } catch (const std::exception&) {
@@ -92,7 +92,7 @@ std::shared_ptr<IAsset> TextureParser::parse(const YAML::Node& node, [[maybe_unu
     const auto containing_folder = std::filesystem::path(path).parent_path();
     const auto texture_path = containing_folder / node["path"].as<std::string>();
 
-    return Texture::create(texture_path);
+    return Texture::create(texture_path.string());
 }
 
 //
@@ -114,12 +114,12 @@ std::shared_ptr<IAsset> CubemapParser::parse(const YAML::Node& node, [[maybe_unu
         // @TODO: Supposing all face fields have valid value
 
         const Cubemap::Faces faces = {
-            .right = load_face(right),
-            .left = load_face(left),
-            .top = load_face(top),
-            .bottom = load_face(bottom),
-            .front = load_face(front),
-            .back = load_face(back),
+            .right = load_face(right).string(),
+            .left = load_face(left).string(),
+            .top = load_face(top).string(),
+            .bottom = load_face(bottom).string(),
+            .front = load_face(front).string(),
+            .back = load_face(back).string(),
         };
         return Cubemap::create(faces);
     }
@@ -134,14 +134,14 @@ std::shared_ptr<IAsset> CubemapParser::parse(const YAML::Node& node, [[maybe_unu
             return nullptr;
         }
 
-        auto node_texture = YAML::LoadFile(m_manager->path() / *texture_asset_path);
+        auto node_texture = YAML::LoadFile((m_manager->path() / *texture_asset_path).string());
 
         PHOS_ASSERT(node_texture["assetType"].as<std::string>() == AssetType::to_string(AssetType::Texture),
                     "Cubemap texture asset type is not texture ({})",
                     node_texture["assetType"].as<std::string>());
 
         const auto texture_complete_path = texture_asset_path->parent_path() / node_texture["path"].as<std::string>();
-        return Cubemap::create(texture_complete_path);
+        return Cubemap::create(texture_complete_path.string());
     }
 
     PHOS_FAIL("Cubemap type '{}' not recognized", cubemap_type);
@@ -157,7 +157,7 @@ std::filesystem::path CubemapParser::load_face(const Phos::UUID& id) {
 
     const auto containing_folder = m_manager->path() / path->parent_path();
 
-    const auto node = YAML::LoadFile(m_manager->path() / *path);
+    const auto node = YAML::LoadFile((m_manager->path() / *path).string());
 
     const auto asset_type = node["assetType"].as<std::string>();
     PHOS_ASSERT(asset_type == AssetType::to_string(AssetType::Texture),
@@ -237,7 +237,7 @@ std::shared_ptr<IAsset> StaticMeshParser::parse(const YAML::Node& node, [[maybe_
         aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
 
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(real_model_path.c_str(), import_flags);
+    const aiScene* scene = importer.ReadFile(real_model_path.string().c_str(), import_flags);
 
     if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
         PHOS_LOG_ERROR("Failed to parse StaticMesh, error loading file: {}\n", real_model_path.string());
@@ -357,7 +357,7 @@ std::shared_ptr<IAsset> ScriptParser::parse([[maybe_unused]] const YAML::Node& n
                                             [[maybe_unused]] const std::string& path) {
     // First stem to remove .psa and second to remove .cs
     const auto class_name = std::filesystem::path(path).stem().stem();
-    return ClassHandle::create("", class_name);
+    return ClassHandle::create("", class_name.string());
 }
 
 } // namespace Phos

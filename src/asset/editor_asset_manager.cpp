@@ -18,7 +18,7 @@ EditorAssetManager::~EditorAssetManager() = default;
 
 std::shared_ptr<IAsset> EditorAssetManager::load(const std::filesystem::path& path) {
     const auto full_path = m_path / path;
-    const auto id = m_loader->get_id(full_path);
+    const auto id = m_loader->get_id(full_path.string());
     if (id == UUID(0))
         return nullptr;
 
@@ -36,7 +36,7 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id(UUID id) {
         return {};
     }
 
-    auto asset = m_loader->load(m_path / *asset_path);
+    auto asset = m_loader->load((m_path / *asset_path).string());
     if (asset == nullptr) {
         PHOS_LOG_ERROR("Could not load asset with id {} and path {}", static_cast<uint64_t>(id), asset_path->string());
         return nullptr;
@@ -55,7 +55,7 @@ std::shared_ptr<IAsset> EditorAssetManager::load_by_id_force_reload(UUID id) {
         return nullptr;
     }
 
-    auto asset = m_loader->load(m_path / *asset_path);
+    auto asset = m_loader->load((m_path / *asset_path).string());
     if (asset == nullptr) {
         PHOS_LOG_ERROR("No asset with id {} found in path: {}", static_cast<uint64_t>(id), m_path.string());
         return nullptr;
@@ -93,7 +93,7 @@ std::optional<AssetType> EditorAssetManager::get_asset_type(UUID id) const {
         return {};
     }
 
-    return m_loader->get_type(m_path / *path);
+    return m_loader->get_type((m_path / *path).string());
 }
 
 std::optional<std::string> EditorAssetManager::get_asset_name(UUID id) const {
@@ -103,17 +103,17 @@ std::optional<std::string> EditorAssetManager::get_asset_name(UUID id) const {
         return {};
     }
 
-    const auto node = YAML::LoadFile(m_path / *path);
+    const auto node = YAML::LoadFile((m_path / *path).string());
 
-    const auto asset_type = m_loader->get_type(m_path / *path);
+    const auto asset_type = m_loader->get_type((m_path / *path).string());
     if (asset_type == AssetType::Material || asset_type == AssetType::Shader)
         return node["name"].as<std::string>();
     else
-        return path->stem();
+        return path->stem().string();
 }
 
 std::optional<UUID> EditorAssetManager::get_asset_id(const std::filesystem::path& path) const {
-    const auto id = m_loader->get_id(m_path / path);
+    const auto id = m_loader->get_id((m_path / path).string());
     if (id == UUID(0))
         return {};
 
@@ -127,7 +127,7 @@ std::optional<std::filesystem::path> EditorAssetManager::get_path_from_id(UUID i
         if (entry.is_directory() || entry.path().extension() != ".psa")
             continue;
 
-        if (m_loader->get_id(entry.path()) == id) {
+        if (m_loader->get_id(entry.path().string()) == id) {
             return std::filesystem::relative(entry.path(), m_path);
         }
     }

@@ -1,5 +1,7 @@
 #include "vulkan_instance.h"
 
+#include <algorithm>
+
 #include "vk_core.h"
 
 #include "utility/logging.h"

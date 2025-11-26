@@ -23,7 +23,7 @@ std::string AssetPack::path_from_id(UUID id) const {
     PHOS_ASSERT(
         m_id_to_asset_file.contains(id), "Asset pack does not contain asset with id {}", static_cast<uint64_t>(id));
 
-    return m_containing_folder / m_id_to_asset_file.find(id)->second;
+    return (m_containing_folder / m_id_to_asset_file.find(id)->second).string();
 }
 
 } // namespace Phos
